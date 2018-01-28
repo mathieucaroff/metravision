@@ -3,7 +3,7 @@
 Detecting and counting light vehicles (motorbikes and alikes) on highways,
 using learning algorithmes.
 
-Currently, the project is based on it's little-brother, Traqumoto, made in
+Currently, the project is based on it's little-brother, Traqu'moto, made in
 2017. It uses Torch and OpenCV and is available under the BSD-3-Clause
 license.
 

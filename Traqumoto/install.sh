@@ -4,6 +4,11 @@
 ### HEADER ###
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
+I=(sudo apt-get install)
+# alias I="sudo apt-get install"
+Y=($I -y)
+# alias Y="I -y"
+
 function echolor () {
     echo "${CYAN}$@${NC}\n"
 }
@@ -20,40 +25,40 @@ function echoexe () {
 echolor "Installation de Traqumoto"
 
 # Updates
-echoexe sudo apt-get -y update
-echoexe sudo apt-get -y upgrade
-echoexe sudo apt-get -y dist-upgrade
-echoexe sudo apt-get -y autoremove
+echoexe sudo apt-get update -y
+# echoexe sudo apt-get upgrade -y
+echoexe sudo apt-get dist-upgrade -y
+echoexe sudo apt-get autoremove -y
 
 
 # INSTALL THE DEPENDENCIES
 
 # Build tools:
-echoexe sudo apt-get install -y build-essential cmake
+echoexe $Y build-essential cmake
 
 # GUI (if you want to use GTK instead of Qt, replace 'qt5-default' with 'libgtkglext1-dev' and remove '-DWITH_QT=ON' option in CMake):
-echoexe sudo apt-get install -y qt5-default libvtk6-dev
+echoexe $Y qt5-default libvtk6-dev
 
 # Media I/O:
-echoexe sudo apt-get install -y zlib1g-dev libjpeg-dev libwebp-dev libpng-dev libtiff5-dev libjasper-dev libopenexr-dev libgdal-dev
+echoexe $Y zlib1g-dev libjpeg-dev libwebp-dev libpng-dev libtiff5-dev libjasper-dev libopenexr-dev libgdal-dev
 
 # Video I/O:
-echoexe sudo apt-get install -y libdc1394-22-dev libavcodec-dev libavformat-dev libswscale-dev libtheora-dev libvorbis-dev libxvidcore-dev libx264-dev yasm libopencore-amrnb-dev libopencore-amrwb-dev libv4l-dev libxine2-dev
+echoexe $Y libdc1394-22-dev libavcodec-dev libavformat-dev libswscale-dev libtheora-dev libvorbis-dev libxvidcore-dev libx264-dev yasm libopencore-amrnb-dev libopencore-amrwb-dev libv4l-dev libxine2-dev
 
 # Parallelism and linear algebra libraries:
-echoexe sudo apt-get install -y libtbb-dev libeigen3-dev
+echoexe $Y libtbb-dev libeigen3-dev
 
 # Python:
-echoexe sudo apt-get install -y python-dev python-tk python-numpy python3-dev python3-tk python3-numpy
+echoexe $Y python-dev python-tk python-numpy python3-dev python3-tk python3-numpy
 
 # Java:
-echoexe sudo apt-get install -y ant default-jdk
+echoexe $Y ant default-jdk
 
 # Git:
-echoexe sudo apt-get install -y git
+echoexe $Y git
 
 # Documentation:
-echoexe sudo apt-get install -y doxygen
+echoexe $Y doxygen
 
 
 # INSTALL Applications
@@ -61,7 +66,6 @@ echoexe mkdir Applications
 echoexe cd Applications
 
 # INSTALL Torch
-
 echoexe git clone https://github.com/torch/distro.git ./torch
 echoexe cd torch
 echoexe bash install-deps
@@ -69,8 +73,7 @@ echoexe ./install.sh
 echoexe cd ..
 
 # INSTALL OpenCV 3.1.0
-
-echoexe sudo apt-get install -y unzip wget
+echoexe $Y unzip wget
 echoexe wget https://github.com/opencv/opencv/archive/3.1.0.zip
 echoexe unzip 3.1.0.zip
 # echoexe rm 3.1.0.zip
@@ -85,7 +88,7 @@ echoexe pwd
 echoexe cd ../..
 
 # INSTALL Luarocks
-echoexe sudo apt-get -y install luarocks
+echoexe $Y luarocks
 
 # LINK Torch & OpenCV
 echoexe git clone https://github.com/VisionLabs/torch-opencv.git

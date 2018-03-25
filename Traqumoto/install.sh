@@ -10,7 +10,7 @@ Y=($I -y)
 # alias Y="I -y"
 
 function echolor () {
-    echo "${CYAN}$@${NC}\n"
+    echo -e "${CYAN}$@${NC}\n"
 }
 
 function echoexe () {
@@ -40,7 +40,9 @@ echoexe $Y build-essential cmake
 echoexe $Y qt5-default libvtk6-dev
 
 # Media I/O:
-echoexe $Y zlib1g-dev libjpeg-dev libwebp-dev libpng-dev libtiff5-dev libjasper-dev libopenexr-dev libgdal-dev
+echoexe $Y zlib1g-dev libjpeg-dev libwebp-dev libpng-dev libtiff5-dev libopenexr-dev libgdal-dev
+echoexe $Y libjasper-dev
+echolor "libjasper-dev has been removed from debian (unmaintained). It's unsure wheather it is needed."
 
 # Video I/O:
 echoexe $Y libdc1394-22-dev libavcodec-dev libavformat-dev libswscale-dev libtheora-dev libvorbis-dev libxvidcore-dev libx264-dev yasm libopencore-amrnb-dev libopencore-amrwb-dev libv4l-dev libxine2-dev

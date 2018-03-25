@@ -81,9 +81,10 @@ static int getFile(lua_State *L)
 {
 
 	FILE *in;
-	if (!(in = popen("zenity  --title=\"Select an image\" --file-selection","r")))
+	if (!(in = popen("bash -c 'zenity  --title=\"Select an image or a video\" --file-selection' &> /dev/null","r")))
 	{
-    		return 1;
+		fprintf(stderr, "[TRM] Couldn't use zenity to get a file from the user.\n");
+    	abort();
 	}
 
 	char buff[512];
@@ -113,7 +114,10 @@ int main ( int argc, char *argv[] )
 	lua_register(L, "getFile", getFile);
 
 	/* execute le script */
-	luaL_dofile(L, "src/traqumoto.lua");
+	int executionError = luaL_dofile(L, "src/traqumoto.lua");
+	if (executionError) {
+		fprintf(stderr, "[TRM] Error trying to run `dofile(\"src/traqumoto.lua\")`\n");
+	}
 
 	/* ferme Lua */
 	lua_close(L);

@@ -73,7 +73,7 @@ require 'cv.imgproc'	-- Utilisation du module imgproc d'OpenCV
 require 'cv.video'	-- Utilisation du module video d'OpenCV
 
 net = torch.load('network.t7')			-- Charge le réseau de neurones network.t7
-vidname = '/home/pi2017/Bureau/Video/embouteillage.mp4'	-- Chemin de la vidéo en entrée
+vidname = '/home/user/traqumoto/sequenceDebut.avi'	-- Chemin de la vidéo en entrée
 
 dofile("prediction.lua")	-- Execute le fichier prediction.lua
 

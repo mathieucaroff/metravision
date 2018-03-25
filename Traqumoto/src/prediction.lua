@@ -86,6 +86,17 @@ end
 local l = 60		-- largeur normalisée des images en entrée du réseau de neurones
 local L = 120		-- hauteur normalisée des images en entrée du réseau de neurones
 
+local fileExists = false
+vidname = vidname
+local file = io.open(vidname)
+if file ~= nil then
+	fileExists = true
+	file:close()
+else
+	print("[TRM] File doesn't exist.")
+	os.exit(2)
+end
+
 local vid = cv.VideoCapture{vidname}	-- capture du chemin de la vidéo
 
 if not vid:isOpened() then	-- ouverture de la vidéo

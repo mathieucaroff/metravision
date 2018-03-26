@@ -54,10 +54,10 @@ else
 	os.exit(2)
 end
 
-local vid = cv.VideoCapture{vidname}	-- capture du chemin de la vidéo
+local vid = cv.VideoCapture{filename = vidname}	-- capture du chemin de la vidéo
 
 if not vid:isOpened() then	-- ouverture de la vidéo
-    print("Failed to open the video")
+    print("[TRM] The video exists but I fail to open the it")
     os.exit(-1)
 end
 

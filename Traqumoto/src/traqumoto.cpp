@@ -41,7 +41,7 @@ static int getFile(lua_State *L)
 {
 
 	FILE *in;
-	if (!(in = popen("bash -c 'zenity  --title=\"Select an image or a video\" --file-selection' &> /dev/null","r")))
+	if (!(in = popen("bash -c 'zenity  --title=\"Select a video\" --file-selection' &> /dev/null","r")))
 	{
 		fprintf(stderr, "[TRM] Couldn't use zenity to get a file from the user.\n");
     	abort();

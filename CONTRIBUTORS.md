@@ -1,6 +1,6 @@
 # Metravision contributors
 
-## Metravision 2018
+## Metravision (2018)
 
 * Ayoub TOUIBI,
 * Luiz Henrique MORAIS ANTUNES,

@@ -50,7 +50,7 @@ if file ~= nil then
 	fileExists = true
 	file:close()
 else
-	print("[TRM] File doesn't exist.")
+	print("[TRM] File `" .. vidname .. "`doesn't exist.")
 	os.exit(2)
 end
 

@@ -29,56 +29,60 @@ cv = require 'cv'	-- Utilisation d'OpenCV
 require 'cv.imgcodecs'	-- Utilisation du module imgcodecs d'OpenCV
 require 'cv.imgproc'	-- Utilisation du module imgproc d'OpenCV
 
-local n1 = 1300			-- Nombre d'images de motos
-local n2 = 1800			-- Nombre d'images de pas motos
+local n1 = 200--1300			-- Nombre d'images de motos
+local n2 = 200--1800			-- Nombre d'images de pas motos
 local N = n1 + n2		-- Nombre total d'images
-local n1app = 1200		-- Nombre d'images de motos pour l'apprentissage
-local n2app = 1700		-- Nombre d'images de pas motos pour l'apprentissage
+local n1app = 100		-- Nombre d'images de motos pour l'apprentissage
+local n2app = 100		-- Nombre d'images de pas motos pour l'apprentissage
 local Napp = n1app + n2app	-- Nombre total d'images pour l'apprentissage
 local n1test = n1 - n1app	-- Nombre d'images de motos pour le test
 local n2test = n2 - n2app	-- Nombre d'images de pas motos pour le test
 local Ntest = n1test + n2test	-- Nombre d'échantillons de tests
 
-local nbiterations = 10 -- nombre d'itérations
-local seuil = 1		-- seuil pour comparer au résultat de la prédiction (moto=1, pasmoto=0)
+local nbiterations = 1 -- nombre d'itérations
+local seuil = 0.60		-- seuil pour comparer au résultat de la prédiction (moto=1, pasmoto=0)
 
 local nt = 10	-- nombre de transformations
 local l = 60	-- largeur normalisée des images en entrée du réseau de neurones
 local L = 120	-- hauteur normalisée des images en entrée du réseau de neurones
+
+local datasetLocationFormat = "/media/dataset/%s/%06d.png"
+local bikeDirname = "bike"
+local notBikeDirname = "not-bike"
 
 -- Creation de la base de données d'images
 function creation_dataset()
 	local imgsetMoto = torch.Tensor(n1,1,L,l):zero() 	-- tableau contenant les images de motos
 	local imgsetPasMoto = torch.Tensor(n2,1,L,l):zero() 	-- tableau contenant les images de pas motos
 
+	local imgname
+
 	for i=1,N do
-		if i <= n1 then
-			if i<100 then
-				imgname = string.format('../BDD/Motos/%02d.png', i)	-- images de 01 à 99
-			else
-				if i<1000 then
-					imgname = string.format('../BDD/Motos/%03d.png', i)	-- images de 100 à 999
-				else
-					imgname = string.format('../BDD/Motos/%04d.png', i)	-- images de 1000 à 9999
-				end
-			end
-			local Img = cv.imread{imgname,cv.IMREAD_GRAYSCALE} 	-- image en niveau de gris
-			local Imgr = cv.resize{Img,{l,L}} 			-- redimensionnement 60x120
-			imgsetMoto[i] = torch.Tensor(1,L,l):copy(Imgr) 		-- ajout image moto dans tableau de motos
+		local yesMoto = i <= n1
+		local j = i - n1
+		
+		if yesMoto then
+			imgname = string.format(datasetLocationFormat, bikeDirname, i)
 		else
-			if i-n1<100 then
-				imgname = string.format('../BDD/Pas_Motos/%02d.png', i-n1)		--images de 01 à 99
-			else
-				if i-n1<1000 then
-					imgname = string.format('../BDD/Pas_Motos/%03d.png', i-n1)		-- images de 100 à 999
-				else
-					imgname = string.format('../BDD/Pas_Motos/%04d.png', i-n1)		-- images de 1000 à 9999
-				end
-			end
-			local Img = cv.imread{imgname,cv.IMREAD_GRAYSCALE}	-- image en niveau de gris
-			local Imgr = cv.resize{Img,{l,L}}			-- redimensionnement 60x120
-			imgsetPasMoto[i-n1] = torch.Tensor(1,L,l):copy(Imgr) 	-- ajout image moto dans tableau de motos
+			imgname = string.format(datasetLocationFormat, notBikeDirname, j)
 		end
+
+		f = io.open(imgname)
+		if f ~= nil then
+			-- print("[TMR] File " .. imgname .. " exists")
+			f:close()
+		else
+			print("[TMR] File " .. imgname .. " doesn't exist")
+		end
+
+		local Img  = cv.imread{imgname,cv.IMREAD_GRAYSCALE} -- image en niveau de gris
+		local Imgr = cv.resize{Img,{l,L}} -- redimensionnement 60x120
+
+		if yesMoto then
+			imgsetMoto[i] = torch.Tensor(1,L,l):copy(Imgr)
+		else
+			imgsetPasMoto[j] = torch.Tensor(1,L,l):copy(Imgr)
+		end -- ajout image moto/pas-moto dans tableau correspondant
 	end
 
 	-- associe le label de moto à 1
@@ -278,18 +282,18 @@ function testNetwork(net,datasetTest,seuil)
 			end
 		end
 	end
-	print('[Résultat] ' .. cptVP/n1test*100 .. '% de Vrai-Positifs pour le seuil de ' .. seuil)
-	print('[Résultat] ' .. cptFN/n2test*100 .. '% de Faux-Negatifs pour le seuil de ' .. seuil)
+	print('[TRM][Résultat] ' .. cptVP/n1test*100 .. '% de Vrai-Positifs pour le seuil de ' .. seuil)
+	print('[TRM][Résultat] ' .. cptFN/n2test*100 .. '% de Faux-Negatifs pour le seuil de ' .. seuil)
 end
 
 -- Main
-print("[Main] Prétraitement et création de la base de données")
+print("[TRM][Main] Prétraitement et création de la base de données")
 datasetApp,datasetTest = creation_dataset()
-print("[Main] Prétraitement et entrainement du réseau de neurones")
+print("[TRM][Main] Prétraitement et entrainement du réseau de neurones")
 local tps = os.time()
 net = entrainement(datasetApp)
-print("[Main] Réseau sauvegardé")
+print("[TRM][Main] Réseau sauvegardé")
 tps = (os.time() - tps)	-- durée de l'entrainement
-print("[Main] Temps d'entrainement : " .. math.floor(tps/86400) .. "d " .. math.floor(tps/3600)%86400 .. "h " .. math.floor(tps/60)%60 .. "m " .. tps%60 .. "s")
-print("[Main] Test du réseau")
+print("[TRM][Main] Temps d'entrainement : " .. math.floor(tps/86400) .. "d " .. math.floor(tps/3600)%86400 .. "h " .. math.floor(tps/60)%60 .. "m " .. tps%60 .. "s")
+print("[TRM][Main] Test du réseau")
 testNetwork(net,datasetTest,seuil)

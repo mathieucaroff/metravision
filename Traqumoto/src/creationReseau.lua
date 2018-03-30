@@ -46,7 +46,7 @@ local nt = 10	-- nombre de transformations
 local l = 60	-- largeur normalisée des images en entrée du réseau de neurones
 local L = 120	-- hauteur normalisée des images en entrée du réseau de neurones
 
-local datasetLocationFormat = "/media/dataset/%s/%06d.png"
+local datasetLocationFormat = "/media/mvdata/dataset/%s/%06d.png"
 local bikeDirname = "bike"
 local notBikeDirname = "not-bike"
 
@@ -243,24 +243,40 @@ function entrainement(dataset)
 	local tailleMaxPooling = 2
 
 	local net = nn.Sequential()										-- Réseau de neurones
+	print("[TRM] net = nn.Sequential()")
 	net:add(nn.SpatialConvolution(inputs,couche1,tailleConvolution,tailleConvolution))			-- Convolution
+	print("[TRM] nn.SpatialConvolution(inputs,couche1")
 	net:add(nn.ReLU())											-- Application du ReLU 
+	print("[TRM] nn.ReLU() 1")
 	net:add(nn.SpatialMaxPooling(tailleMaxPooling,tailleMaxPooling,tailleMaxPooling,tailleMaxPooling))	-- Max Pooling pour réduire les images
+	print("[TRM] nn.SpatialMaxPooling 1")
 	net:add(nn.SpatialConvolution(couche1,couche2,tailleConvolution,tailleConvolution))			-- 6 input image channels, 16 output channels, 5x5 convolution kernel
+	print("[TRM] nn.SpatialConvolution(couche1,couche2")
 	net:add(nn.ReLU())											-- Application du ReLU 
+	print("[TRM] (nn.ReLU() 2")
 	net:add(nn.SpatialMaxPooling(tailleMaxPooling,tailleMaxPooling,tailleMaxPooling,tailleMaxPooling))	-- Max Pooling pour réduire les images
-	net:add(nn.View(couche2*27*12))										-- redimmensionnement en un seul tableau 
+	print("[TRM] nn.SpatialMaxPooling 2")
+	net:add(nn.View(couche2*27*12))										-- redimmensionnement en un seul tableau
+	print("[TRM] nn.View(couche2*27*12)")
 	net:add(nn.Linear(couche2*27*12,couche3))								-- Liens entre la deuxième et troisième couche
+	print("[TRM] nn.Linear(couche2*27*12,couche3)")
 	net:add(nn.ReLU())											-- Application du ReLU
+	print("[TRM] nn.ReLU 3")
 	net:add(nn.Linear(couche3,outputs))									-- Liens entre la  troisième couche et la couche de sortie
+	print("[TRM] nn.Linear(couche3,outputs)")
 	net:add(nn.Sigmoid())											-- Sigmoid pour que les résultats soient entre 0 et 1
+	print("[TRM] nn.Sigmoid()")
 
+	print("[TRM] nn.BCECriterion()")
 	local criterion = nn.BCECriterion()				-- Choix du critère d'entrainement, BCE adapté à deux classes
+	print("[TRM] nn.StochasticGradient(net, criterion)")
 	local trainer = nn.StochasticGradient(net, criterion)		-- Création de l'entraineur avec le reseau et le critère
 	trainer.learningRate = 0.0005		-- paramètre vitesse d'apprentissage
 	trainer.maxIteration = nbiterations	-- paramètre nombre d'itérations
+	print("[TRM] trainer:train(dataset)")
 	trainer:train(dataset)			-- lance l'entrainement du reseau de neurones avec la base de données
 
+	print("[TRM] torch.save('network.t7', net)")
 	torch.save('network.t7', net)		-- Sauvegarde du réseau de neurones en fichier .t7
 	return net
 end

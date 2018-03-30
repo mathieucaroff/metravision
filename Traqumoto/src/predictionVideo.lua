@@ -34,7 +34,7 @@ require 'cv.imgproc'	-- Utilisation du module imgproc d'OpenCV
 require 'cv.video'	-- Utilisation du module video d'OpenCV
 
 net = torch.load('network.t7')			-- Charge le réseau de neurones network.t7
-vidname = '/home/user/traqumoto/sequence.avi'	-- Chemin de la vidéo en entrée
+vidname = '/media/mvdata/test-videos/1ereSequence.avi' -- Chemin de la vidéo en entrée
 
 dofile("prediction.lua")	-- Execute le fichier prediction.lua
 

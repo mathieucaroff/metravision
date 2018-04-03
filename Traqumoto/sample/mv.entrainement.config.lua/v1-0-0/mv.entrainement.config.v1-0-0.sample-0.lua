@@ -1,11 +1,8 @@
-local config = {}
-
--- torch path
-config.torchPath = ""
+local entrainementConfig = {}
 
 -- CreationRéseau
 local cr = {}
-config.creationReseau = cr
+entrainementConfig.creationReseau = cr
 
 cr.n1 = 200--1300			-- Nombre d'images de motos
 cr.n2 = 200--1800			-- Nombre d'images de pas motos
@@ -25,9 +22,9 @@ cr.bikeDirname = "bike"
 cr.notBikeDirname = "not-bike"
 
 -- Prédiction -- Traqumoto
-config.prediction = {}
-local pr = config.prediction
+entrainementConfig.prediction = {}
+local pr = entrainementConfig.prediction
 pr.l = cr.l
 pr.L = cr.L
 
-return config
+return entrainementConfig

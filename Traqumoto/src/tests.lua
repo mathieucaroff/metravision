@@ -16,11 +16,10 @@ Ce fichier fait parti du logiciel Traqu'moto, servant à la détection
 des deux roues motorisés sur autoroute. Il a été réalisé sur commande
 du Cerema.]]
 
-require 'torch'		-- Utilisation du module torch
-require 'nn'		-- Utilisation du module neural network
-cv = require 'cv'	-- Utilisation d'OpenCV
-require 'cv.imgcodecs'	-- Utilisation du module imgcodecs d'OpenCV
-require 'cv.imgproc'	-- Utilisation du module imgproc d'OpenCV
+require 'mv.globals'
+
+require 'cv.imgcodecs'
+require 'cv.imgproc'
 
 local n1 = 1300			-- Nombre d'images de motos
 local n2 = 1800			-- Nombre d'images de pas motos

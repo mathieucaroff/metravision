@@ -16,15 +16,14 @@ Ce fichier fait parti du logiciel Traqu'moto, servant à la détection
 des deux roues motorisés sur autoroute. Il a été réalisé sur commande
 du Cerema.]]
 
-require 'torch'		-- Utilisation du module torch
-require 'nn'		-- Utilisation du module neural network
-require 'math'		-- Utilisation du module math
-cv = require 'cv'	-- Utilisation d'OpenCV
-require 'cv.features2d'	-- Utilisation du module features2d d'OpenCV
-require 'cv.highgui'	-- Utilisation du module highgui d'OpenCV
-require 'cv.videoio'	-- Utilisation du module videoio d'OpenCV
-require 'cv.imgproc'	-- Utilisation du module imgproc d'OpenCV
-require 'cv.video'	-- Utilisation du module video d'OpenCV
+
+require 'mv.globals'
+
+require 'cv.features2d'
+require 'cv.highgui'
+require 'cv.videoio'
+require 'cv.video'
+require 'math'
 
 -- fonction ecrire dans un fichier excel
 function write(path, data, sep)	-- 
@@ -40,19 +39,13 @@ function write(path, data, sep)	--
     file:close()
 end
 
-local l = 60		-- largeur normalisée des images en entrée du réseau de neurones
-local L = 120		-- hauteur normalisée des images en entrée du réseau de neurones
 
-local fileExists = false
+local pr = config.prediction
+local l = pr.l		-- largeur normalisée des images en entrée du réseau de neurones
+local L = pr.L		-- hauteur normalisée des images en entrée du réseau de neurones
+
 vidname = vidname
-local file = io.open(vidname)
-if file ~= nil then
-	fileExists = true
-	file:close()
-else
-	print("[TRM] File doesn't exist.")
-	os.exit(2)
-end
+util.exitIfMissing(vidname)
 
 local vid = cv.VideoCapture{filename = vidname}	-- capture du chemin de la vidéo
 

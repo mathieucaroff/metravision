@@ -1,0 +1,1 @@
+return dofile("sample/mv.config.lua/v1-0-0/mv.config.v1-0-0.sample-0.lua")

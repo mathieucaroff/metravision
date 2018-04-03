@@ -21,11 +21,10 @@ Ce script charge le réseau de neurones puis le teste avec la base de
 données de tests. Il renvoie les pourcentages de réussite des
 échantillons de motos et de pas motos ]]
 
-require 'torch'			-- Utilisation du module torch
-require 'nn'			-- Utilisation du module neural network
-cv = require 'cv'		-- Utilisation d'OpenCV
-require 'cv.imgproc'		-- Utilisation du module imgproc d'OpenCV
-require 'cv.imgcodecs'		-- Utilisation du module imgcodecs d'OpenCV
+require 'mv.globals'
+
+require 'cv.imgproc'
+require 'cv.imgcodecs'
 
 local l = 60			-- largeur normalisée des images en entrée du réseau de neurone
 local L = 120			-- hauteur normalisée des images en entrée du réseau de neurone

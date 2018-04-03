@@ -23,16 +23,14 @@ On charge le réseau de neurones, choisit le chemin de la vidéo, execute
 le programme de prédiction puis enregistre les résultats dans un fichier
 excel. ]]
 
-require 'torch'		-- Utilisation du module torch
-require 'nn'		-- Utilisation du module neural network
-require 'math'		-- Utilisation du module math
-cv = require 'cv'	-- Utilisation d'OpenCV
-require 'cv.features2d'	-- Utilisation du module features2d d'OpenCV
-require 'cv.highgui'	-- Utilisation du module highgui d'OpenCV
-require 'cv.videoio'	-- Utilisation du module videoio d'OpenCV
-require 'cv.imgproc'	-- Utilisation du module imgproc d'OpenCV
-require 'cv.video'	-- Utilisation du module video d'OpenCV
+require 'mv.globals'
 
+require 'cv.features2d'
+require 'cv.highgui'
+require 'cv.videoio'
+require 'cv.imgproc'
+require 'cv.video'
+require 'math'
 net = torch.load('network.t7')			-- Charge le réseau de neurones network.t7
 vidname = '/home/user/traqumoto/sequence.mp4'	-- Chemin de la vidéo en entrée
 

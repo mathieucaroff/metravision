@@ -242,7 +242,7 @@ function entrainement(dataset)
 	net:add(nn.SpatialMaxPooling(tailleMaxPooling,tailleMaxPooling,tailleMaxPooling,tailleMaxPooling))	-- Max Pooling pour réduire les images
 	printTRM("nn.SpatialConvolution--2")
 	net:add(nn.SpatialConvolution(couche1,couche2,tailleConvolution,tailleConvolution))			-- 6 input image channels, 16 output channels, 5x5 convolution kernel
-	printTRM("(nn.ReLU--2")
+	printTRM("nn.ReLU--2")
 	net:add(nn.ReLU())											-- Application du ReLU 
 	printTRM("nn.SpatialMaxPooling--2")
 	net:add(nn.SpatialMaxPooling(tailleMaxPooling,tailleMaxPooling,tailleMaxPooling,tailleMaxPooling))	-- Max Pooling pour réduire les images

@@ -17,7 +17,7 @@ des deux roues motorisés sur autoroute. Il a été réalisé sur commande
 du Cerema.]]
 
 
-require 'mv.globals'
+require 'mv.globals.lua'
 
 require 'cv.features2d'
 require 'cv.highgui'

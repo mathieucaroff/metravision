@@ -3,10 +3,10 @@
 local cr = {}
 config.creationReseau = cr
 
-cr.n1 = 200--1300			-- Nombre d'images de motos
-cr.n2 = 200--1800			-- Nombre d'images de pas motos
-cr.n1app = 100		-- Nombre d'images de motos pour l'apprentissage
-cr.n2app = 100		-- Nombre d'images de pas motos pour l'apprentissage
+cr.n1 = 1300			-- Nombre d'images de motos
+cr.n2 = 1800			-- Nombre d'images de pas motos
+cr.n1app = 800		-- Nombre d'images de motos pour l'apprentissage
+cr.n2app = 1200		-- Nombre d'images de pas motos pour l'apprentissage
 -- Les image qui ne sont pas attribuée à l'apprentissage sont utilisées pour le test
 
 cr.nbiterations = 1 -- nombre d'itérations

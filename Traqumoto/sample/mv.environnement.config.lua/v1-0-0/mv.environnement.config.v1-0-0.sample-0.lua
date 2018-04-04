@@ -1,6 +1,3 @@
-environnementConfig = {}
-
+-- # Environnment # --
 -- Torch path
-environnementConfig.torchPath = ""
-
-return environnementConfig
+config.torchLocation = "/home/user/traqumoto/Application/torch"

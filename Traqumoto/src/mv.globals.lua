@@ -1,6 +1,5 @@
-require("solve-environement")
-
 util = require("mv.util")
+
 config = require("../mv.config")
 
 -- External libraries

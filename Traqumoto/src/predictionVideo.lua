@@ -23,7 +23,7 @@ On charge le réseau de neurones, choisit le chemin de la vidéo, execute
 le programme de prédiction puis enregistre les résultats dans un fichier
 excel. ]]
 
-require 'mv.globals'
+require 'mv-header'
 
 require 'cv.features2d'
 require 'cv.highgui'

@@ -44,4 +44,32 @@ function util.exitIfMissing(filename)
     end
 end
 
+function util.printTRM_table (tbl, indent)
+    if not indent then indent = 0 end
+    for key, val in pairs(tbl) do
+        formattingKey = string.rep("  ", indent) .. key .. ":"
+        if type(val) == "table" then
+            printTRM(formattingKey)
+            util.printTRM_table(val, indent + 2)
+        else
+            printTRM(formattingKey .. " " .. val)
+        end
+    end
+end
+
+function util.nope ()
+end
+
+-- Run a command and get it's output
+function util.capture(cmd, raw)
+    local f = assert(io.popen(cmd, 'r'))
+    local s = assert(f:read('*a'))
+    f:close()
+    if raw then return s end
+    s = string.gsub(s, '^%s+', '')
+    s = string.gsub(s, '%s+$', '') -- Remove trailing space
+    s = string.gsub(s, '[\n\r]+', ' ') -- Remove newlines
+    return s
+end
+
 return util

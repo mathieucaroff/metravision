@@ -21,7 +21,7 @@ Ce script charge le réseau de neurones puis le teste avec la base de
 données de tests. Il renvoie les pourcentages de réussite des
 échantillons de motos et de pas motos ]]
 
-require 'mv.globals'
+require 'mv-header'
 
 require 'cv.imgproc'
 require 'cv.imgcodecs'

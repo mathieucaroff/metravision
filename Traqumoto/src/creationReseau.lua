@@ -23,7 +23,7 @@ images. Puis il crée le réseau de neurones et l'entraine avec la base
 de données. Ensuite, il teste les Ntest images pour évaluer le réseau.
 ]]
 
-require 'mv.globals'
+require 'mv-header'
 
 require 'cv.imgcodecs'
 require 'cv.imgproc'
@@ -232,29 +232,33 @@ function entrainement(dataset)
 	local tailleConvolution = 5
 	local tailleMaxPooling = 2
 
-	printTRM("net = nn.Sequential")
+	local printTRM_debug = util.nope
+
+	printTRM_debug("<Structure du réseau>")
+
+	printTRM_debug("net = nn.Sequential")
 	local net = nn.Sequential()										-- Réseau de neurones
-	printTRM("nn.SpatialConvolution--1")
+	printTRM_debug("nn.SpatialConvolution--1")
 	net:add(nn.SpatialConvolution(inputs,couche1,tailleConvolution,tailleConvolution))			-- Convolution
-	printTRM("nn.ReLU--1")
+	printTRM_debug("nn.ReLU--1")
 	net:add(nn.ReLU())											-- Application du ReLU 
-	printTRM("nn.SpatialMaxPooling--1")
+	printTRM_debug("nn.SpatialMaxPooling--1")
 	net:add(nn.SpatialMaxPooling(tailleMaxPooling,tailleMaxPooling,tailleMaxPooling,tailleMaxPooling))	-- Max Pooling pour réduire les images
-	printTRM("nn.SpatialConvolution--2")
+	printTRM_debug("nn.SpatialConvolution--2")
 	net:add(nn.SpatialConvolution(couche1,couche2,tailleConvolution,tailleConvolution))			-- 6 input image channels, 16 output channels, 5x5 convolution kernel
-	printTRM("nn.ReLU--2")
+	printTRM_debug("nn.ReLU--2")
 	net:add(nn.ReLU())											-- Application du ReLU 
-	printTRM("nn.SpatialMaxPooling--2")
+	printTRM_debug("nn.SpatialMaxPooling--2")
 	net:add(nn.SpatialMaxPooling(tailleMaxPooling,tailleMaxPooling,tailleMaxPooling,tailleMaxPooling))	-- Max Pooling pour réduire les images
-	printTRM("nn.View")
+	printTRM_debug("nn.View")
 	net:add(nn.View(couche2*27*12))										-- redimmensionnement en un seul tableau
-	printTRM("nn.Linear--1")
+	printTRM_debug("nn.Linear--1")
 	net:add(nn.Linear(couche2*27*12,couche3))								-- Liens entre la deuxième et troisième couche
-	printTRM("nn.ReLU--3")
+	printTRM_debug("nn.ReLU--3")
 	net:add(nn.ReLU())											-- Application du ReLU
-	printTRM("nn.Linear--2")
+	printTRM_debug("nn.Linear--2")
 	net:add(nn.Linear(couche3,outputs))									-- Liens entre la  troisième couche et la couche de sortie
-	printTRM("nn.Sigmoid")
+	printTRM_debug("nn.Sigmoid")
 	net:add(nn.Sigmoid())											-- Sigmoid pour que les résultats soient entre 0 et 1
 	
 	printTRM("nn.BCECriterion")

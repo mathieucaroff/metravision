@@ -27,4 +27,27 @@ config.prediction = pr
 pr.l = cr.l
 pr.L = cr.L
 
+
+-- # Environnment # --
+-- Torch path
+config.torchLocation = "/home/user/traqumoto/Application/torch"
+
+-- Video de test --
+-- (Chemin de la vidéo en entrée)
+config.videoLocation = "/media/mvdata/test-videos/HeureDePointe.avi"
+
+-- Fichier de réseau de neuronne --
+config.networkLocation = 'network.t7'
+
+-- Fichier de destination des résultats --
+config.resultDestination = 'Resultats.csv'
+
+-- # Interface # --
+config.windows = {}
+config.windows.nb = false -- vidéo en niveaux de gris avec prédictions effectuées (rectangles blancs)
+config.windows.bcgSub = false -- Masque Background Subtractor, fond en noir et pixels en mouvement en blanc
+config.windows.mask = false -- BS + fonctions Eroder & Dilater
+config.windows.blob = true  -- BS + E&D + détection blobs
+config.windows.detection = true -- vidéo avec trackers + compteur + temps
+
 return config

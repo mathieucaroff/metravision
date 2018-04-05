@@ -16,17 +16,15 @@ Ce fichier fait parti du logiciel Traqu'moto, servant à la détection
 des deux roues motorisés sur autoroute. Il a été réalisé sur commande
 du Cerema.]]
 
-
-require 'mv-header.lua'
-
 require 'cv.features2d'
 require 'cv.highgui'
 require 'cv.videoio'
 require 'cv.video'
+require 'cv.imgproc'
 require 'math'
 
 -- fonction ecrire dans un fichier excel
-function write(path, data, sep)	-- 
+function writeCSV(path, data, sep)	-- 
     sep = sep or ';'	-- separateur pour décaler d'une colonne à droite
     local file = assert(io.open(path, "w"))
     for i=1,#data do	-- #data = nombre de lignes
@@ -39,18 +37,20 @@ function write(path, data, sep)	--
     file:close()
 end
 
+-- Charge le réseau de neuronnes
+net = torch.load(config.networkLocation)
 
 local pr = config.prediction
 local l = pr.l		-- largeur normalisée des images en entrée du réseau de neurones
 local L = pr.L		-- hauteur normalisée des images en entrée du réseau de neurones
 
-vidname = vidname
+vidname = config.videoLocation
 util.exitIfMissing(vidname)
 
 local vid = cv.VideoCapture{filename = vidname}	-- capture du chemin de la vidéo
 
 if not vid:isOpened() then	-- ouverture de la vidéo
-    print("[TRM] The video exists but I fail to open the it")
+    printTRM("[TRM] The video exists but I fail to open the it")
     os.exit(-1)
 end
 
@@ -89,22 +89,32 @@ local cpt = 0		-- compteur de motos par 6 minutes
 local cptglb = 0	-- compteur global (total)
 
 -- création de 5 fenetres
-cv.namedWindow{'win1'}
-cv.setWindowTitle{'win1', 'N&B'}	
+if config.windows.nb then
+	cv.namedWindow{'win1'}
+	cv.setWindowTitle{'win1', 'N&B'}	
+end
 
-cv.namedWindow{'win2'}
-cv.setWindowTitle{'win2', 'BcgSub'}
+if config.windows.bcgSub then
+	cv.namedWindow{'win2'}
+	cv.setWindowTitle{'win2', 'BcgSub'}	
+end
 
-cv.namedWindow{'win3'}
-cv.setWindowTitle{'win3', 'Mask'}
+if config.windows.mask then
+	cv.namedWindow{'win3'}
+	cv.setWindowTitle{'win3', 'Mask'}	
+end
 
-cv.namedWindow{'win4'}
-cv.setWindowTitle{'win4', 'Blob'}
+if config.windows.blob then
+	cv.namedWindow{'win4'}
+	cv.setWindowTitle{'win4', 'Blob'}	
+end
 
-cv.namedWindow{'win5'}
-cv.setWindowTitle{'win5', 'Detection'}
+if config.windows.detection then
+	cv.namedWindow{'win5'}
+	cv.setWindowTitle{'win5', 'Detection'}
+end
 
-local pause = false 
+local pause = false
 local key = 0
 local key_SPACE = 32  	-- touche Espace
 local key_ESCAPE = 27 	-- touche Echap
@@ -114,17 +124,17 @@ while true do
 	if key == key_SPACE then	-- mettre en pause avec la touche espace
 		key = 0
 		pause = not pause
-		print("en pause")
+		printTRM("en pause")
 		key=cv.waitKey{0}
 	elseif key == key_ESCAPE or key == key_Q then -- quitter avec les touches Echap ou Q
-		print("quitter")
+		printTRM("quitter")
 		break
 	end
 	
 	if not pause then
 
 		if not(vid:read{frame}) then	-- fin de la vidéo
-			print("Fin de la video")
+			printTRM("Fin de la video")
 			key=cv.waitKey{0}
 			break
 		end
@@ -176,7 +186,7 @@ while true do
 				-- local tps = os.clock() -- calcul temps pour traverser le réseau
 				local predicted = net:forward(sub:view(1,L,l))					-- prediction de l'echantillon
 				-- tps = (os.clock() - tps)
-				-- print(tps) -- durée d'une prédiction en seconde 
+				-- printTRM(tps) -- durée d'une prédiction en seconde 
 				if predicted[1]==1 then		-- si prédiction >= seuil
 					NPredicted = NPredicted + 1
 					CoordPredicted[NPredicted][1] = x
@@ -298,16 +308,29 @@ while true do
 		end
 
 		-- affichage des fenetres
-		cv.imshow{'win1', Img}		-- vidéo en niveaux de gris avec prédictions effectuées (rectangles blancs)		
-		cv.imshow{'win2', fgMaskMOG2} 	-- Masque Background Subtractor, fond en noir et pixels en mouvement en blanc
-		cv.imshow{'win3', Mask} 	-- BS + fonctions Eroder & Dilater
-		cv.imshow{'win4', ImgBlob}	-- BS + E&D + détection blobs
-		cv.imshow{'win5', frame}	-- vidéo avec trackers + compteur + temps 
+		if config.windows.nb then
+			cv.imshow{'win1', Img}	
+		end
+		if config.windows.bcgSub then
+			cv.imshow{'win2', fgMaskMOG2}
+		end
+		if config.windows.mask then
+			cv.imshow{'win3', Mask}
+		end
+		if config.windows.blob then
+			cv.imshow{'win4', ImgBlob}
+		end
+		if config.windows.detection then
+			cv.imshow{'win5', frame}
+		end
 		
 		key=cv.waitKey{1} -- temps entre chaque image en ms
 	end
 end
--- écriture temps dans fichier excel
+-- Ecriture du temps au format excel
 table.insert(data,{math.floor(oldtps/60) .. ':00' .. '-' .. math.floor(tps/60) .. ':' .. string.format('%02d',tps%60),cpt})
 
 cv.destroyAllWindows{}
+
+-- Ecrire le résultat dans un fichier CSV --
+writeCSV(config.resultDestination, data, ';')

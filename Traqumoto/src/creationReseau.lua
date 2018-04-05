@@ -270,8 +270,8 @@ function entrainement(dataset)
 	printTRM("trainer:train(dataset)")
 	trainer:train(dataset)			-- lance l'entrainement du reseau de neurones avec la base de données
 
-	printTRM("torch.save('network.t7', net)")
-	torch.save('network.t7', net)		-- Sauvegarde du réseau de neurones en fichier .t7
+	printTRM("torch.save(config.resultDestination, net)")
+	torch.save(config.resultDestination, net)		-- Sauvegarde du réseau de neurones en fichier .t7
 	return net
 end
 

@@ -25,11 +25,9 @@ require 'cv.imgproc'
 require 'cv.video'
 require 'math'
 
-net = torch.load('src/network.t7')	-- Charge le réseau de neurones network.t7
 vidname = getFile()			-- Appel de la fonction getFile de traqumoto.cpp
 vidname = vidname:gsub("\n", "")	-- retire le caractère \n à la fin du chemin de la vidéo
-print(vidname)				-- Affiche le chemin
+printTRM(vidname)				-- Affiche le chemin
 
+config.videoLocation = vidname -- Remplace la valeur par défaut
 dofile("src/prediction.lua")		-- Execute le programme de prediction
-
-write('Resultat.csv',data,';')		-- Ecris le résultat dans un fichier excel

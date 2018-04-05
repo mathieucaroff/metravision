@@ -36,7 +36,7 @@ local seuil = 1			-- seuil pour comparer au résultat de la prédiction (moto=1,
 local net = torch.load('network.t7')			-- Chargement du réseau de neurones
 local datasetTest = torch.load('datasetTest.t7') 	-- Chargement de la base de données
 
-print('Détails ? (y or n)')		-- Demande de détails
+printTRM('Détails ? (y or n)')		-- Demande de détails
 local key = io.read()			-- Lecture de la réponse
 
 if key == 'y' or key == 'n' then	-- si touche y ou n appuyée
@@ -54,15 +54,15 @@ if key == 'y' or key == 'n' then	-- si touche y ou n appuyée
 			end
 		end
 		if key == 'y' then				-- si touche y appuyée, afficher
-			print('n°' .. i)			-- n° image
-			print('pred = ' .. predicted[1])	-- prediction du reseau de neurones
-			print('cptVP = ' .. cptVP)		-- nombre vrai positif
-			print('cptFN = ' .. cptFN)		-- nombre faux negatif
-			print('\n')
+			printTRM('n°' .. i)			-- n° image
+			printTRM('pred = ' .. predicted[1])	-- prediction du reseau de neurones
+			printTRM('cptVP = ' .. cptVP)		-- nombre vrai positif
+			printTRM('cptFN = ' .. cptFN)		-- nombre faux negatif
+			printTRM('\n')
 		end
 	end
-	print('[Résultat] ' .. cptVP/n1test*100 .. '% de Vrai-Positifs pour le seuil de ' .. seuil)
-	print('[Résultat] ' .. cptFN/n2test*100 .. '% de Faux-Negatifs pour le seuil de ' .. seuil)
+	printTRM('[Résultat] ' .. cptVP/n1test*100 .. '% de Vrai-Positifs pour le seuil de ' .. seuil)
+	printTRM('[Résultat] ' .. cptFN/n2test*100 .. '% de Faux-Negatifs pour le seuil de ' .. seuil)
 else
-	print('Mauvaise entrée')
+	printTRM('Mauvaise entrée')
 end

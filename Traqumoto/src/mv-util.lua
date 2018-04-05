@@ -36,7 +36,7 @@ function util.tellIfMissing(filename)
 end
 
 function util.exitIfMissing(filename)
-    if util.fileExists(filename) then
+    if util.fileExists(assert(filename)) then
     else
         util.printFileMissingMessage(filename)
         util.printTRM("Exiting.")
@@ -44,15 +44,40 @@ function util.exitIfMissing(filename)
     end
 end
 
-function util.printTRM_table (tbl, indent)
+function util.formatTypeValue (val)
+    return string.format("(%s) %s", tostring(type(val)):sub(1, 3), tostring(val))
+end
+
+function util.sortedIpairs(tbl)
+    local sortedKeys = {}
+    -- populate the table that holds the keys
+    for key in pairs(tbl) do table.insert(sortedKeys, key) end
+    table.sort(sortedKeys)
+
+    function tblIterator (_, index)
+        key = sortedKeys[index]
+        val = tbl[key]
+        if key ~= nil then
+            return index + 1, key, val
+        else
+            return nil
+        end
+    end
+
+    return tblIterator, nil, 1
+end
+
+function util.printTRM_table(tbl, indent)
     if not indent then indent = 0 end
-    for key, val in pairs(tbl) do
+    for _, key, val in util.sortedIpairs(tbl) do
+        if key == nil then key = "NILVAL" end
+        if val == nil then val = "NILVAL" end
         formattingKey = string.rep("  ", indent) .. key .. ":"
         if type(val) == "table" then
             printTRM(formattingKey)
             util.printTRM_table(val, indent + 2)
         else
-            printTRM(formattingKey .. " " .. val)
+            printTRM(formattingKey .. " " .. util.formatTypeValue(val))
         end
     end
 end

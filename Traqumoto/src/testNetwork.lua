@@ -34,13 +34,13 @@ local n2test = 320		-- Nombre d'images de pas motos pour le test
 local Ntest = n1test + n2test	-- Nombre d'échantillons de tests
 local seuil = 1			-- seuil pour comparer au résultat de la prédiction (moto=1, pasmoto=0)
 
-local net = torch.load('network.t7')			-- Chargement du réseau de neurones
-local datasetTest = torch.load('datasetTest.t7') 	-- Chargement de la base de données
+local net = torch.load(config.networkLocation)             -- Chargement du réseau de neurones
+local datasetTest = torch.load(config.torchTestDataseFile) -- Chargement de la base de données
 
-printTRM('Détails ? (y or n)')		-- Demande de détails
-local key = io.read()			-- Lecture de la réponse
+printTRM('Détails ? (y or n)') -- Demande de détails
+local key = io.read()          -- Lecture de la réponse
 
-if key == 'y' or key == 'n' then	-- si touche y ou n appuyée
+if key == 'y' or key == 'n' then -- si touche y ou n appuyée
 	local cptVP = 0 -- compteur Vrai Postif (signifie moto vue comme moto par le reseau)
 	local cptFN = 0 -- compteur Faux Negatif (signifie pas moto vue comme pas moto par le reseau)
 	for i = 1,Ntest do

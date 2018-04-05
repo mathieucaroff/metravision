@@ -14,4 +14,4 @@ Metravision]]
 package.path = package.path .. ";src/?.lua"
 require 'mv-header'
 
-dofile("prediction.lua") -- Execute le fichier prediction.lua
+util.mvDofile("prediction.lua") -- Execute le fichier prediction.lua

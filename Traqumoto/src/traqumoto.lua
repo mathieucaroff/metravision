@@ -27,9 +27,9 @@ require 'cv.imgproc'
 require 'cv.video'
 require 'math'
 
-vidname = util.getFile()
-vidname = vidname:gsub("\n", "")-- retire le caractère \n à la fin du chemin de la vidéo
+printTRM("util.getFile()")
+local vidname = util.getFile()
 printTRM(vidname)               -- Affiche le chemin
 
-config.videoLocation = vidname -- Remplace la valeur par défaut
-dofile("prediction.lua")       -- Execute le programme de prediction
+config.videoLocation = vidname -- Remplace la valeur par défaut -- ANTI-PATTERN !
+util.mvDofile("prediction.lua")       -- Execute le programme de prediction

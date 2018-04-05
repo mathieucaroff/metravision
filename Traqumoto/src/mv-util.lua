@@ -117,4 +117,26 @@ function util.getFile()
     return path
 end
 
+function util.mvDofile(filepath)
+    if not util.fileExists(filepath) then
+        filepath = "src/" .. filepath
+    end
+    return dofile(filepath)
+end
+
+
+-- fonction ecrire dans un fichier excel
+function util.writeCSV(path, data, sep)	-- 
+    sep = sep or ';'	-- separateur pour décaler d'une colonne à droite
+    local file = assert(io.open(path, "w"))
+    for i=1,#data do	-- #data = nombre de lignes
+        for j=1,#data[i] do	-- #data[i] = nombre de colonnes
+            if j>1 then file:write(sep) end
+            file:write(data[i][j])	-- data[i][j] = donnée de la case ieme ligne et jeme colonne
+        end
+        file:write('\n') -- separateur pour descendre d'une ligne
+    end
+    file:close()
+end
+
 return util

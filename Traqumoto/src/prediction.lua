@@ -23,28 +23,16 @@ require 'cv.video'
 require 'cv.imgproc'
 require 'math'
 
--- fonction ecrire dans un fichier excel
-function writeCSV(path, data, sep)	-- 
-    sep = sep or ';'	-- separateur pour décaler d'une colonne à droite
-    local file = assert(io.open(path, "w"))
-    for i=1,#data do	-- #data = nombre de lignes
-        for j=1,#data[i] do	-- #data[i] = nombre de colonnes
-            if j>1 then file:write(sep) end
-            file:write(data[i][j])	-- data[i][j] = donnée de la case ieme ligne et jeme colonne
-        end
-        file:write('\n') -- separateur pour descendre d'une ligne
-    end
-    file:close()
-end
 
 -- Charge le réseau de neuronnes
-net = torch.load(config.networkLocation)
+util.tellIfMissing(config.networkLocation)
+local net = torch.load(config.networkLocation)
 
 local pr = config.prediction
 local l = pr.l		-- largeur normalisée des images en entrée du réseau de neurones
 local L = pr.L		-- hauteur normalisée des images en entrée du réseau de neurones
 
-vidname = config.videoLocation
+local vidname = config.videoLocation
 util.exitIfMissing(vidname)
 
 local vid = cv.VideoCapture{filename = vidname}	-- capture du chemin de la vidéo
@@ -333,4 +321,4 @@ table.insert(data,{math.floor(oldtps/60) .. ':00' .. '-' .. math.floor(tps/60) .
 cv.destroyAllWindows{}
 
 -- Ecrire le résultat dans un fichier CSV --
-writeCSV(config.resultDestination, data, ';')
+util.writeCSV(config.resultDestination, data, ';')

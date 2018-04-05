@@ -206,8 +206,8 @@ function creation_dataset()
 	end
 
 	-- Enregistre les datasets (BDD d'apprentissage et de test)
-	torch.save('datasetApp.t7', datasetApp)		
-	torch.save('datasetTest.t7', datasetTest)
+	torch.save(config.torchAppDatasetFile, datasetApp)		
+	torch.save(config.torchTestDataseFile, datasetTest)
 	return datasetApp,datasetTest
 end
 

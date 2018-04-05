@@ -16,6 +16,8 @@ Ce fichier fait parti du logiciel Traqu'moto, servant à la détection
 des deux roues motorisés sur autoroute. Il a été réalisé sur commande
 du Cerema.]]
 
+package.path = package.path .. ";src/?.lua"
+
 require 'mv-header'
 
 require 'cv.features2d'
@@ -25,9 +27,9 @@ require 'cv.imgproc'
 require 'cv.video'
 require 'math'
 
-vidname = getFile()			-- Appel de la fonction getFile de traqumoto.cpp
-vidname = vidname:gsub("\n", "")	-- retire le caractère \n à la fin du chemin de la vidéo
-printTRM(vidname)				-- Affiche le chemin
+vidname = util.getFile()
+vidname = vidname:gsub("\n", "")-- retire le caractère \n à la fin du chemin de la vidéo
+printTRM(vidname)               -- Affiche le chemin
 
 config.videoLocation = vidname -- Remplace la valeur par défaut
-dofile("src/prediction.lua")		-- Execute le programme de prediction
+dofile("prediction.lua")       -- Execute le programme de prediction

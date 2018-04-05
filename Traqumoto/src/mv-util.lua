@@ -1,4 +1,4 @@
-local util = {}
+util = {}
 
 function util.printTRM(arg1, ...)
     text = tostring(arg1)
@@ -70,7 +70,7 @@ end
 function util.printTRM_table(tbl, indent)
     if not indent then indent = 0 end
     for _, key, val in util.sortedIpairs(tbl) do
-        if key == nil then key = "NILVAL" end
+        if key == nil then key = "NILKEY" end
         if val == nil then val = "NILVAL" end
         formattingKey = string.rep("  ", indent) .. key .. ":"
         if type(val) == "table" then
@@ -95,6 +95,26 @@ function util.capture(cmd, raw)
     s = string.gsub(s, '%s+$', '') -- Remove trailing space
     s = string.gsub(s, '[\n\r]+', ' ') -- Remove newlines
     return s
+end
+
+function util.dirname(path)
+    lastSlashPattern = "/[^/]*$" -- linux
+    -- lastSlashPattern = "\\[^\\]*$" -- windows
+    lastSlashIndex = path:find(lastSlashPattern)
+    if lastSlashIndex ~= nil then
+        dir = path:sub(1, lastSlashIndex)
+    else
+        dir = "./"
+    end
+    return dir
+end
+
+--[[
+* Obtenir une vidéo de l'utilisateur.
+]]
+function util.getFile()
+    local path = util.capture("bash -c 'zenity  --title=\"Select a video\" --file-selection' 2> /dev/null")
+    return path
 end
 
 return util

@@ -16,6 +16,7 @@ Ce fichier fait parti du logiciel Traqu'moto, servant à la détection
 des deux roues motorisés sur autoroute. Il a été réalisé sur commande
 du Cerema.]]
 
+package.path = package.path .. ";src/?.lua"
 require 'mv-header'
 
 require 'cv.imgcodecs'

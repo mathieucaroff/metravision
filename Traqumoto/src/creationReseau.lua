@@ -23,6 +23,7 @@ images. Puis il crée le réseau de neurones et l'entraine avec la base
 de données. Ensuite, il teste les Ntest images pour évaluer le réseau.
 ]]
 
+package.path = package.path .. ";src/?.lua"
 require 'mv-header'
 
 require 'cv.imgcodecs'

@@ -32,7 +32,7 @@ local L = 120			-- hauteur normalisée des images en entrée du réseau de neuro
 local n1test = 280		-- Nombre d'images de motos pour le test
 local n2test = 320		-- Nombre d'images de pas motos pour le test
 local Ntest = n1test + n2test	-- Nombre d'échantillons de tests
-local seuil = 1			-- seuil pour comparer au résultat de la prédiction (moto=1, pasmoto=0)
+local seuil = 1			-- seuil pour comparer au résultat de la prédiction (moto = 1, pasmoto = 0)
 
 local net = torch.load(config.networkLocation)             -- Chargement du réseau de neurones
 local datasetTest = torch.load(config.torchTestDataseFile) -- Chargement de la base de données
@@ -43,9 +43,9 @@ local key = io.read()          -- Lecture de la réponse
 if key == 'y' or key == 'n' then -- si touche y ou n appuyée
 	local cptVP = 0 -- compteur Vrai Postif (signifie moto vue comme moto par le reseau)
 	local cptFN = 0 -- compteur Faux Negatif (signifie pas moto vue comme pas moto par le reseau)
-	for i = 1,Ntest do
+	for i = 1, Ntest do
 		local predicted = net:forward(datasetTest[i][1])	-- prediction de l'echantillon
-		if datasetTest[i][2]==1 then		-- si l'image est une moto
+		if datasetTest[i][2] == 1 then		-- si l'image est une moto
 			if predicted[1] >= seuil then	-- si la prediction du reseau est >= au seuil
 				cptVP = cptVP + 1	-- bonne prediction donc on incrémente le compteur
 			end

@@ -16,11 +16,11 @@ Ce fichier fait parti du logiciel Traqu'moto, servant à la détection
 des deux roues motorisés sur autoroute. Il a été réalisé sur commande
 du Cerema.]]
 
-require 'torch'		-- Utilisation du module torch
-require 'nn'		-- Utilisation du module neural network
-cv = require 'cv'	-- Utilisation d'OpenCV
-require 'cv.imgcodecs'	-- Utilisation du module imgcodecs d'OpenCV
-require 'cv.imgproc'	-- Utilisation du module imgproc d'OpenCV
+package.path = package.path .. ";src/?.lua"
+require 'mv-header'
+
+require 'cv.imgcodecs'
+require 'cv.imgproc'
 
 local n1 = 1300			-- Nombre d'images de motos
 local n2 = 1800			-- Nombre d'images de pas motos
@@ -206,8 +206,8 @@ function creation_dataset()
 	end
 
 	-- Enregistre les datasets (BDD d'apprentissage et de test)
-	torch.save('datasetApp.t7', datasetApp)		
-	torch.save('datasetTest.t7', datasetTest)
+	torch.save(config.torchAppDatasetFile, datasetApp)		
+	torch.save(config.torchTestDataseFile, datasetTest)
 	return datasetApp,datasetTest
 end
 
@@ -224,7 +224,7 @@ function entrainement(dataset)
 		if erreur>=1 then
 			stop = true
 			trainer.maxIteration = 1
-			print("STOOOOOOOOOOOP!!!!")
+			printTRM("STOOOOOOOOOOOP!!!!")
 		end
 	end
 
@@ -279,13 +279,13 @@ function testNetwork(net,datasetTest,seuil)
 			end
 		end
 	end
-	print('[Résultat] ' .. cptVP/n1test*100 .. '% de Vrai-Positifs pour le seuil de ' .. seuil)
-	print('[Résultat] ' .. cptFN/n2test*100 .. '% de Faux-Negatifs pour le seuil de ' .. seuil)
+	printTRM('[Résultat] ' .. cptVP/n1test*100 .. '% de Vrai-Positifs pour le seuil de ' .. seuil)
+	printTRM('[Résultat] ' .. cptFN/n2test*100 .. '% de Faux-Negatifs pour le seuil de ' .. seuil)
 	return cptVP/n1test*100, cptFN/n2test*100
 end
 
 local nbTests = 10	-- nombre de tests
-print("[Main] " .. nbTests .. " tests vont être fait sur ces paramètres")
+printTRM("[Main] " .. nbTests .. " tests vont être fait sur ces paramètres")
 
 local tpstab = torch.Tensor(nbTests):zero()
 local VP1 = torch.Tensor(nbTests):zero()	-- nombre vrai positif au seuil 1
@@ -299,16 +299,16 @@ local meilleurNet = {}				-- permet de selectionner le meilleur réseau
 local i = 1
 while i<=nbTests do
 	-- Main
-	print("[Test" .. i .. "] Prétraitement de la base de donnée")
+	printTRM("[Test" .. i .. "] Prétraitement de la base de donnée")
 	datasetApp,datasetTest = creation_dataset()
-	print("[Test" .. i .. "] Entrainement du réseau")
+	printTRM("[Test" .. i .. "] Entrainement du réseau")
 	local tps = os.time()
 	net,stop = entrainement(datasetApp)
 	tps = (os.time() - tps)	-- durée de l'entrainement
 	if not(stop) then
 		tpstab[i] = tps		-- tableau des temps d'entrainement
-		print("[Test" .. i .. "] Temps d'entrainement : " .. math.floor(tps/86400) .. "d " .. math.floor(tps/3600)%86400 .. "h " .. math.floor(tps/60)%60 .. "m " .. tps%60 .. "s")
-		print("[Test" .. i .. "] Test du réseau")
+		printTRM("[Test" .. i .. "] Temps d'entrainement : " .. math.floor(tps/86400) .. "d " .. math.floor(tps/3600)%86400 .. "h " .. math.floor(tps/60)%60 .. "m " .. tps%60 .. "s")
+		printTRM("[Test" .. i .. "] Test du réseau")
 		r1,r2 = testNetwork(net,datasetTest,1)
 		if i==1 then
 			meilleurNet[1] = net
@@ -334,8 +334,8 @@ while i<=nbTests do
 	end
 end
 
-torch.save('network.t7', meilleurNet[1])	-- Sauvagarde du meilleur réseau de neurones en fichier network.t7
-print("[Main] Meilleur réseau sauvegardé")
+torch.save(config.resultDestination, meilleurNet[1])	-- Sauvagarde du meilleur réseau de neurones en fichier network.t7
+printTRM("[Main] Meilleur réseau sauvegardé")
 
 -- Affichage de statistiques sur les nbTests effectués
 tpsmoy = tpstab:mean()	-- temps moyen d'entrainement
@@ -352,16 +352,16 @@ moy3VP = VP3:mean()
 std3VP = VP3:std()
 moy3FN = FN3:mean()
 std3FN = FN3:std()
-print("[Main] Rappel des Paramètres :")
-print("[Main] Nombre d'images total : " .. n1 .. " motos et " .. n2 .. " pas motos. Soit " .. N .. " images.")
-print("[Main] Nombre d'images pour l'apprentissage : " .. n1app .. " motos et " .. n2app .. " pas motos. Soit " .. Napp .. " images.")
-print("[Main] Nombre d'images pour les tests : " .. n1test .. " motos et " .. n2test .. " pas motos. Soit " .. Ntest .. " images.")
-print("[Main] Nombre d'itérations : " .. nbiterations)
-print("[Résultats] Temps d'entrainement moyen : " .. math.floor(tpsmoy/86400) .. "d " .. math.floor(tpsmoy/3600)%86400 .. "h " .. math.floor(tpsmoy/60)%60 .. "m " .. string.format('%.1f', (tpsmoy%60)) .. "s")
-print("[Résultats] Ecart-type du temps d'entrainement : " .. math.floor(tpsstd/86400) .. "d " .. math.floor(tpsstd/3600)%86400 .. "h " .. math.floor(tpsstd/60)%60 .. "m " .. string.format('%.1f', (tpsstd%60)) .. "s")
-print(string.format('[Résultats] Moyenne de %.1f%% de Vrai-Positifs pour le seuil de 1, écart-type de %.1f%%', moy1VP, std1VP))
-print(string.format('[Résultats] Moyenne de %.1f%% de Faux-Negatifs pour le seuil de 1, écart-type de %.1f%%', moy1FN, std1FN))
-print(string.format('[Résultats] Moyenne de %.1f%% de Vrai-Positifs pour le seuil de 0.9999, écart-type de %.1f%%', moy2VP, std2VP))
-print(string.format('[Résultats] Moyenne de %.1f%% de Faux-Negatifs pour le seuil de 0.9999, écart-type de %.1f%%', moy2FN, std2FN))
-print(string.format('[Résultats] Moyenne de %.1f%% de Vrai-Positifs pour le seuil de 0.9, écart-type de %.1f%%', moy3VP, std3VP))
-print(string.format('[Résultats] Moyenne de %.1f%% de Faux-Negatifs pour le seuil de 0.9, écart-type de %.1f%%', moy3FN, std3FN))
+printTRM("[Main] Rappel des Paramètres :")
+printTRM("[Main] Nombre d'images total : " .. n1 .. " motos et " .. n2 .. " pas motos. Soit " .. N .. " images.")
+printTRM("[Main] Nombre d'images pour l'apprentissage : " .. n1app .. " motos et " .. n2app .. " pas motos. Soit " .. Napp .. " images.")
+printTRM("[Main] Nombre d'images pour les tests : " .. n1test .. " motos et " .. n2test .. " pas motos. Soit " .. Ntest .. " images.")
+printTRM("[Main] Nombre d'itérations : " .. nbiterations)
+printTRM("[Résultats] Temps d'entrainement moyen : " .. math.floor(tpsmoy/86400) .. "d " .. math.floor(tpsmoy/3600)%86400 .. "h " .. math.floor(tpsmoy/60)%60 .. "m " .. string.format('%.1f', (tpsmoy%60)) .. "s")
+printTRM("[Résultats] Ecart-type du temps d'entrainement : " .. math.floor(tpsstd/86400) .. "d " .. math.floor(tpsstd/3600)%86400 .. "h " .. math.floor(tpsstd/60)%60 .. "m " .. string.format('%.1f', (tpsstd%60)) .. "s")
+printTRM(string.format('[Résultats] Moyenne de %.1f%% de Vrai-Positifs pour le seuil de 1, écart-type de %.1f%%', moy1VP, std1VP))
+printTRM(string.format('[Résultats] Moyenne de %.1f%% de Faux-Negatifs pour le seuil de 1, écart-type de %.1f%%', moy1FN, std1FN))
+printTRM(string.format('[Résultats] Moyenne de %.1f%% de Vrai-Positifs pour le seuil de 0.9999, écart-type de %.1f%%', moy2VP, std2VP))
+printTRM(string.format('[Résultats] Moyenne de %.1f%% de Faux-Negatifs pour le seuil de 0.9999, écart-type de %.1f%%', moy2FN, std2FN))
+printTRM(string.format('[Résultats] Moyenne de %.1f%% de Vrai-Positifs pour le seuil de 0.9, écart-type de %.1f%%', moy3VP, std3VP))
+printTRM(string.format('[Résultats] Moyenne de %.1f%% de Faux-Negatifs pour le seuil de 0.9, écart-type de %.1f%%', moy3FN, std3FN))

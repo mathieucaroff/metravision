@@ -23,28 +23,34 @@ images. Puis il crée le réseau de neurones et l'entraine avec la base
 de données. Ensuite, il teste les Ntest images pour évaluer le réseau.
 ]]
 
-require 'torch'		-- Utilisation du module torch
-require 'nn'		-- Utilisation du module neural network
-cv = require 'cv'	-- Utilisation d'OpenCV
-require 'cv.imgcodecs'	-- Utilisation du module imgcodecs d'OpenCV
-require 'cv.imgproc'	-- Utilisation du module imgproc d'OpenCV
+package.path = package.path .. ";src/?.lua"
+require 'mv-header'
 
-local n1 = 200--1300			-- Nombre d'images de motos
-local n2 = 200--1800			-- Nombre d'images de pas motos
-local N = n1 + n2		-- Nombre total d'images
-local n1app = 100		-- Nombre d'images de motos pour l'apprentissage
-local n2app = 100		-- Nombre d'images de pas motos pour l'apprentissage
+require 'cv.imgcodecs'
+require 'cv.imgproc'
+
+local cr = config.creationReseau
+
+local n1 = cr.n1			-- Nombre d'images de motos
+local n2 = cr.n2			-- Nombre d'images de pas motos
+local N = n1 + n2			-- Nombre total d'images
+local n1app = cr.n1app		-- Nombre d'images de motos pour l'apprentissage
+local n2app = cr.n2app		-- Nombre d'images de pas motos pour l'apprentissage
 local Napp = n1app + n2app	-- Nombre total d'images pour l'apprentissage
 local n1test = n1 - n1app	-- Nombre d'images de motos pour le test
 local n2test = n2 - n2app	-- Nombre d'images de pas motos pour le test
 local Ntest = n1test + n2test	-- Nombre d'échantillons de tests
 
-local nbiterations = 1 -- nombre d'itérations
-local seuil = 0.60		-- seuil pour comparer au résultat de la prédiction (moto=1, pasmoto=0)
+local nbiterations = cr.nbiterations -- nombre d'itérations
+local seuil = cr.seuil		-- seuil pour comparer au résultat de la prédiction (moto=1, pasmoto=0)
 
-local nt = 10	-- nombre de transformations
-local l = 60	-- largeur normalisée des images en entrée du réseau de neurones
-local L = 120	-- hauteur normalisée des images en entrée du réseau de neurones
+local nt = cr.nt	-- nombre de transformations
+local l = cr.l	-- largeur normalisée des images en entrée du réseau de neurones
+local L = cr.L	-- hauteur normalisée des images en entrée du réseau de neurones
+
+local datasetLocationFormat = cr.datasetLocationFormat
+local bikeDirname = cr.bikeDirname
+local notBikeDirname = cr.notBikeDirname
 
 local datasetLocationFormat = "/media/mvdata/dataset/%s/%06d.png"
 local bikeDirname = "bike"
@@ -69,10 +75,10 @@ function creation_dataset()
 
 		f = io.open(imgname)
 		if f ~= nil then
-			-- print("[TMR] File " .. imgname .. " exists")
+			-- printTRM("File `" .. imgname .. "` exists")
 			f:close()
 		else
-			print("[TMR] File " .. imgname .. " doesn't exist")
+			printTRM("File `" .. imgname .. "` doesn't exist")
 		end
 
 		local Img  = cv.imread{imgname,cv.IMREAD_GRAYSCALE} -- image en niveau de gris
@@ -221,8 +227,8 @@ function creation_dataset()
 	end
 
 	-- Enregistre les datasets (BDD d'apprentissage et de test)
-	torch.save('datasetApp.t7', datasetApp)		
-	torch.save('datasetTest.t7', datasetTest)
+	torch.save(config.torchAppDatasetFile, datasetApp)		
+	torch.save(config.torchTestDataseFile, datasetTest)
 	return datasetApp,datasetTest
 end
 
@@ -242,42 +248,46 @@ function entrainement(dataset)
 	local tailleConvolution = 5
 	local tailleMaxPooling = 2
 
-	local net = nn.Sequential()										-- Réseau de neurones
-	print("[TRM] net = nn.Sequential()")
-	net:add(nn.SpatialConvolution(inputs,couche1,tailleConvolution,tailleConvolution))			-- Convolution
-	print("[TRM] nn.SpatialConvolution(inputs,couche1")
-	net:add(nn.ReLU())											-- Application du ReLU 
-	print("[TRM] nn.ReLU() 1")
-	net:add(nn.SpatialMaxPooling(tailleMaxPooling,tailleMaxPooling,tailleMaxPooling,tailleMaxPooling))	-- Max Pooling pour réduire les images
-	print("[TRM] nn.SpatialMaxPooling 1")
-	net:add(nn.SpatialConvolution(couche1,couche2,tailleConvolution,tailleConvolution))			-- 6 input image channels, 16 output channels, 5x5 convolution kernel
-	print("[TRM] nn.SpatialConvolution(couche1,couche2")
-	net:add(nn.ReLU())											-- Application du ReLU 
-	print("[TRM] (nn.ReLU() 2")
-	net:add(nn.SpatialMaxPooling(tailleMaxPooling,tailleMaxPooling,tailleMaxPooling,tailleMaxPooling))	-- Max Pooling pour réduire les images
-	print("[TRM] nn.SpatialMaxPooling 2")
-	net:add(nn.View(couche2*27*12))										-- redimmensionnement en un seul tableau
-	print("[TRM] nn.View(couche2*27*12)")
-	net:add(nn.Linear(couche2*27*12,couche3))								-- Liens entre la deuxième et troisième couche
-	print("[TRM] nn.Linear(couche2*27*12,couche3)")
-	net:add(nn.ReLU())											-- Application du ReLU
-	print("[TRM] nn.ReLU 3")
-	net:add(nn.Linear(couche3,outputs))									-- Liens entre la  troisième couche et la couche de sortie
-	print("[TRM] nn.Linear(couche3,outputs)")
-	net:add(nn.Sigmoid())											-- Sigmoid pour que les résultats soient entre 0 et 1
-	print("[TRM] nn.Sigmoid()")
+	local printTRM_debug = util.nope
 
-	print("[TRM] nn.BCECriterion()")
+	printTRM_debug("<Structure du réseau>")
+
+	printTRM_debug("net = nn.Sequential")
+	local net = nn.Sequential()										-- Réseau de neurones
+	printTRM_debug("nn.SpatialConvolution--1")
+	net:add(nn.SpatialConvolution(inputs,couche1,tailleConvolution,tailleConvolution))			-- Convolution
+	printTRM_debug("nn.ReLU--1")
+	net:add(nn.ReLU())											-- Application du ReLU 
+	printTRM_debug("nn.SpatialMaxPooling--1")
+	net:add(nn.SpatialMaxPooling(tailleMaxPooling,tailleMaxPooling,tailleMaxPooling,tailleMaxPooling))	-- Max Pooling pour réduire les images
+	printTRM_debug("nn.SpatialConvolution--2")
+	net:add(nn.SpatialConvolution(couche1,couche2,tailleConvolution,tailleConvolution))			-- 6 input image channels, 16 output channels, 5x5 convolution kernel
+	printTRM_debug("nn.ReLU--2")
+	net:add(nn.ReLU())											-- Application du ReLU 
+	printTRM_debug("nn.SpatialMaxPooling--2")
+	net:add(nn.SpatialMaxPooling(tailleMaxPooling,tailleMaxPooling,tailleMaxPooling,tailleMaxPooling))	-- Max Pooling pour réduire les images
+	printTRM_debug("nn.View")
+	net:add(nn.View(couche2*27*12))										-- redimmensionnement en un seul tableau
+	printTRM_debug("nn.Linear--1")
+	net:add(nn.Linear(couche2*27*12,couche3))								-- Liens entre la deuxième et troisième couche
+	printTRM_debug("nn.ReLU--3")
+	net:add(nn.ReLU())											-- Application du ReLU
+	printTRM_debug("nn.Linear--2")
+	net:add(nn.Linear(couche3,outputs))									-- Liens entre la  troisième couche et la couche de sortie
+	printTRM_debug("nn.Sigmoid")
+	net:add(nn.Sigmoid())											-- Sigmoid pour que les résultats soient entre 0 et 1
+	
+	printTRM("nn.BCECriterion")
 	local criterion = nn.BCECriterion()				-- Choix du critère d'entrainement, BCE adapté à deux classes
-	print("[TRM] nn.StochasticGradient(net, criterion)")
+	printTRM("nn.StochasticGradient")
 	local trainer = nn.StochasticGradient(net, criterion)		-- Création de l'entraineur avec le reseau et le critère
 	trainer.learningRate = 0.0005		-- paramètre vitesse d'apprentissage
 	trainer.maxIteration = nbiterations	-- paramètre nombre d'itérations
-	print("[TRM] trainer:train(dataset)")
+	printTRM("trainer:train(dataset)")
 	trainer:train(dataset)			-- lance l'entrainement du reseau de neurones avec la base de données
 
-	print("[TRM] torch.save('network.t7', net)")
-	torch.save('network.t7', net)		-- Sauvegarde du réseau de neurones en fichier .t7
+	printTRM("torch.save(config.resultDestination, net)")
+	torch.save(config.resultDestination, net)		-- Sauvegarde du réseau de neurones en fichier .t7
 	return net
 end
 
@@ -298,18 +308,18 @@ function testNetwork(net,datasetTest,seuil)
 			end
 		end
 	end
-	print('[TRM][Résultat] ' .. cptVP/n1test*100 .. '% de Vrai-Positifs pour le seuil de ' .. seuil)
-	print('[TRM][Résultat] ' .. cptFN/n2test*100 .. '% de Faux-Negatifs pour le seuil de ' .. seuil)
+	printTRM('[Résultat] ' .. cptVP/n1test*100 .. '% de Vrai-Positifs pour le seuil de ' .. seuil)
+	printTRM('[Résultat] ' .. cptFN/n2test*100 .. '% de Faux-Negatifs pour le seuil de ' .. seuil)
 end
 
 -- Main
-print("[TRM][Main] Prétraitement et création de la base de données")
+printTRM("[Main] Prétraitement et création de la base de données")
 datasetApp,datasetTest = creation_dataset()
-print("[TRM][Main] Prétraitement et entrainement du réseau de neurones")
+printTRM("[Main] Prétraitement et entrainement du réseau de neurones")
 local tps = os.time()
 net = entrainement(datasetApp)
-print("[TRM][Main] Réseau sauvegardé")
+printTRM("[Main] Réseau sauvegardé")
 tps = (os.time() - tps)	-- durée de l'entrainement
-print("[TRM][Main] Temps d'entrainement : " .. math.floor(tps/86400) .. "d " .. math.floor(tps/3600)%86400 .. "h " .. math.floor(tps/60)%60 .. "m " .. tps%60 .. "s")
-print("[TRM][Main] Test du réseau")
+printTRM("[Main] Temps d'entrainement : " .. math.floor(tps/86400) .. "d " .. math.floor(tps/3600)%86400 .. "h " .. math.floor(tps/60)%60 .. "m " .. tps%60 .. "s")
+printTRM("[Main] Test du réseau")
 testNetwork(net,datasetTest,seuil)

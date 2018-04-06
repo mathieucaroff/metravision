@@ -16,22 +16,20 @@ Ce fichier fait parti du logiciel Traqu'moto, servant à la détection
 des deux roues motorisés sur autoroute. Il a été réalisé sur commande
 du Cerema.]]
 
-require 'torch'		-- Utilisation du module torch
-require 'nn'		-- Utilisation du module neural network
-require 'math'		-- Utilisation du module math
-cv = require 'cv'	-- Utilisation d'OpenCV
-require 'cv.features2d'	-- Utilisation du module features2d d'OpenCV
-require 'cv.highgui'	-- Utilisation du module highgui d'OpenCV
-require 'cv.videoio'	-- Utilisation du module videoio d'OpenCV
-require 'cv.imgproc'	-- Utilisation du module imgproc d'OpenCV
-require 'cv.video'	-- Utilisation du module video d'OpenCV
+package.path = package.path .. ";src/?.lua"
 
+require 'mv-header'
 
-net = torch.load('src/network.t7')	-- Charge le réseau de neurones network.t7
-vidname = getFile()			-- Appel de la fonction getFile de traqumoto.cpp
-vidname = vidname:gsub("\n", "")	-- retire le caractère \n à la fin du chemin de la vidéo
-print(vidname)				-- Affiche le chemin
+require 'cv.features2d'
+require 'cv.highgui'
+require 'cv.videoio'
+require 'cv.imgproc'
+require 'cv.video'
+require 'math'
 
-dofile("src/prediction.lua")		-- Execute le programme de prediction
+printTRM("util.getFile()")
+local vidname = util.getFile()
+printTRM(vidname)               -- Affiche le chemin
 
-write('Resultat.csv',data,';')		-- Ecris le résultat dans un fichier excel
+config.videoLocation = vidname -- Remplace la valeur par défaut -- ANTI-PATTERN !
+util.mvDofile("prediction.lua")       -- Execute le programme de prediction

@@ -55,7 +55,7 @@ function creation_dataset()
 				end
 			end
 			local Img = cv.imread{imgname, cv.IMREAD_GRAYSCALE} 	-- image en niveau de gris
-			local Imgr = cv.resize{Img,{l, L}} 			-- redimensionnement 60x120
+			local Imgr = cv.resize{Img, {l, L}} 			-- redimensionnement 60x120
 			imgsetMoto[i] = torch.Tensor(1, L, l):copy(Imgr) 		-- ajout image moto dans tableau de motos
 		else
 			if i-n1<100 then
@@ -68,7 +68,7 @@ function creation_dataset()
 				end
 			end
 			local Img = cv.imread{imgname, cv.IMREAD_GRAYSCALE}	-- image en niveau de gris
-			local Imgr = cv.resize{Img,{l, L}}			-- redimensionnement 60x120
+			local Imgr = cv.resize{Img, {l, L}}			-- redimensionnement 60x120
 			imgsetPasMoto[i-n1] = torch.Tensor(1, L, l):copy(Imgr) 	-- ajout image moto dans tableau de motos
 		end
 	end

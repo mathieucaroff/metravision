@@ -82,7 +82,7 @@ function creation_dataset()
 		end
 
 		local Img  = cv.imread{imgname, cv.IMREAD_GRAYSCALE} -- image en niveau de gris
-		local Imgr = cv.resize{Img,{l, L}} -- redimensionnement 60x120
+		local Imgr = cv.resize{Img, {l, L}} -- redimensionnement 60x120
 
 		if yesMoto then
 			imgsetMoto[i] = torch.Tensor(1, L, l):copy(Imgr)

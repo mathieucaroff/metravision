@@ -46,7 +46,7 @@ local fps = vid:get{cv.CAP_PROP_FPS} 	-- images par seconde
 local cptframe = 0			-- compteur image
 local oldtps = 0			-- temps début
 local tps = 0				-- temps actuel
-data ={{'Temps','Nombre de Motos'}}	-- données à écriture dans fichier résultats.xlsx
+data = {{'Temps','Nombre de Motos'}}	-- données à écriture dans fichier résultats.xlsx
 
 local pMOG2 = cv.BackgroundSubtractorMOG2{} 	-- Background Subtractor
 local _, frame = vid:read{}			-- booléen , image actuelle
@@ -181,11 +181,11 @@ while true do
 					CoordPredicted[NPredicted][2] = y
 					-- dessine cercles rouges sur la moto predite
 					for i = 10, 26, 8 do
-						cv.circle{frame, center ={x, y-10}, radius = i, color = {0, 0, 255}, 1, 8, 0}
+						cv.circle{frame, center = {x, y-10}, radius = i, color = {0, 0, 255}, 1, 8, 0}
 					end	
 				end
 				-- dessine un rectangle blanc à chaque prediction dans la fenetre en N&B
-				cv.rectangle{Img, pt1 ={x-l/2, y-L/2}, pt2 ={x+l/2-1, y+L/2-1}, color = {255, 255, 255}}
+				cv.rectangle{Img, pt1 = {x-l/2, y-L/2}, pt2 = {x+l/2-1, y+L/2-1}, color = {255, 255, 255}}
 			end
 		end
 
@@ -214,14 +214,14 @@ while true do
 					CoordTrack[j][3] = CoordTrack[j][3] + 1
 					Coordchange[j] = true
 					--if CoordTrack[j][3] > 5 then	-- cercle bleu indique que la moto sera comptée
-					--	cv.circle{frame, center ={CoordTrack[j][1], CoordTrack[j][2]-10}, radius = 5, color = {255, 0, 0}, 1, 4, 0}
+					--	cv.circle{frame, center = {CoordTrack[j][1], CoordTrack[j][2]-10}, radius = 5, color = {255, 0, 0}, 1, 4, 0}
 					--end
 				end
 			end
 			if new then	-- si nouvelle moto détectée
 				NTrack = NTrack + 1	-- dessine cercle vert sur la moto predite
-				cv.circle{frame, center ={CoordPredicted[i][1], CoordPredicted[i][2]-10}, radius = 26, color = {0, 255, 0}, 1, 8, 0}
-				table.insert(CoordTrack,{CoordPredicted[i][1], CoordPredicted[i][2], 1})	-- ajoute coordonnées dans le tableau des coordonnées
+				cv.circle{frame, center = {CoordPredicted[i][1], CoordPredicted[i][2]-10}, radius = 26, color = {0, 255, 0}, 1, 8, 0}
+				table.insert(CoordTrack, {CoordPredicted[i][1], CoordPredicted[i][2], 1})	-- ajoute coordonnées dans le tableau des coordonnées
 			end
 		end
 
@@ -231,7 +231,7 @@ while true do
 					local sub = torch.Tensor(1, L, l):copy(Imgpred:sub(CoordTrack[j][2]-L/2, CoordTrack[j][2]+L/2-1, CoordTrack[j][1]-l/2, CoordTrack[j][1]+l/2-1))
 					local predicted = net:forward(sub:view(1, L, l))
 					if predicted[1] == 1 then	-- dessine un rectangle vert sur la moto traquee
-						cv.rectangle{frame, pt1 ={CoordTrack[j][1]-l/2, CoordTrack[j][2]-L/2}, pt2 ={CoordTrack[j][1]+l/2-1, CoordTrack[j][2]+L/2-1}, color = {0, 255, 0}}
+						cv.rectangle{frame, pt1 = {CoordTrack[j][1]-l/2, CoordTrack[j][2]-L/2}, pt2 = {CoordTrack[j][1]+l/2-1, CoordTrack[j][2]+L/2-1}, color = {0, 255, 0}}
 						CoordTrack[j][3] = CoordTrack[j][3] + 1
 					end
 				end
@@ -261,7 +261,7 @@ while true do
 				local sub = torch.Tensor(1, L, l):copy(Imgpred:sub(CoordTrack[j][2]-L/2, CoordTrack[j][2]+L/2-1, CoordTrack[j][1]-l/2, CoordTrack[j][1]+l/2-1))
 				local predicted = net:forward(sub:view(1, L, l))
 				if predicted[1]>0.8 then
-					cv.rectangle{frame, pt1 ={CoordTrack[j][1]-l/2-1, CoordTrack[j][2]-L/2-1}, pt2 ={CoordTrack[j][1]+l/2-1+1, CoordTrack[j][2]+L/2-1+1}, color = {255, 0, 0}}
+					cv.rectangle{frame, pt1 = {CoordTrack[j][1]-l/2-1, CoordTrack[j][2]-L/2-1}, pt2 = {CoordTrack[j][1]+l/2-1+1, CoordTrack[j][2]+L/2-1+1}, color = {255, 0, 0}}
 				end
 				CoordTrack[j][2] = CoordTrack[j][2]+VTrack
 			else	-- si hors cadre
@@ -280,19 +280,19 @@ while true do
 			cptframe = 0
 			tps = tps + 1
 			if tps%(6*60) == 0 and tps~= 0 then	-- découpage par tranche de 6 minutes
-				table.insert(data,{math.floor(oldtps/60) .. ':00' .. '-' .. math.floor(tps/60) .. ':00', cpt})
+				table.insert(data, {math.floor(oldtps/60) .. ':00' .. '-' .. math.floor(tps/60) .. ':00', cpt})
 				oldtps = tps
 				cpt = 0
 			end
 		end
 		-- affichage du temps et du compteur de motos en haut de la frame
-		cv.rectangle{frame, pt1 ={0, 0}, pt2 ={60, 20}, color = {255, 255, 255}, thickness =-1}
-		cv.putText{frame, string.format('%02d', math.floor(tps/60)) .. ':' .. string.format('%02d', tps%60),{3, 16}, cv.FONT_HERSHEY_SIMPLEX, 0.6,{0, 0, 0}, 2}
-		cv.rectangle{frame, pt1 ={length-290, 0}, pt2 ={length, 20}, color = {255, 255, 255}, thickness =-1}
+		cv.rectangle{frame, pt1 = {0, 0}, pt2 = {60, 20}, color = {255, 255, 255}, thickness =-1}
+		cv.putText{frame, string.format('%02d', math.floor(tps/60)) .. ':' .. string.format('%02d', tps%60), {3, 16}, cv.FONT_HERSHEY_SIMPLEX, 0.6, {0, 0, 0}, 2}
+		cv.rectangle{frame, pt1 = {length-290, 0}, pt2 = {length, 20}, color = {255, 255, 255}, thickness =-1}
 		if cptglb>1 then
-			cv.putText{frame, string.format('Traqumoto compte %d motos', cptglb),{length-290, 16}, cv.FONT_HERSHEY_SIMPLEX, 0.6,{0, 0, 0}, 2}
+			cv.putText{frame, string.format('Traqumoto compte %d motos', cptglb), {length-290, 16}, cv.FONT_HERSHEY_SIMPLEX, 0.6, {0, 0, 0}, 2}
 		else
-			cv.putText{frame, string.format('Traqumoto compte %d moto', cptglb),{length-290, 16}, cv.FONT_HERSHEY_SIMPLEX, 0.6,{0, 0, 0}, 2}
+			cv.putText{frame, string.format('Traqumoto compte %d moto', cptglb), {length-290, 16}, cv.FONT_HERSHEY_SIMPLEX, 0.6, {0, 0, 0}, 2}
 		end
 
 		-- affichage des fenetres
@@ -316,7 +316,7 @@ while true do
 	end
 end
 -- Ecriture du temps au format excel
-table.insert(data,{math.floor(oldtps/60) .. ':00' .. '-' .. math.floor(tps/60) .. ':' .. string.format('%02d', tps%60), cpt})
+table.insert(data, {math.floor(oldtps/60) .. ':00' .. '-' .. math.floor(tps/60) .. ':' .. string.format('%02d', tps%60), cpt})
 
 cv.destroyAllWindows{}
 

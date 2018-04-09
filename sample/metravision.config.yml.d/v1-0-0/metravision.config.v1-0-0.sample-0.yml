@@ -1,0 +1,29 @@
+%YAML 1.2
+---
+dataset:
+    directoryLocation: /home/lox/dataset
+    nameFormat: "%06d.png"
+    categories:
+        "bike":
+            first: 1
+            count: 1300
+        "not-bike":
+            first: 1
+            count: 1800
+test-videos:
+    directoryLocation: /home/lox/video
+    short:
+        directoryName: "short"
+        files: !!set
+            ? 8s.mp4
+            ? bouchon-40s.mp4
+            ? embouteillage-21s.mp4
+            ? soleil-1m32.avi
+            ? test-9s.avi
+    medium:
+        directoryName: "6min"
+        files: !!set
+            ? 1ereSequence.avi
+            ? DerniereSequence.avi
+            ? HeureDePointe.avi
+    long: null

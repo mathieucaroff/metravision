@@ -3,8 +3,8 @@
 Detecting and counting light vehicles (motorbikes and alikes) on highways,
 using learning algorithmes.
 
-Currently, the project is based on it's little-brother, Traqu'moto, made in
-2017. It uses Torch and OpenCV and is available under the BSD-3-Clause
+Currently, the *project* is **based** on it's little-brother, Traqu'moto, made
+in 2017. It uses Torch and OpenCV and is available under the BSD-3-Clause
 license.
 
 
@@ -18,7 +18,13 @@ page [Learn git in Y minutes](https://learnxinyminutes.com/docs/git/).
 The below command presentations are copy-pasted from that page. This page
 will likely be harder to understand than the above linked page.
 
-### Commands
+### Récapitulatif des commandes :
+
+![Git data transport commands](https://i.stack.imgur.com/MgaV9.png)
+
+Source: [q/2745076](https://stackoverflow.com/q/2745076)
+
+### Détail des commandes :
 
 #### config
 

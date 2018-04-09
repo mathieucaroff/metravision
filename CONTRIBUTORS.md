@@ -1,12 +1,12 @@
 # Metravision contributors
 
-## Metravision 2018
+## Metravision (2018)
 
-* Ayoub TOUIBI
+* Ayoub TOUIBI,
 * Luiz Henrique MORAIS ANTUNES,
-* Mathieu CAROFF,
+* Mathieu CAROFF
 
 ## Traqu'moto (2017)
-* Antoine SOUSTELLE
+* Antoine SOUSTELLE,
 * Manuel MATILDE,
-* Maxime LEIBER,
+* Maxime LEIBER

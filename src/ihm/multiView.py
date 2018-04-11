@@ -22,5 +22,5 @@ def viewDimensionsFromN(n):
 def renderNimages():
     pass
 
-def renderNvideos():
+def gatherNimages():
     pass

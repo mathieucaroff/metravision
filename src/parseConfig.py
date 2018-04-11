@@ -1,12 +1,14 @@
+# Interaction
+import os
 import yaml
+
+# Usual
 import abc
 import collections
 
-class Dotdict(dict):
-    """dot.notation access to dictionary attributes"""
-    __getattr__ = dict.get
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
+# Internal
+from util import Dotdict
+
 
 class MvConfig(collections.namedtuple("AbstractMvConfig", "dataset, testVideoFileSets")):
     @staticmethod
@@ -20,12 +22,30 @@ class MvConfig(collections.namedtuple("AbstractMvConfig", "dataset, testVideoFil
     
     @classmethod
     def fromConfigData(cls, configData):
+        # dataset
         dataset = configData["dataset"]
-        datasetDirectoryLocation = dataset["directoryLocation"]
-        datasetFileSets = Dotdict()
+        datasetFileSets = dict()
         for subdirname, dirDescription in dataset.items():
-            datasetFileSets[subdirname] = generateFileIteratorFromRange(datasetDirectoryLocation, subdirname, dataset["nameFormat"], dirDescription["first"], dirDescription["count"])
+            
+            dirname = dirDescription["dirname"]
+            nameFormat = dataset["nameFormat"]
+            firstImgIndex = dirDescription["first"]
+            imgCount = dirDescription["count"]
+            lFrac = dirDescription["learningFraction"]
 
+            imgLearnCount = imgCount * lFrac[0] // lFrac[1]
+            imgTestCount = imgCount - imgLearnCount
+
+            datasetFileSets[(subdirname, "learn")] = generateFileIteratorFromRange(
+                dataset["directoryLocation"], dirname, nameFormat, firstImgIndex,
+                imgLearnCount
+            )
+            datasetFileSets[(subdirname, "test")] = generateFileIteratorFromRange(
+                dataset["directoryLocation"], dirname, nameFormat, firstImgIndex,
+                imgTestCount
+            )
+
+        # test-video
         testVideos = configData["test-videos"]
         testVideosDirectoryLocation = testVideos["directoryLocation"]
         testVideoFileSets = Dotdict()
@@ -35,20 +55,22 @@ class MvConfig(collections.namedtuple("AbstractMvConfig", "dataset, testVideoFil
         return cls(datasetFileSets, testVideoFileSets)
 
 
-def getSubDirpath(directoryLocation, subdirname):
-    if directoryLocation[-1] != "/":
-        pathformat = "%s/%s/"
+def joinpath(begining, end):
+    if begining[-1] == "/" or end[0] == "/":
+        pathformat = "%s%s"
+        if begining[-1] == "/" and end[0] == "/":
+            end = end[1:]
     else:
-        pathformat = "%s%s/"
-    dirpath = pathformat % (directoryLocation, subdirname)
+        pathformat = "%s/%s"
+    dirpath = pathformat % (begining, end)
     return dirpath
 
 
 def generateFileIteratorFromRange(directoryLocation, subdirname, nameFormat, first, count):
-    dirpath = getSubDirpath(directoryLocation, subdirname)
+    dirpath = os.path.join(directoryLocation, subdirname)
 
     for index in range(first, first + count):
-        yield dirpath + nameFormat % index
+        yield os.path.join(dirpath, nameFormat % index)
 
 def generateFileIteratorFromSet(directoryLocation, mvConfigDirectoryDescription):
     if directoryLocation[-1] != "/":

@@ -4,16 +4,21 @@ import cv2
 import time
 import random
 
+import collections
+
 from util import Namespace
 from ihm.multiView import viewDimensionsFromN, renderNimages
 from ihm.progressBar import drawBar
 
-import preTraitement
+import parseConfig
 
 def main():
-    videoPath = "C:\\pi\\Sequences6min\\DerniereSequences.avi"
-    videoPath = "C:\\pi\\SequencesCourtes\\embouteillage-21s.mp4"
-    videoPath = "C:\\pi\\SequencesCourtes\\bouchon-40s.mp4"
+    with open("metravision.config.yml") as configFile:
+        config = parseConfig.MvConfig.fromConfigFile(configFile)
+    
+    videoPath = random.choice(config.video.files)
+    cv2.namedWindow('View')
+    cv2.setMouseCallback("View", evListener)
 
     cap = cv2.VideoCapture(videoPath)
 
@@ -31,7 +36,7 @@ def main():
 
     startTime = time.clock()
     for frameIdx in range(1_000_000_000):
-        action, fgMask = loop(frameIdx, timePerFrame, startTime, height, width, cap, bgSub, fgMask)
+        action, fgMask = loopActions(frameIdx, timePerFrame, startTime, height, width, cap, bgSub, fgMask)
         if action == "break":
             break
 
@@ -55,31 +60,33 @@ def wImshow(winName, content):
 
 def evListener(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDBLCLK:
-        gx, gy = x, y
-
-cv2.namedWindow('View')
-cv2.setMouseCallback("View", evListener)
+        print(x, y)
+        glob.x = x
+        glob.y = y
 
 # Create a black image, a window and bind the function to window
 
-def loop(frameIdx, timePerFrame, startTime, height, width, cap, bgSub, last_fgMask):
+def loopActions(frameIdx, timePerFrame, startTime, height, width, cap, bgSub, last_fgMask):
+    im = collections.OrderedDict()
+    #! viewSet = im
+
     # Capture frame-by-frame
-    ok, frame = cap.read()
+    ok, im["frame"] = cap.read()
 
     if not ok:
         return "break", None
 
-    fgMask = bgSub.apply(image = frame) # , learningRate = 0.5)
+    im["fgMask"] = bgSub.apply(image = im["frame"]) # , learningRate = 0.5)
     # glob.fgMask = fgMask
 
     if last_fgMask is None:
-        last_fgMask = fgMask
+        last_fgMask = im["fgMask"]
 
     # Two-frame and
-    bitwise_fgMask_and = cv2.bitwise_and(fgMask, last_fgMask)
+    im["bitwise_fgMask_and"] = cv2.bitwise_and(im["fgMask"], last_fgMask)
 
     # erodeAndDilate
-    mask = bitwise_fgMask_and
+    mask = im["bitwise_fgMask_and"]
 
     erodeA = 2
     dilateA = 30
@@ -87,31 +94,31 @@ def loop(frameIdx, timePerFrame, startTime, height, width, cap, bgSub, last_fgMa
     dilateB = 30 # erodeA + erodeB - dilateA
 
     mask = cv2.erode(mask, easyKernel(erodeA))
-    erodeMaskA = mask
+    im["erodeMaskA"] = mask
 
     mask = cv2.dilate(mask, easyKernel(dilateA))
-    dilateMaskA = mask
+    im["dilateMaskA"] = mask
     
     mask = cv2.erode(mask, easyKernel(erodeB))
-    erodeMaskB = mask
+    im["erodeMaskB"] = mask
 
     mask = cv2.dilate(mask, easyKernel(dilateB))
-    dilateMaskB = mask
+    im["dilateMaskB"] = mask
 
     # edMask = mask
 
-    bitwise_fgMask_dilateB_and = cv2.bitwise_and(mask, fgMask)
+    im["bitwise_fgMask_dilateB_and"] = cv2.bitwise_and(mask, im["fgMask"])
 
     # End of image operations
-    last_fgMask = fgMask
+    last_fgMask = im["fgMask"]
 
     # Display the resulting frame
     height = 960
     width = 960
     shape = (height, width, 3)
     output = np.zeros(shape = shape, dtype = np.uint8)
-    imageList = [frame, fgMask, bitwise_fgMask_and, erodeMaskA, dilateMaskB, bitwise_fgMask_dilateB_and]
-    renderNimages(imageList, output = output)
+    #! viewSet = im
+    renderNimages(im.values(), output = output)
     barProperties = Namespace()
     barProperties.bgCol = [255, 255, 255]
     barProperties.fgCol = [255, 191, 127]
@@ -124,7 +131,7 @@ def loop(frameIdx, timePerFrame, startTime, height, width, cap, bgSub, last_fgMa
         return "break", None
     if any(map(windowClosed, windowNameSet)):
         return "break", None
-    return "continue", fgMask
+    return "continue", im["fgMask"]
 
 def windowClosed(windowName):
     """Checking for a property of the window to tell whether it is (still) open."""

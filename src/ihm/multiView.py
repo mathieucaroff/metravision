@@ -121,4 +121,4 @@ def selectVideo(output, n, imghpx, imgwpx):
                 break
             cv2.destroyAllWindows()
 
-        #return videoSelected    
+        #return videoSelected

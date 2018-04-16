@@ -51,7 +51,9 @@ while(cap.isOpened()):
     numpy_ver = np.concatenate((numpy_horizontal, numpy_horizontal2), axis=0)
     
     cv2.namedWindow('1')
-    cv2.setMouseCallback('1', getPosition)
+
+    """    
+    #cv2.setMouseCallback('1', getPosition)
     
     #height and width define the limits of each video - imghpx and imgwpx
     ohpx, owpx = numpy_ver.shape[0:2] #pixel's number of output (same of imagList if it is not declare) It's necessary modifie to parameters defined by user
@@ -64,7 +66,7 @@ while(cap.isOpened()):
     
     cv2.imshow('1',numpy_ver)
     if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+        break """
        
 cap.release()
 cv2.destroyAllWindows()

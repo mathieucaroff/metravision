@@ -15,22 +15,22 @@ activeWindows:
     mask: false # BS + Fonctions Eroder & Dilater
     blob: true # BS + E&D + détection blobs
     detection: true # Vidéo avec trackers + compteur + temps
-image-dataset:
-    directoryLocation: /home/lox/dataset
+image:
+    directoryLocation: /path/to/image-dataset
     nameFormat: "%06d.png"
     categories:
-        "bike":
+        bike:
             dirname: bike
             first: 1
             count: 1300
             learningFraction: [2, 3]  # 2 / 3
-        "not-bike":
+        notBike:
             dirname: not-bike
             first: 1
             count: 1800
             learningFraction: [2, 3]  # 2 / 3
-test-videos:
-    directoryLocation: /home/lox/video
+video:
+    directoryLocation: /path/to/videos
     short:
         directoryName: "short"
         files: !!set

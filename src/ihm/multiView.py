@@ -29,6 +29,7 @@ def renderNimages(imageList, output = None, h = None, w = None):
     If no output image buffer is given, the output dimension is that of one input image.
     Returns the output image.
     """
+    global h, w
     imageList = list(imageList)
 
     n = len(imageList)
@@ -78,12 +79,46 @@ def renderNimages(imageList, output = None, h = None, w = None):
         cv2.resize(src = currentImage, dsize = destination.shape[:2][::-1], dst = destination)
 
     return output
-"""
-    def selectVideo(event, x, y, flags, param):
-    
-    Select and expand the video selected by double click
-    
-    pass   
-        #if event == cv2.EVENT_LBUTTONDBLCLK
 
-"""
+
+
+
+pVx = 0
+pVy = 0
+press = False
+# mouse callback function
+def getPosition(event,x,y,flags,param):
+    """
+    Identify double click
+    """ 
+    global pVx, pVy, press
+    if event == cv2.EVENT_LBUTTONDBLCLK:
+        pVx = x
+        pVy = y
+        press = True
+
+
+
+
+def selectVideo(output, n, imghpx, imgwpx):
+    """
+    Select and expand the video selected by double click
+    """ 
+
+    cv2.setMouseCallback('Metravision', getPosition)
+    if press == True:
+        i = math.ceil(pVy / imghpx)
+        j = math.ceil(pVx / imgwpx)
+        yoffset = i * imghpx
+        xoffset = j * imgwpx
+
+        videoSelected = output[yoffset:(yoffset + imghpx), xoffset:(xoffset + imgwpx)]
+
+        cv2.namedWindow('Selected')
+        while (1):
+            cv2.imshow('Selected', videoSelected)
+            if cv2.waitKey(1) & 0xFF == ord('x'):
+                break
+            cv2.destroyAllWindows()
+
+        #return videoSelected    

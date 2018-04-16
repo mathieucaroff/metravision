@@ -1,44 +1,25 @@
 
 import numpy as np
 import cv2
+import sys
 import math
-
-
-def on_mouse(event, x, y, flags, params):
-
-    global boxes;
-    global selection_in_progress;
-
-    
-    #currentMousePosition[0] = x;
-    #currentMousePosition[1] = y;
-
-    if event == cv2.EVENT_LBUTTONDOWN:
-        boxes = [];
-        print ('Start Mouse Position: '+str(x)+', '+str(y))
-        sbox = [x, y];
-        selection_in_progress = True;
-        boxes.append(sbox);
-
-    elif event == cv2.EVENT_LBUTTONUP:
-        print ('End Mouse Position: '+str(x)+', '+str(y))
-        ebox = [x, y];
-        selection_in_progress = False;
-        boxes.append(ebox);
 
 
 video = r"C:\Users\eleves\Desktop\MV_IHM\bouchon-40s.mp4"
 cap = cv2.VideoCapture(video)
 bgSub = cv2.createBackgroundSubtractorMOG2()
 
-cv2.setMouseCallback('cap', on_mouse)
+
+
 
 while(cap.isOpened()):
+    
     ret, frame = cap.read()
-	
-    frame = cv2.resize(frame, (0, 0), None, .5, .5)
+    
     
     fgMask = bgSub.apply(image = frame, learningRate = 0.1)
+
+    
 	
     # erodeAndDilate
     mask = fgMask
@@ -68,6 +49,19 @@ while(cap.isOpened()):
     numpy_horizontal2 = np.hstack((dilateMaskA, erodeMaskB, dilateMaskB))
     
     numpy_ver = np.concatenate((numpy_horizontal, numpy_horizontal2), axis=0)
+    
+    cv2.namedWindow('1')
+    cv2.setMouseCallback('1', getPosition)
+    
+    #height and width define the limits of each video - imghpx and imgwpx
+    ohpx, owpx = numpy_ver.shape[0:2] #pixel's number of output (same of imagList if it is not declare) It's necessary modifie to parameters defined by user
+    imghpx = ohpx // 2
+    imgwpx = owpx // 3
+    
+    if px < imgwpx and py < imghpx:
+        cv2.namedWindow('Selected')
+        cv2.imshow('Selected', gray)
+    
     cv2.imshow('1',numpy_ver)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break

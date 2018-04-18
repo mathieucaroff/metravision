@@ -13,11 +13,8 @@ import itertools
 # Internal
 from util import Namespace
 from util import Dotdict
-# from util import ReadOnlyDotdict
+from util import ReadOnlyDotdict
 
-class ReadOnlyDotdict(dict):
-    """dot.notation readonly access to dictionary attributes"""
-    __getattr__ = dict.get
 
 glob = Namespace()
 

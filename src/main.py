@@ -1,86 +1,93 @@
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import cv2
 import time
 import random
 
 import collections
 
-from util import Namespace
-from ihm.multiView import viewDimensionsFromN, renderNimages
-from ihm.progressBar import drawBar
+from util import Namespace, printMV, printMVerr
+import ihm.window as window
+from ihm.progressBar import setupClickHook
 
 import parseConfig
+
+import sys
+print(sys.version)
+
+
+glob = Namespace()
+
 
 def main():
     with open("metravision.config.yml") as configFile:
         config = parseConfig.MvConfig.fromConfigFile(configFile)
-    
+
     videoPath = random.choice(config.video.files)
-    cv2.namedWindow('View')
-    cv2.setMouseCallback("View", evListener)
+    try:
+        open(videoPath).close()
+    except FileNotFoundError:
+        printMVerr(f"The specified video {videoPath} coudln't be open. (Missing file?)")
+        raise
 
     cap = cv2.VideoCapture(videoPath)
 
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    fps = cap.get(cv2.CAP_PROP_FPS)
+    def jumpToFrameFunction(advancementPercentage):
+        jumpTo(cap, advancementPercentage)
 
-    jumpTo(cap, random.random() / 2)
+    height = 800
+    width = 960
+    setupClickHook("Metravision", (height, width), 30, jumpToFrameFunction)
 
-    timePerFrame = 1 / fps
-
-    fgMask = np.zeros((height, width), dtype = np.uint8) # Temporary value
-
-    bgSub = cv2.createBackgroundSubtractorMOG2()
-
-    startTime = time.clock()
-    for frameIdx in range(1_000_000_000):
-        action, fgMask = loopActions(frameIdx, timePerFrame, startTime, height, width, cap, bgSub, fgMask)
-        if action == "break":
-            break
+    lecture(cap)
 
     # When everything done, release the capture
     cap.release()
     cv2.destroyAllWindows()
 
-windowNameSet = set()
-glob = Namespace()
+def lecture(cap):
+    frameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    timePerFrame = 1 / fps
 
-glob.x = -1
-glob.y = -1
+    jumpTo(cap, random.random() * 3 / 4)
 
-def wImshow(winName, content):
-    windowNameSet.add(winName)
-    if (glob.x, glob.y) != (-1, -1):
-        cv2.circle(content, (glob.x, glob.y), 100, (255, 0, 0), -1)
-        glob.x, glob.y = -1, -1        
-    cv2.imshow(winName, content)
+    last_fgMask = np.zeros((height, width), dtype = np.uint8) # Temporary value
 
+    bgSub = cv2.createBackgroundSubtractorMOG2()
 
-def evListener(event, x, y, flags, param):
-    if event == cv2.EVENT_LBUTTONDBLCLK:
-        print(x, y)
-        glob.x = x
-        glob.y = y
+    referenceTime = time.clock()
+    for loopIndex in range(1_000_000_000):
+        im = collections.OrderedDict()
+        #! viewSet = im
 
-# Create a black image, a window and bind the function to window
+        # Capture frame-by-frame
+        ok, im["frame"] = cap.read()
 
-def loopActions(frameIdx, timePerFrame, startTime, height, width, cap, bgSub, last_fgMask):
-    im = collections.OrderedDict()
-    #! viewSet = im
+        if not ok:
+            return "break", None
 
-    # Capture frame-by-frame
-    ok, im["frame"] = cap.read()
+        analyse(bgSub, im, last_fgMask)
 
-    if not ok:
-        return "break", None
-
-    im["fgMask"] = bgSub.apply(image = im["frame"]) # , learningRate = 0.5)
-    # glob.fgMask = fgMask
-
-    if last_fgMask is None:
+        # End of image operations
         last_fgMask = im["fgMask"]
+
+        # Display the resulting frame
+        advancementPercentage = cap.get(cv2.CAP_PROP_POS_FRAMES) / frameCount
+        window.window(im, advancementPercentage)
+
+        controlledTime = (referenceTime + timePerFrame * loopIndex) - time.clock()
+        continuing = window.waitkey(controlledTime)
+        last_fgMask = im["fgMask"]
+
+        if continuing == "break":
+            break
+
+
+def analyse(bgSub, im, last_fgMask):
+    im["fgMask"] = bgSub.apply(image = im["frame"]) # , learningRate = 0.5)
 
     # Two-frame and
     im["bitwise_fgMask_and"] = cv2.bitwise_and(im["fgMask"], last_fgMask)
@@ -98,7 +105,7 @@ def loopActions(frameIdx, timePerFrame, startTime, height, width, cap, bgSub, la
 
     mask = cv2.dilate(mask, easyKernel(dilateA))
     im["dilateMaskA"] = mask
-    
+
     mask = cv2.erode(mask, easyKernel(erodeB))
     im["erodeMaskB"] = mask
 
@@ -108,34 +115,6 @@ def loopActions(frameIdx, timePerFrame, startTime, height, width, cap, bgSub, la
     # edMask = mask
 
     im["bitwise_fgMask_dilateB_and"] = cv2.bitwise_and(mask, im["fgMask"])
-
-    # End of image operations
-    last_fgMask = im["fgMask"]
-
-    # Display the resulting frame
-    height = 960
-    width = 960
-    shape = (height, width, 3)
-    output = np.zeros(shape = shape, dtype = np.uint8)
-    #! viewSet = im
-    renderNimages(im.values(), output = output)
-    barProperties = Namespace()
-    barProperties.bgCol = [255, 255, 255]
-    barProperties.fgCol = [255, 191, 127]
-    barProperties.height = 30
-    drawBar(barProperties, buffer = output, advancementPercentage = frameIdx / 1000)
-    wImshow("View", output)
-
-    controlledTime = (startTime + timePerFrame * frameIdx) - time.clock()
-    if cv2.waitKey(max(0, int(1000 * controlledTime)) + 1) & 0xFF == ord('q'):
-        return "break", None
-    if any(map(windowClosed, windowNameSet)):
-        return "break", None
-    return "continue", im["fgMask"]
-
-def windowClosed(windowName):
-    """Checking for a property of the window to tell whether it is (still) open."""
-    return cv2.getWindowProperty(windowName, cv2.WND_PROP_VISIBLE) != 1
 
 def easyKernel(size, sizeX = None):
     """Generate an OpenCV kernel objet of given size.

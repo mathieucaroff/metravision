@@ -23,13 +23,13 @@ def viewDimensionsFromN(n = 1):
         w += 1
     return (h, w)
 
-def renderNimages(imageList, output = None, h = None, w = None):
+def renderNimages(imageSet, output = None, h = None, w = None):
     """
     Gather the images from the given collection into one image. All images must have the same dimension.
     If no output image buffer is given, the output dimension is that of one input image.
     Returns the output image.
     """
-    imageList = list(imageList)
+    imageNameList, imageList = zip(*imageSet.items())
 
     n = len(imageList)
 
@@ -122,5 +122,3 @@ def selectVideo(imageList, output):
             cv2.destroyAllWindows()
 
         press == False
-
-        #return videoSelected

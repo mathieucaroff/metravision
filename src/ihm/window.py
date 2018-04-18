@@ -1,27 +1,43 @@
 import cv2
 import numpy as np
 
-from ihm.multiView import renderNimages
-from ihm.progressBar import drawBar
-
 from util import Namespace
 
-def window(imageSet, advancementPercentage, updateWindows):
+import ihm.progressBar
+import ihm.multiView
+
+
+def setup(windowName, windowShape, jumpToFrameFunction):
+    cv2.namedWindow(windowName)
+
+    mouseCallbackList = []
+    def mouseCallbackDispatcher(event, x, y, flags, param):
+        for fun in mouseCallbackList:
+            fun(event, x, y, flags, param)
+    
+    cv2.setMouseCallback(windowName, mouseCallbackDispatcher)
+
+    updateWindows = ihm.multiView.setupVideoSelectionHook(mouseCallbackList)
+    ihm.progressBar.setupClickHook(mouseCallbackList, windowShape, 30, jumpToFrameFunction)
+    
+    return updateWindows
+
+
+def window(imageSet, advancementPercentage, updateWindows, windowShape):
     # Display the resulting frame
-    height = 800
-    width = 960
-    shape = (height, width, 3)
+    shape = (*windowShape, 3)
     output = np.zeros(shape = shape, dtype = np.uint8)
     barProperties = Namespace()
     barProperties.bgCol = [255, 255, 255]
     barProperties.fgCol = [255, 191, 127]
-    barProperties.height = 30
+    barHeight = 30
+    barProperties.shape = (barHeight, shape[1])
 
-    renderNimages(imageSet, output = output[:-barProperties.height])
-    drawBar(barProperties, buffer = output, advancementPercentage = advancementPercentage)
+    ihm.multiView.renderNimages(imageSet, output = output[:-barHeight])
+    ihm.progressBar.drawBar(barProperties, buffer = output, advancementPercentage = advancementPercentage)
     cv2.imshow("Metravision", output)
 
-    updateWindows(imageSet = imageSet, output = output)
+    updateWindows(imageSet = imageSet, windowShape = windowShape)
 
 
 def waitkey(controlledTime):

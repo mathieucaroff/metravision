@@ -8,15 +8,13 @@ from util import Namespace
 Affiches un nombre arbitraire d'images ou de vidéos dans une fenêtre.
 Show an arbitrary number of images or videos on window
 """
-# TODO
-h = 0
-w = 0
 def viewDimensionsFromN(n = 1):
     """
     Compute the number of horizontal and vertical views needed to reach at least n views.
     Returns a pair of numbers.
     """
-    global h, w
+    h = 0
+    w = 0
     while True:
         if h * w >=n:
             break
@@ -32,7 +30,7 @@ def renderNimages(imageSet, output = None, h = None, w = None):
     If no output image buffer is given, the output dimension is that of one input image.
     Returns the output image.
     """
-    imageNameList, imageList = zip(*imageSet.items())
+    imageList = imageSet.values()
 
     n = len(imageList)
 
@@ -48,8 +46,6 @@ def renderNimages(imageSet, output = None, h = None, w = None):
         else:
             if not h * w >= n:
                 raise ValueError("h*w est trop petit")
-        
-
 
     if output is None:
         img = imageList[0]
@@ -62,28 +58,39 @@ def renderNimages(imageSet, output = None, h = None, w = None):
     imghpx = ohpx // h
     imgwpx = owpx // w
 
-    for m in range(n):
+    for m, (name, image) in enumerate(imageSet.items()):
         i = m // w
         j = m % w
         yoffset = i * imghpx
         xoffset = j * imgwpx
 
-        currentImage = imageList[m]
-
-        if len(currentImage.shape) == 2 and currentImage.dtype == np.uint8:
-            currentImage = cv2.cvtColor(currentImage, cv2.COLOR_GRAY2BGR)
-        elif len(currentImage.shape) == 3 and currentImage.dtype == np.uint8:
+        if len(image.shape) == 2 and image.dtype == np.uint8:
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        elif len(image.shape) == 3 and image.dtype == np.uint8:
             pass
         else:
             raise TypeError("Unhandeled image color type.")
+        
 
-        destination = output[yoffset:(yoffset + imghpx), xoffset:(xoffset + imgwpx)]
-        cv2.resize(src = currentImage, dsize = destination.shape[:2][::-1], dst = destination)
+        destination = output[
+            yoffset:(yoffset + imghpx),
+            xoffset:(xoffset + imgwpx
+        )]
+        cv2.resize(
+            src = image, dsize = destination.shape[:2][::-1],
+            dst = destination)
+
+        orange = (0, 116, 240)
+        cv2.putText(
+            img = destination, text = name, org = (16, 16),
+            fontFace = cv2.FONT_HERSHEY_SIMPLEX, fontScale = 0.6,
+            color = orange, thickness = 2
+        )
 
     return output
 
 
-def setupVideoSelectionHook(windowName):
+def setupVideoSelectionHook(mouseCallbackList):
     """
     Select and expand the video selected by double click
     """
@@ -93,7 +100,7 @@ def setupVideoSelectionHook(windowName):
     share.pVx = 0
 
     # mouse callback function
-    def getPosition(event,x,y,flags,param):
+    def getPosition(event, x, y, flags, param):
         """
         Identify double click
         """ 
@@ -101,28 +108,27 @@ def setupVideoSelectionHook(windowName):
             share.press = True
             share.pVy = y
             share.pVx = x
-            print (x , y, f"event: {event}")
     
-    
-    cv2.setMouseCallback(windowName, getPosition)
+
+    mouseCallbackList.append(getPosition)
 
     displayedImageNameList = []
 
-    def updateWindows(imageSet, output):
+    def updateWindows(imageSet, windowShape):
         imageNameList, _ = zip(*imageSet.items())
 
         if share.press == True:
             n = len(imageSet)
             h, w = viewDimensionsFromN(n)
-            ohpx, owpx = output.shape[0:2]
-            
-            imghpx = ohpx // h
-            imgwpx = owpx // w
+
+            width, height = windowShape
+            imghpx = height // h
+            imgwpx = width // w
             i = math.floor(share.pVy / imghpx)
             j = math.floor(share.pVx / imgwpx)
             m = j + i*w
-
-            displayedImageNameList.append(imageNameList[m])
+            if m < n:
+                displayedImageNameList.append(imageNameList[m])
             
             share.press = False
         

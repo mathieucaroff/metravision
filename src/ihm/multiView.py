@@ -1,6 +1,9 @@
 import numpy as np
 import cv2
 import math
+
+from util import Namespace
+
 """
 Affiches un nombre arbitraire d'images ou de vidéos dans une fenêtre.
 Show an arbitrary number of images or videos on window
@@ -80,20 +83,14 @@ def renderNimages(imageSet, output = None, h = None, w = None):
     return output
 
 
-def selectVideo(imageList, output):
+def setupVideoSelectionHook(windowName):
     """
     Select and expand the video selected by double click
     """
-    press = False
-    pVy = 0
-    pVx = 0
-
-    imageList = list(imageList)
-    n = len(imageList)
-    h, w = viewDimensionsFromN(n)
-    ohpx, owpx = output.shape[0:2]
-    imghpx = ohpx // h
-    imgwpx = owpx // w
+    share = Namespace()
+    share.press = False
+    share.pVy = 0
+    share.pVx = 0
 
     # mouse callback function
     def getPosition(event,x,y,flags,param):
@@ -101,24 +98,36 @@ def selectVideo(imageList, output):
         Identify double click
         """ 
         if event == cv2.EVENT_LBUTTONDBLCLK:
-            press = True
-            pVy = y
-            pVx = x
+            share.press = True
+            share.pVy = y
+            share.pVx = x
+            print (x , y, f"event: {event}")
     
     
-    cv2.setMouseCallback('Metravision', getPosition)   
-    if press == True:
-        i = math.ceil(pVy / imghpx)
-        j = math.ceil(pVx / imgwpx)
-        m = j + i*w
+    cv2.setMouseCallback(windowName, getPosition)
 
-        videoSelected = imageList[m]
+    displayedImageNameList = []
+
+    def updateWindows(imageSet, output):
+        imageNameList, _ = zip(*imageSet.items())
+
+        if share.press == True:
+            n = len(imageSet)
+            h, w = viewDimensionsFromN(n)
+            ohpx, owpx = output.shape[0:2]
+            
+            imghpx = ohpx // h
+            imgwpx = owpx // w
+            i = math.floor(share.pVy / imghpx)
+            j = math.floor(share.pVx / imgwpx)
+            m = j + i*w
+
+            displayedImageNameList.append(imageNameList[m])
+            
+            share.press = False
         
-        cv2.namedWindow('Selected')
-        while (1):
-            cv2.imshow('Selected', videoSelected)
-            if cv2.waitKey(1) & 0xFF == ord('x'):
-                break
-            cv2.destroyAllWindows()
+        for imageName in displayedImageNameList:
+            cv2.imshow(imageName, imageSet[imageName])
 
-        press == False
+
+    return updateWindows

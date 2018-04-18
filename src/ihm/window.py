@@ -6,7 +6,7 @@ from ihm.progressBar import drawBar
 
 from util import Namespace
 
-def window(im, advancementPercentage):
+def window(imageSet, advancementPercentage, updateWindows):
     # Display the resulting frame
     height = 800
     width = 960
@@ -17,17 +17,18 @@ def window(im, advancementPercentage):
     barProperties.fgCol = [255, 191, 127]
     barProperties.height = 30
 
-    #: viewSet = im
-    renderNimages(im, output = output[:-barProperties.height])
+    renderNimages(imageSet, output = output[:-barProperties.height])
     drawBar(barProperties, buffer = output, advancementPercentage = advancementPercentage)
     cv2.imshow("Metravision", output)
+
+    updateWindows(imageSet = imageSet, output = output)
 
 
 def waitkey(controlledTime):
     continuing = "continue"
     if cv2.waitKey(max(0, int(1000 * controlledTime)) + 1) & 0xFF == ord('q'):
         continuing = "break"
-    if windowClosed("Metravision"):
+    if False and windowClosed("Metravision"):
         print("Window closed")
         continuing = "break"
     return continuing

@@ -56,7 +56,16 @@ def lecture(cap):
 
     last_fgMask = np.zeros((height, width), dtype = np.uint8) # Temporary value
 
+    # Background subtractor initialisation
     bgSub = cv2.createBackgroundSubtractorMOG2()
+
+    # blobDetector initialisation
+    params = cv2.SimpleBlobDetector_Params()
+    params.filterByArea = True
+    params.minArea = 1_000
+    params.maxArea = 50_000
+    params.minDistBetweenBlobs = 1
+    blobDetector = cv2.SimpleBlobDetector_create(params)
 
     referenceTime = time.clock()
     for loopIndex in range(1_000_000_000):
@@ -66,7 +75,7 @@ def lecture(cap):
         # Capture frame-by-frame
         ok, im["frame"] = cap.read()
 
-        analyse(bgSub, im, last_fgMask)
+        analyse(bgSub, blobDetector, im, last_fgMask)
 
         # End of image operations
         last_fgMask = im["fgMask"]
@@ -83,7 +92,7 @@ def lecture(cap):
             break
 
 
-def analyse(bgSub, im, last_fgMask):
+def analyse(bgSub, blobDetector, im, last_fgMask):
     im["fgMask"] = bgSub.apply(image = im["frame"]) # , learningRate = 0.5)
 
     # Two-frame and
@@ -92,10 +101,11 @@ def analyse(bgSub, im, last_fgMask):
     # erodeAndDilate
     mask = im["bitwise_fgMask_and"]
 
-    erodeA = 2
+    erodeA = 4
     dilateA = 20
     erodeB = 26
-    dilateB = 15 # erodeA + erodeB - dilateA
+    dilateB = 15 # previously erodeA + erodeB - dilateA
+    dilateC = 4
 
     mask = cv2.erode(mask, easyKernel(erodeA))
     im["erodeMaskA"] = mask
@@ -114,8 +124,13 @@ def analyse(bgSub, im, last_fgMask):
     mask = cv2.bitwise_and(mask, im["fgMask"])
     im["bitwise_fgMask_dilateB_and"] = mask
 
-    img, contourPointList, hierachy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    mask = cv2.dilate(mask, easyKernel(dilateC))
+    im["dilateC"] = mask
 
+    # Contour
+    red = (0, 0, 255)
+    """ 
+    img, contourPointList, hierachy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     im["dilateMaskA"] = cv2.cvtColor(im["dilateMaskA"], cv2.COLOR_GRAY2BGR)
 
@@ -124,9 +139,24 @@ def analyse(bgSub, im, last_fgMask):
         image = im["dilateMaskA"],
         contours = contourPointList,
         contourIdx = allContours,
-        color = [0, 0, 255]
+        color = red
+    ) """
+
+    # Blob Detector
+    imageNameList = list(im.keys()) # Buffered
+    for imageName in imageNameList:
+        if not "dilate" in imageName:
+            continue
+        blobKeypoints = blobDetector.detect(255 - im[imageName])
+        im[f"blob_{imageName}"] = cv2.drawKeypoints(
+            image = im[imageName],
+            keypoints = blobKeypoints,
+            outImage = np.array([]),
+            color = red,
+            flags = cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS
         )
 
+    # cv2.cvtColor(im["dilateMaskB"], cv2.COLOR_GRAY2BGR)
 
 def easyKernel(size, sizeX = None):
     """Generate an OpenCV kernel objet of given size.

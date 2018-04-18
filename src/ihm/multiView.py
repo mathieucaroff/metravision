@@ -20,16 +20,18 @@ def viewDimensionsFromN(n = 1):
         w += 1
     return (h, w)
 
-def renderNimages(imageList, output = None):
+def renderNimages(imageSet, output = None, viewDimensions = None, fillMode = "fill"):
     """
     Gather the images from the given collection into one image. All images must have the same dimension.
     If no output image buffer is given, the output dimension is that of one input image.
     Returns the output image.
     """
-    imageList = list(imageList)
+    imageNameList, imageList = zip(*imageSet.items())
 
     n = len(imageList)
-    h, w = viewDimensionsFromN(n)
+    if viewDimensions is None:
+        viewDimensions = viewDimensionsFromN(n)
+    h, w = viewDimensions
 
     if output is None:
         img = imageList[0]

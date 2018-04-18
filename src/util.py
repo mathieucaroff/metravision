@@ -8,13 +8,22 @@ class Namespace:
 
 class Dotdict(dict):
     """dot.notation access to dictionary attributes"""
-    __getattr__ = dict.get
+    __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
 class ReadOnlyDotdict(dict):
     """dot.notation readonly access to dictionary attributes"""
-    __getattr__ = dict.get
+    __getattr__ = dict.__getitem__
+
+class RecursiveReadOnlyDotdict(dict):
+    """dot.notation readonly access to dictionary attributes, propagated to children dictionaries upon acess."""
+    def __getitem__(self, key):
+        val = dict.__getitem__(self, key)
+        if type(val) == dict:
+            val = RecursiveReadOnlyDotdict(val)
+        return val
+    __getattr__ = __getitem__
 
 class Point:
     def __init__(self, *args, **kwargs):

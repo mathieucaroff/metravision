@@ -3,8 +3,6 @@ import os
 import yaml
 
 # Usual
-import abc
-import collections
 import itertools
 # import pprint as Pprint
 
@@ -12,8 +10,7 @@ import itertools
 
 # Internal
 from util import Namespace
-from util import Dotdict
-from util import ReadOnlyDotdict
+from util import Dotdict, ReadOnlyDotdict, RecursiveReadOnlyDotdict
 
 
 glob = Namespace()
@@ -91,46 +88,14 @@ video:
     assert len(config.video.files) == 8
 
 
-class MvDirectory(ReadOnlyDotdict):
-    def __init__(self, filePathFormat = None, fileValues = None, subdirs = {}):
-        
-        # Verifications
-        assert type(subdirs) == dict
-
-        if subdirs != {} and (filePathFormat is not None or fileValues is not None):
-            raise ValueError("Argument subdir can't be used with filePathFormat and fileValues.")
-
-        if (filePathFormat is None) != (fileValues is None):
-            raise ValueError("Arguments filePathFormat and fileValues must always be used together.")
-
-
-        # Assignements
-        for dirname, dirvalue in subdirs.items():
-            self[dirname] = dirvalue
-        
-        self.__subdirs = subdirs
-        if filePathFormat is not None:            
-            self.__files = [ filePathFormat % val for val in fileValues ]
-    
-    @property
-    def files(self):
-        """
-        List all own and subdirectory files.
-        Returns them as a list if they are it's own files.
-        Returns them as a tuple if they are from it's subdirectory.
-        """
-        try:
-            files = self.__files
-            assert(files is not None)
-            return files
-        except (AttributeError, AssertionError):
-            subdirFileListList = map(lambda dir: dir.files, self.__subdirs.values())
-            subFiles = tuple(itertools.chain(*subdirFileListList))
-            return subFiles
-
-
 class MvConfig(Dotdict):
     # collections.namedtuple("AbstractMvConfig", "imageDataset, testVideoFileSets"))
+    def __init__(self):
+        Dotdict.__init__(self)
+        self.raw = None
+        self.image = None
+        self.video = None
+
     @staticmethod
     def fromConfigFile(configFile):
         """
@@ -149,7 +114,7 @@ class MvConfig(Dotdict):
         
         resultConfig = MvConfig()
 
-        resultConfig.raw = rawConfigData
+        resultConfig.raw = RecursiveReadOnlyDotdict(rawConfigData)
 
         # image
         resultConfig.image = cls.__expandImage(rawConfigData["image"])
@@ -208,6 +173,50 @@ class MvConfig(Dotdict):
 
         videoDirectory = MvDirectory(subdirs = categories)
         return videoDirectory
+
+
+class MvDirectory(ReadOnlyDotdict):
+    def __init__(self, filePathFormat = None, fileValues = None, subdirs = None):
+        # Verifications
+        if subdirs is not None and (filePathFormat is not None or fileValues is not None):
+            raise ValueError("Argument subdir can't be used with filePathFormat and fileValues.")
+
+        if (filePathFormat is None) != (fileValues is None):
+            raise ValueError("Arguments filePathFormat and fileValues must always be used together.")
+
+        if subdirs is not None:
+            assert type(subdirs) == dict
+        else:
+            subdirs = {}
+
+        ReadOnlyDotdict.__init__(self)
+
+        # Assignements
+        for dirname, dirvalue in subdirs.items():
+            self[dirname] = dirvalue
+        
+        self.__subdirs = subdirs
+        if filePathFormat is not None:            
+            self.__files = [ filePathFormat % val for val in fileValues ]
+        
+    
+    @property
+    def files(self):
+        """
+        List all own and subdirectory files.
+        Returns them as a list if they are it's own files.
+        Returns them as a tuple if they are from it's subdirectory.
+        """
+        try:
+            files = self.__files
+            assert(files is not None)
+            return files
+        except (KeyError, AttributeError, AssertionError):
+            subdirFileListList = map(lambda dir: dir.files, self.__subdirs.values())
+            subFiles = tuple(itertools.chain(*subdirFileListList))
+            return subFiles
+
+
 
 if __name__ == "__main__":
     test_MvConfig()

@@ -16,7 +16,6 @@ def setupClickHook(windowName, bufferShape, sensitivityHeight, jumpToFrameFuncti
         if event == cv2.EVENT_LBUTTONDOWN:
             if y > height - sensitivityHeight:
                 jumpToFrameFunction(x / width)
-    cv2.namedWindow(windowName)
     cv2.setMouseCallback("Metravision", evListener)
 
 def drawBar(barProperties, buffer, advancementPercentage):

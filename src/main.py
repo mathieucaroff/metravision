@@ -9,6 +9,7 @@ import collections
 from util import Namespace, printMV, printMVerr
 import ihm.window as window
 from ihm.progressBar import setupClickHook
+from ihm.multiView import setupVideoSelectionHook
 
 import parseConfig
 
@@ -18,6 +19,10 @@ print(sys.version)
 
 glob = Namespace()
 
+def jumpTo(cap, fraction):
+    frameCount = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    frameIndex = int(fraction * frameCount)
+    cap.set(cv2.CAP_PROP_POS_FRAMES, frameIndex)
 
 def main():
     with open("metravision.config.yml") as configFile:
@@ -37,15 +42,19 @@ def main():
 
     height = 800
     width = 960
-    setupClickHook("Metravision", (height, width), 30, jumpToFrameFunction)
+    windowName = "Metravision"
+    cv2.namedWindow(windowName)
+    setupClickHook(windowName, (height, width), 30, jumpToFrameFunction)
 
-    lecture(cap)
+    updateWindows = setupVideoSelectionHook(windowName)
+
+    lecture(cap, updateWindows)
 
     # When everything done, release the capture
     cap.release()
     cv2.destroyAllWindows()
 
-def lecture(cap):
+def lecture(cap, updateWindows):
     frameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -82,7 +91,7 @@ def lecture(cap):
 
         # Display the resulting frame
         advancementPercentage = cap.get(cv2.CAP_PROP_POS_FRAMES) / frameCount
-        window.window(im, advancementPercentage)
+        window.window(im, advancementPercentage, updateWindows)
 
         controlledTime = (referenceTime + timePerFrame * loopIndex) - time.clock()
         continuing = window.waitkey(controlledTime)
@@ -166,10 +175,6 @@ def easyKernel(size, sizeX = None):
         sizeX = size
     return cv2.getStructuringElement( cv2.MORPH_ELLIPSE, (sizeY, sizeX) )
 
-def jumpTo(cap, fraction):
-    frameCount = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-    frameIndex = int(fraction * frameCount)
-    cap.set(cv2.CAP_PROP_POS_FRAMES, frameIndex)
 
 if __name__ == "__main__":
     main()

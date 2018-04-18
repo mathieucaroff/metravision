@@ -80,20 +80,22 @@ def renderNimages(imageSet, output = None, h = None, w = None):
             src = image, dsize = destination.shape[:2][::-1],
             dst = destination)
 
-        orange = (0, 116, 240)
-        cv2.putText(
-            img = destination, text = name, org = (16, 16),
-            fontFace = cv2.FONT_HERSHEY_SIMPLEX, fontScale = 0.6,
-            color = orange, thickness = 2
-        )
+        if name != "frame":
+            orange = (0, 128, 256)
+            cv2.putText(
+                img = destination, text = name, org = (16, 16),
+                fontFace = cv2.FONT_HERSHEY_SIMPLEX, fontScale = 0.6,
+                color = orange, thickness = 2
+            )
 
     return output
 
 
-def setupVideoSelectionHook(mouseCallbackList):
+def setupVideoSelectionHook(mouseCallbackList, windowShape):
     """
     Select and expand the video selected by double click
     """
+    height, width = windowShape
     share = Namespace()
     share.press = False
     share.pVy = 0
@@ -114,14 +116,13 @@ def setupVideoSelectionHook(mouseCallbackList):
 
     displayedImageNameList = []
 
-    def updateWindows(imageSet, windowShape):
+    def updateWindows(imageSet):
         imageNameList, _ = zip(*imageSet.items())
 
         if share.press == True:
             n = len(imageSet)
             h, w = viewDimensionsFromN(n)
 
-            width, height = windowShape
             imghpx = height // h
             imgwpx = width // w
             i = math.floor(share.pVy / imghpx)
@@ -134,6 +135,5 @@ def setupVideoSelectionHook(mouseCallbackList):
         
         for imageName in displayedImageNameList:
             cv2.imshow(imageName, imageSet[imageName])
-
 
     return updateWindows

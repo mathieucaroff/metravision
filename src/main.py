@@ -14,8 +14,9 @@ import parseConfig
 import analyse
 
 import sys
-print(sys.version)
+printMV(sys.version)
 
+sys.path[:0] = ["src", "."]
 
 glob = Namespace()
 
@@ -28,6 +29,7 @@ def main():
     with open("metravision.config.yml") as configFile:
         config = parseConfig.MvConfig.fromConfigFile(configFile)
 
+    windowName = config.raw.windowName
     windowHeight = config.raw["window"]["height"]
     windowWidth = config.raw["window"]["width"]
     windowShape = (windowHeight, windowWidth)
@@ -44,19 +46,19 @@ def main():
     def jumpToFrameFunction(advancementPercentage):
         jumpTo(cap, advancementPercentage)
 
-    updateWindows = window.setup(
-        windowName = "Metravision",
+    updateWindows, barProperties = window.setup(
+        windowName = windowName,
         windowShape = windowShape,
         jumpToFrameFunction = jumpToFrameFunction)
 
-    lecture(cap, updateWindows, windowShape)
+    lecture(cap, windowName, updateWindows, windowShape, barProperties, config.raw.redCrossEnabled)
 
     # When everything done, release the capture
     cap.release()
     cv2.destroyAllWindows()
 
 
-def lecture(cap, updateWindows, windowShape):
+def lecture(cap, windowName, updateWindows, windowShape, barProperties, redCrossEnabled):
     frameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -66,6 +68,7 @@ def lecture(cap, updateWindows, windowShape):
     jumpTo(cap, random.random() * 3 / 4)
 
     last_fgMask = np.zeros((height, width), dtype = np.uint8) # Temporary value
+    oneBeforeLast_fgMask = last_fgMask
 
     # Background subtractor initialisation
     bgSub, blobDetector = analyse.setupAnalyseTools()
@@ -78,17 +81,19 @@ def lecture(cap, updateWindows, windowShape):
         # Capture frame-by-frame
         ok, im["frame"] = cap.read()
 
-        analyse.analyse(bgSub, blobDetector, im, last_fgMask)
+
+        analyse.analyse(bgSub, blobDetector, im, last_fgMask, oneBeforeLast_fgMask)
 
         # End of image operations
+        oneBeforeLast_fgMask = last_fgMask
         last_fgMask = im["fgMask"]
 
         # Display the resulting frame
         advancementPercentage = cap.get(cv2.CAP_PROP_POS_FRAMES) / frameCount
-        window.window(im, advancementPercentage, updateWindows, windowShape)
+        window.window(im, advancementPercentage, updateWindows, windowShape, barProperties)
 
         controlledTime = (referenceTime + timePerFrame * loopIndex) - time.clock()
-        continuing = window.waitkey(controlledTime)
+        continuing = window.waitkey(windowName, controlledTime, redCrossEnabled)
         last_fgMask = im["fgMask"]
 
         if continuing == "break" or not ok:

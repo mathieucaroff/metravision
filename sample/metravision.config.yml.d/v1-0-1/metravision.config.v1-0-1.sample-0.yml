@@ -3,6 +3,8 @@
 networkDestination: /your/path
 networkLocation: /your/path.t7
 resultDestination: /your/path.csv
+windowName: Metravision
+redCrossEnabled: true
 training:
     iterationCount: 1
     threashold: 0.60

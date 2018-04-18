@@ -8,19 +8,24 @@ def setupAnalyseTools():
 
     # blobDetector initialisation
     params = cv2.SimpleBlobDetector_Params()
+    params.minDistBetweenBlobs = 4
     params.filterByArea = True
-    params.minArea = 1_000
-    params.maxArea = 50_000
-    params.minDistBetweenBlobs = 1
+    params.minArea = 800
+    params.maxArea = 100_000
+    params.filterByInertia = True
+    params.maxInertiaRatio = 2
     blobDetector = cv2.SimpleBlobDetector_create(params)
     return bgSub, blobDetector
 
 
-def analyse(bgSub, blobDetector, im, last_fgMask):
-    im["fgMask"] = bgSub.apply(image = im["frame"]) # , learningRate = 0.5)
+def analyse(bgSub, blobDetector, im, last_fgMask, oneBeforeLast_fgMask):
+    im["fgMask"] = bgSub.apply(image = im["frame"]) #, learningRate = 0.05)
 
     # Two-frame and
-    im["bitwise_fgMask_and"] = cv2.bitwise_and(im["fgMask"], last_fgMask)
+    try:
+        im["bitwise_fgMask_and"] = cv2.bitwise_and(im["fgMask"], last_fgMask, oneBeforeLast_fgMask)
+    except cv2.error:
+        im["bitwise_fgMask_and"] = np.zeros(shape = im["fgMask"].shape, dtype = np.uint8)
 
     # erodeAndDilate
     mask = erodeAndDilate(im)

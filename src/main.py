@@ -66,9 +66,6 @@ def lecture(cap):
         # Capture frame-by-frame
         ok, im["frame"] = cap.read()
 
-        if not ok:
-            return "break", None
-
         analyse(bgSub, im, last_fgMask)
 
         # End of image operations
@@ -96,9 +93,9 @@ def analyse(bgSub, im, last_fgMask):
     mask = im["bitwise_fgMask_and"]
 
     erodeA = 2
-    dilateA = 30
-    erodeB = 35
-    dilateB = 30 # erodeA + erodeB - dilateA
+    dilateA = 20
+    erodeB = 26
+    dilateB = 15 # erodeA + erodeB - dilateA
 
     mask = cv2.erode(mask, easyKernel(erodeA))
     im["erodeMaskA"] = mask
@@ -114,7 +111,22 @@ def analyse(bgSub, im, last_fgMask):
 
     # edMask = mask
 
-    im["bitwise_fgMask_dilateB_and"] = cv2.bitwise_and(mask, im["fgMask"])
+    mask = cv2.bitwise_and(mask, im["fgMask"])
+    im["bitwise_fgMask_dilateB_and"] = mask
+
+    img, contourPointList, hierachy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+
+    im["dilateMaskA"] = cv2.cvtColor(im["dilateMaskA"], cv2.COLOR_GRAY2BGR)
+
+    allContours = -1
+    cv2.drawContours(
+        image = im["dilateMaskA"],
+        contours = contourPointList,
+        contourIdx = allContours,
+        color = [0, 0, 255]
+        )
+
 
 def easyKernel(size, sizeX = None):
     """Generate an OpenCV kernel objet of given size.

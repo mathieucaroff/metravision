@@ -1,11 +1,20 @@
-
 import operator
+
+import sys
+
+class Namespace:
+    pass
+
 
 class Dotdict(dict):
     """dot.notation access to dictionary attributes"""
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
+class ReadOnlyDotdict(dict):
+    """dot.notation readonly access to dictionary attributes"""
+    __getattr__ = dict.get
 
 class Point:
     def __init__(self, *args, **kwargs):
@@ -37,5 +46,13 @@ class Point:
         for i in range(len(self.coords)):
             self.coords[i] = operation(self.coords[i], other.coords[i])
 
+
 def average(iterable):
     return float(sum(iterable)) / max(len(iterable), 1)
+
+def printMV(*args, **kwargs):
+    print("[MV]", *args, **kwargs)
+
+def printMVerr(*args, **kwargs):
+    kwargs["file"] = sys.stdout
+    printMV(*args, **kwargs)

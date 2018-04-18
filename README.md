@@ -8,6 +8,14 @@ in 2017. It uses Torch and OpenCV and is available under the BSD-3-Clause
 license.
 
 
+## Installing
+
+The project depends on anaconda packages. To retrieve them, you should install miniconda or anaconda, then use
+```
+conda install -c conda-forge opencv pyyaml
+```
+to install them. If you are on Windows, you'll want to use
+
 ## Using git
 
 Below is the subset of the most basic git commands you need to know to work

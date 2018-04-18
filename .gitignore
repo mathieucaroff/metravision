@@ -1,5 +1,12 @@
-Traqumoto/Applications
+/metravision.config.yml
 
-Traqumoto/Traqumoto
+/Traqumoto/Applications
 
-Traqumoto/mv.config.lua
+/Traqumoto/Traqumoto
+
+/Traqumoto/mv.config.lua
+
+__pycache__
+*.pyc
+
+.vscode

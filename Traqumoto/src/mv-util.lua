@@ -129,8 +129,8 @@ end
 function util.writeCSV(path, data, sep)	-- 
     sep = sep or ';'	-- separateur pour décaler d'une colonne à droite
     local file = assert(io.open(path, "w"))
-    for i=1,#data do	-- #data = nombre de lignes
-        for j=1,#data[i] do	-- #data[i] = nombre de colonnes
+    for i = 1,#data do	-- #data = nombre de lignes
+        for j = 1,#data[i] do	-- #data[i] = nombre de colonnes
             if j>1 then file:write(sep) end
             file:write(data[i][j])	-- data[i][j] = donnée de la case ieme ligne et jeme colonne
         end

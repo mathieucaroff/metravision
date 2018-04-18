@@ -46,12 +46,12 @@ local fps = vid:get{cv.CAP_PROP_FPS} 	-- images par seconde
 local cptframe = 0			-- compteur image
 local oldtps = 0			-- temps début
 local tps = 0				-- temps actuel
-data ={{'Temps','Nombre de Motos'}}	-- données à écriture dans fichier résultats.xlsx
+data = {{'Temps','Nombre de Motos'}}	-- données à écriture dans fichier résultats.xlsx
 
 local pMOG2 = cv.BackgroundSubtractorMOG2{} 	-- Background Subtractor
 local _, frame = vid:read{}			-- booléen , image actuelle
 -- 30 premières images pour créer le fond fixe de l'image pour le BS
-for i=1,30 do
+for i = 1, 30 do
 	if not(vid:read{frame}) then
 		break
 	end
@@ -62,9 +62,9 @@ end
 
 local width = frame:size()[1]	-- largeur
 local length = frame:size()[2]	-- longueur
-local Img = torch.Tensor(width,length):zero() 
+local Img = torch.Tensor(width, length):zero() 
 Img = cv.cvtColor{frame, nil, cv.COLOR_BGR2GRAY}  
-local Imgpred = torch.Tensor(width,length):zero()
+local Imgpred = torch.Tensor(width, length):zero()
 Imgpred = cv.cvtColor{frame, nil, cv.COLOR_BGR2GRAY}
 
 local CoordTrack = {} 	-- Liste des coordonnées des trackers
@@ -72,7 +72,7 @@ local NTrack = 0	-- Nombre de trackers
 local VTrack = 5	-- Vitesse du traquer (en pixels/image)
 local TVTab = 5		-- Taille du tableau des 5 dernières vitesses
 local VTab = {}		-- Liste des vitesses des trackers
-for i=1,TVTab do VTab[i] = VTrack end
+for i = 1, TVTab do VTab[i] = VTrack end
 local cpt = 0		-- compteur de motos par 6 minutes
 local cptglb = 0	-- compteur global (total)
 
@@ -113,7 +113,7 @@ while true do
 		key = 0
 		pause = not pause
 		printTRM("en pause")
-		key=cv.waitKey{0}
+		key = cv.waitKey{0}
 	elseif key == key_ESCAPE or key == key_Q then -- quitter avec les touches Echap ou Q
 		printTRM("quitter")
 		break
@@ -123,7 +123,7 @@ while true do
 
 		if not(vid:read{frame}) then	-- fin de la vidéo
 			printTRM("Fin de la video")
-			key=cv.waitKey{0}
+			key = cv.waitKey{0}
 			break
 		end
 		cptframe = cptframe + 1
@@ -132,13 +132,13 @@ while true do
 		local Imgpred = cv.cvtColor{frame, nil, cv.COLOR_BGR2GRAY}
 
 		local fgMaskMOG2 = pMOG2:apply{frame}								-- application du Background Subtractor
-		local Mask = torch.ByteTensor(fgMaskMOG2:size()[1],fgMaskMOG2:size()[2]):copy(fgMaskMOG2)	-- image du Background Subtractor
+		local Mask = torch.ByteTensor(fgMaskMOG2:size()[1], fgMaskMOG2:size()[2]):copy(fgMaskMOG2)	-- image du Background Subtractor
 
-		cv.threshold{Mask, Mask, 100, 255, cv.THRESH_BINARY} -- pixels entre 0 et 100 =0 (noir), pixels entre 100 et 255 =255 (blanc)
+		cv.threshold{Mask, Mask, 100, 255, cv.THRESH_BINARY} -- pixels entre 0 et 100 = 0 (noir), pixels entre 100 et 255 = 255 (blanc)
 
-		local erodeElement = cv.getStructuringElement{ cv.MORPH_RECT, cv.Size{4,4}}
+		local erodeElement = cv.getStructuringElement{ cv.MORPH_RECT, cv.Size{4, 4}}
 		cv.erode{Mask, Mask, erodeElement}	-- erode pixels blancs de 4 dans la longueur et la largeur
-		local dilateElement = cv.getStructuringElement{ cv.MORPH_RECT, cv.Size{5,5}}
+		local dilateElement = cv.getStructuringElement{ cv.MORPH_RECT, cv.Size{5, 5}}
 		cv.dilate{Mask, Mask, dilateElement}	-- dilate pixels blancs de 5 dans la longueur et la largeur
 
 		-- Filtre negatif
@@ -163,50 +163,50 @@ while true do
 		local keypoints = detector:detect{Mask}			-- liste des coordonnées des centres de blobs
 		local ImgBlob = cv.drawKeypoints{Mask, keypoints}	-- Mask + keypoints
 
-		local CoordPredicted = torch.Tensor(keypoints.size,2):zero() -- liste des coordonnées des centres de blobs
+		local CoordPredicted = torch.Tensor(keypoints.size, 2):zero() -- liste des coordonnées des centres de blobs
 		local NPredicted = 0	-- nombre de prédictions
 
-		for k=1,keypoints.size do
+		for k = 1, keypoints.size do
 			local x = keypoints.data[k].pt.x	-- coordonnées des points clés
 			local y = keypoints.data[k].pt.y
 			if y+L/2-1<width and y-L/2>1 and x-l/2>1 and x+l/2-1<length then	-- pour ne pas dépasser du cadre de l'image
-				local sub = torch.Tensor(1,L,l):copy(Imgpred:sub(y-L/2,y+L/2-1,x-l/2,x+l/2-1))	-- découpage de l'echantillon à prédire
+				local sub = torch.Tensor(1, L, l):copy(Imgpred:sub(y-L/2, y+L/2-1, x-l/2, x+l/2-1))	-- découpage de l'echantillon à prédire
 				-- local tps = os.clock() -- calcul temps pour traverser le réseau
-				local predicted = net:forward(sub:view(1,L,l))					-- prediction de l'echantillon
+				local predicted = net:forward(sub:view(1, L, l))					-- prediction de l'echantillon
 				-- tps = (os.clock() - tps)
 				-- printTRM(tps) -- durée d'une prédiction en seconde 
-				if predicted[1]==1 then		-- si prédiction >= seuil
+				if predicted[1] == 1 then		-- si prédiction >= seuil
 					NPredicted = NPredicted + 1
 					CoordPredicted[NPredicted][1] = x
 					CoordPredicted[NPredicted][2] = y
 					-- dessine cercles rouges sur la moto predite
-					for i=10,26,8 do
-						cv.circle{frame, center={x, y-10}, radius= i, color = {0,0,255},1,8,0}
+					for i = 10, 26, 8 do
+						cv.circle{frame, center = {x, y-10}, radius = i, color = {0, 0, 255}, 1, 8, 0}
 					end	
 				end
 				-- dessine un rectangle blanc à chaque prediction dans la fenetre en N&B
-				cv.rectangle{Img, pt1={x-l/2, y-L/2}, pt2={x+l/2-1, y+L/2-1}, color = {255,255,255}}
+				cv.rectangle{Img, pt1 = {x-l/2, y-L/2}, pt2 = {x+l/2-1, y+L/2-1}, color = {255, 255, 255}}
 			end
 		end
 
 		local Coordchange = {}
-		for i=1,NTrack do Coordchange[i] = false end
+		for i = 1, NTrack do Coordchange[i] = false end
 
-		for i=1,NPredicted do
+		for i = 1, NPredicted do
 			local new = true	-- variable nouvelle moto
-			for j=1,NTrack do
+			for j = 1, NTrack do
 				-- si la distance entre l'ordonnée de l'ancienne prediction (traker) et le blob actuel < 50
 				-- si la distance entre l'abscisse de l'ancienne prediction et le blob actuel < 30
 				if math.abs(CoordTrack[j][1]-CoordPredicted[i][1])<50 and math.abs(CoordTrack[j][2]-CoordPredicted[i][2])<30 then
 					new = false	-- ce n'est pas une nouvelle moto
 					if math.abs(CoordTrack[j][2]-CoordPredicted[i][2])<15 then	-- si la vitesse (pixels/image) est <15
-						table.remove(VTab,1)					-- on supprime la vitesse la plus ancienne du tableau
-						table.insert(VTab,math.abs(CoordTrack[j][2]-CoordPredicted[i][2]))	-- on y ajoute la vitesse actuelle
-						m=0	-- calcul vitesse moyenne
-						for a=1,TVTab do
-							m=m+VTab[a]
+						table.remove(VTab, 1)					-- on supprime la vitesse la plus ancienne du tableau
+						table.insert(VTab, math.abs(CoordTrack[j][2]-CoordPredicted[i][2]))	-- on y ajoute la vitesse actuelle
+						m = 0	-- calcul vitesse moyenne
+						for a = 1, TVTab do
+							m = m+VTab[a]
 						end
-						VTrack=m/TVTab
+						VTrack = m/TVTab
 					end
 					-- Actualisation des coordonnées : copie des coordonnées predites dans tracker
 					CoordTrack[j][1] = CoordPredicted[i][1]
@@ -214,24 +214,24 @@ while true do
 					CoordTrack[j][3] = CoordTrack[j][3] + 1
 					Coordchange[j] = true
 					--if CoordTrack[j][3] > 5 then	-- cercle bleu indique que la moto sera comptée
-					--	cv.circle{frame, center={CoordTrack[j][1], CoordTrack[j][2]-10}, radius=5, color = {255,0,0},1,4,0}
+					--	cv.circle{frame, center = {CoordTrack[j][1], CoordTrack[j][2]-10}, radius = 5, color = {255, 0, 0}, 1, 4, 0}
 					--end
 				end
 			end
 			if new then	-- si nouvelle moto détectée
 				NTrack = NTrack + 1	-- dessine cercle vert sur la moto predite
-				cv.circle{frame, center={CoordPredicted[i][1], CoordPredicted[i][2]-10}, radius= 26, color = {0,255,0},1,8,0}
-				table.insert(CoordTrack,{CoordPredicted[i][1],CoordPredicted[i][2],1})	-- ajoute coordonnées dans le tableau des coordonnées
+				cv.circle{frame, center = {CoordPredicted[i][1], CoordPredicted[i][2]-10}, radius = 26, color = {0, 255, 0}, 1, 8, 0}
+				table.insert(CoordTrack, {CoordPredicted[i][1], CoordPredicted[i][2], 1})	-- ajoute coordonnées dans le tableau des coordonnées
 			end
 		end
 
-		for j=1,NTrack do
+		for j = 1, NTrack do
 			if not(Coordchange[i]) then	-- si les coordonnées n'ont pas été actualisées, on effectue une prediction à l'emplacement du tracker
 				if CoordTrack[j][1]-l/2>1 and CoordTrack[j][2]-L/2>1 and CoordTrack[j][1]+l/2-1<length and CoordTrack[j][2]+L/2-1<width then
-					local sub = torch.Tensor(1,L,l):copy(Imgpred:sub(CoordTrack[j][2]-L/2,CoordTrack[j][2]+L/2-1,CoordTrack[j][1]-l/2,CoordTrack[j][1]+l/2-1))
-					local predicted = net:forward(sub:view(1,L,l))
-					if predicted[1]==1 then	-- dessine un rectangle vert sur la moto traquee
-						cv.rectangle{frame, pt1={CoordTrack[j][1]-l/2, CoordTrack[j][2]-L/2}, pt2={CoordTrack[j][1]+l/2-1, CoordTrack[j][2]+L/2-1}, color = {0,255,0}}
+					local sub = torch.Tensor(1, L, l):copy(Imgpred:sub(CoordTrack[j][2]-L/2, CoordTrack[j][2]+L/2-1, CoordTrack[j][1]-l/2, CoordTrack[j][1]+l/2-1))
+					local predicted = net:forward(sub:view(1, L, l))
+					if predicted[1] == 1 then	-- dessine un rectangle vert sur la moto traquee
+						cv.rectangle{frame, pt1 = {CoordTrack[j][1]-l/2, CoordTrack[j][2]-L/2}, pt2 = {CoordTrack[j][1]+l/2-1, CoordTrack[j][2]+L/2-1}, color = {0, 255, 0}}
 						CoordTrack[j][3] = CoordTrack[j][3] + 1
 					end
 				end
@@ -239,12 +239,12 @@ while true do
 		end
 
 		local j = 1	-- permet d'effacer les doublons
-		while j<=NTrack and j>0 do
+		while j<= NTrack and j>0 do
 			local k = 1
-			while k<=NTrack and k>0 and j>0 do
-				if k~=j then
+			while k<= NTrack and k>0 and j>0 do
+				if k~= j then
 					if CoordTrack[j][2] == CoordTrack[k][2] then
-						table.remove(CoordTrack,k)
+						table.remove(CoordTrack, k)
 						NTrack = NTrack-1
 						j = j-1
 						k = k-1
@@ -255,13 +255,13 @@ while true do
 			j = j+1
 		end
 
-		j=1
-		while j<=NTrack and j>0 do	-- tous les trackers avancent de Vtrack pixels s'ils ne dépassent pas de l'image
+		j = 1
+		while j<= NTrack and j>0 do	-- tous les trackers avancent de Vtrack pixels s'ils ne dépassent pas de l'image
 			if CoordTrack[j][1]-l/2>1 and CoordTrack[j][2]-L/2>1 and CoordTrack[j][1]+l/2-1<length and CoordTrack[j][2]+L/2-1<width then
-				local sub = torch.Tensor(1,L,l):copy(Imgpred:sub(CoordTrack[j][2]-L/2,CoordTrack[j][2]+L/2-1,CoordTrack[j][1]-l/2,CoordTrack[j][1]+l/2-1))
-				local predicted = net:forward(sub:view(1,L,l))
+				local sub = torch.Tensor(1, L, l):copy(Imgpred:sub(CoordTrack[j][2]-L/2, CoordTrack[j][2]+L/2-1, CoordTrack[j][1]-l/2, CoordTrack[j][1]+l/2-1))
+				local predicted = net:forward(sub:view(1, L, l))
 				if predicted[1]>0.8 then
-					cv.rectangle{frame, pt1={CoordTrack[j][1]-l/2-1, CoordTrack[j][2]-L/2-1}, pt2={CoordTrack[j][1]+l/2-1+1, CoordTrack[j][2]+L/2-1+1}, color = {255,0,0}}
+					cv.rectangle{frame, pt1 = {CoordTrack[j][1]-l/2-1, CoordTrack[j][2]-L/2-1}, pt2 = {CoordTrack[j][1]+l/2-1+1, CoordTrack[j][2]+L/2-1+1}, color = {255, 0, 0}}
 				end
 				CoordTrack[j][2] = CoordTrack[j][2]+VTrack
 			else	-- si hors cadre
@@ -269,30 +269,30 @@ while true do
 					cpt = cpt+1
 					cptglb = cptglb+1
 				end	-- supprime les données de la moto
-				table.remove(CoordTrack,j)
+				table.remove(CoordTrack, j)
 				NTrack = NTrack-1
 				j = j-1
 			end
 			j = j+1
 		end
 
-		if cptframe>=fps then	-- calcul du temps via compteur de frame
+		if cptframe>= fps then	-- calcul du temps via compteur de frame
 			cptframe = 0
 			tps = tps + 1
-			if tps%(6*60)==0 and tps~=0 then	-- découpage par tranche de 6 minutes
-				table.insert(data,{math.floor(oldtps/60) .. ':00' .. '-' .. math.floor(tps/60) .. ':00',cpt})
+			if tps%(6*60) == 0 and tps~= 0 then	-- découpage par tranche de 6 minutes
+				table.insert(data, {math.floor(oldtps/60) .. ':00' .. '-' .. math.floor(tps/60) .. ':00', cpt})
 				oldtps = tps
 				cpt = 0
 			end
 		end
 		-- affichage du temps et du compteur de motos en haut de la frame
-		cv.rectangle{frame, pt1={0, 0}, pt2={60, 20}, color = {255,255,255},thickness=-1}
-		cv.putText{frame,string.format('%02d',math.floor(tps/60)) .. ':' .. string.format('%02d',tps%60),{3,16},cv.FONT_HERSHEY_SIMPLEX,0.6,{0,0,0},2}
-		cv.rectangle{frame, pt1={length-290, 0}, pt2={length, 20}, color = {255,255,255},thickness=-1}
+		cv.rectangle{frame, pt1 = {0, 0}, pt2 = {60, 20}, color = {255, 255, 255}, thickness =-1}
+		cv.putText{frame, string.format('%02d', math.floor(tps/60)) .. ':' .. string.format('%02d', tps%60), {3, 16}, cv.FONT_HERSHEY_SIMPLEX, 0.6, {0, 0, 0}, 2}
+		cv.rectangle{frame, pt1 = {length-290, 0}, pt2 = {length, 20}, color = {255, 255, 255}, thickness =-1}
 		if cptglb>1 then
-			cv.putText{frame,string.format('Traqumoto compte %d motos',cptglb),{length-290,16},cv.FONT_HERSHEY_SIMPLEX,0.6,{0,0,0},2}
+			cv.putText{frame, string.format('Traqumoto compte %d motos', cptglb), {length-290, 16}, cv.FONT_HERSHEY_SIMPLEX, 0.6, {0, 0, 0}, 2}
 		else
-			cv.putText{frame,string.format('Traqumoto compte %d moto',cptglb),{length-290,16},cv.FONT_HERSHEY_SIMPLEX,0.6,{0,0,0},2}
+			cv.putText{frame, string.format('Traqumoto compte %d moto', cptglb), {length-290, 16}, cv.FONT_HERSHEY_SIMPLEX, 0.6, {0, 0, 0}, 2}
 		end
 
 		-- affichage des fenetres
@@ -312,11 +312,11 @@ while true do
 			cv.imshow{'win5', frame}
 		end
 		
-		key=cv.waitKey{1} -- temps entre chaque image en ms
+		key = cv.waitKey{1} -- temps entre chaque image en ms
 	end
 end
 -- Ecriture du temps au format excel
-table.insert(data,{math.floor(oldtps/60) .. ':00' .. '-' .. math.floor(tps/60) .. ':' .. string.format('%02d',tps%60),cpt})
+table.insert(data, {math.floor(oldtps/60) .. ':00' .. '-' .. math.floor(tps/60) .. ':' .. string.format('%02d', tps%60), cpt})
 
 cv.destroyAllWindows{}
 

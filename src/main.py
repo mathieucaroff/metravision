@@ -71,7 +71,8 @@ def lecture(cap, windowName, updateWindows, windowShape, barProperties, redCross
     oneBeforeLast_fgMask = last_fgMask
 
     # Background subtractor initialisation
-    bgSub, blobDetector = analyse.setupAnalyseTools()
+    bgSub, blobDetector, mvTrackerCreator = analyse.setupAnalyseTools()
+    trackerList = []
 
     referenceTime = time.clock()
     for loopIndex in range(1_000_000_000):
@@ -79,10 +80,20 @@ def lecture(cap, windowName, updateWindows, windowShape, barProperties, redCross
         #! viewSet = im
 
         # Capture frame-by-frame
-        ok, im["frame"] = cap.read()
+        ok = False
+        notOkCount = 0
+        while not ok:
+            ok, im["frame"] = cap.read()
+            if not ok:
+                notOkCount += 1
+                printMV("Not ok!")
+                if notOkCount >= 3:
+                    printMV("Not ok >= 3 -- break")
+                    break
+            else:
+                notOkCount = 0
 
-
-        analyse.analyse(bgSub, blobDetector, im, last_fgMask, oneBeforeLast_fgMask)
+        trackerList = analyse.analyse(bgSub, blobDetector, mvTrackerCreator, trackerList, im, last_fgMask, oneBeforeLast_fgMask, glob)
 
         # End of image operations
         oneBeforeLast_fgMask = last_fgMask
@@ -96,7 +107,7 @@ def lecture(cap, windowName, updateWindows, windowShape, barProperties, redCross
         continuing = window.waitkey(windowName, controlledTime, redCrossEnabled)
         last_fgMask = im["fgMask"]
 
-        if continuing == "break" or not ok:
+        if continuing == "break":
             break
 
 

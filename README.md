@@ -12,9 +12,13 @@ license.
 
 The project depends on anaconda packages. To retrieve them, you should install miniconda or anaconda, then use
 ```
-conda install -c conda-forge opencv pyyaml
+conda install -c conda-forge opencv pyyaml ipython
 ```
-to install them. If you are on Windows, you'll want to use
+to install them. If you are on Windows, you'll want to use the Anaconda Prompt.
+If you want to develop the project, you may want to install the python packages `pylint` and `rope`. You can do so with the command:
+```
+conda install pylint rope
+```
 
 ## Using git
 

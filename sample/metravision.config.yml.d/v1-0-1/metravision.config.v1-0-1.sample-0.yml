@@ -3,18 +3,17 @@
 networkDestination: /your/path
 networkLocation: /your/path.t7
 resultDestination: /your/path.csv
+windowName: Metravision
+redCrossEnabled: true
 training:
     iterationCount: 1
     threashold: 0.60
 network:
     imgWidth: 60
     imgHeight: 120 # Dimensions normalisées en entrée du réseau de neuronne.
-activeWindows:
-    nb: true # Vidéo en niveaux de gris avec prédictions effectuées (rectangles blancs)
-    bcgSub: false # Masque Background Subtractor, fond en noir et pixels en mouvement en blanc
-    mask: false # BS + Fonctions Eroder & Dilater
-    blob: true # BS + E&D + détection blobs
-    detection: true # Vidéo avec trackers + compteur + temps
+window:
+    height: 800
+    width: 960
 image:
     directoryLocation: /path/to/image-dataset
     nameFormat: "%06d.png"

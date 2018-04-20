@@ -5,7 +5,7 @@ Ajoute une bare de progression de lecture en bas d'une fenêtre.
 Permet à l'utilisateur d'aller à n'importe quel point de la vidéo.
 """
 
-def setupClickHook(windowName, bufferShape, sensitivityHeight, jumpToFrameFunction):
+def setupClickHook(mouseCallbackList, bufferShape, sensitivityHeight, jumpToFrameFunction):
     """
     Ajoute un évènement à la fenêtre window qui détècte les clicks dans la partie inférieur de la fenêtre.
     Lors de tels cliques se produisent, execute jumpToFrameFunction
@@ -16,8 +16,8 @@ def setupClickHook(windowName, bufferShape, sensitivityHeight, jumpToFrameFuncti
         if event == cv2.EVENT_LBUTTONDOWN:
             if y > height - sensitivityHeight:
                 jumpToFrameFunction(x / width)
-    cv2.namedWindow(windowName)
-    cv2.setMouseCallback("Metravision", evListener)
+    
+    mouseCallbackList.append(evListener)
 
 def drawBar(barProperties, buffer, advancementPercentage):
     """
@@ -25,7 +25,7 @@ def drawBar(barProperties, buffer, advancementPercentage):
     La barre fait barProperties.height pixels de haut et est de couleur barProperties.fgCol (BGR) à gauche,
     et barProperties.bgCol (BGR) à droite.
     """
-    height = barProperties.height
+    height = barProperties.shape[0]
     width = buffer.shape[1]
     advancementPx = int(advancementPercentage * width)
     buffer[-height:, :advancementPx, :] = barProperties.fgCol

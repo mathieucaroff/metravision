@@ -8,20 +8,31 @@ import collections
 
 from util import Namespace, printMV, printMVerr
 import ihm.window as window
-from ihm.progressBar import setupClickHook
 
 import parseConfig
 
-import sys
-print(sys.version)
+import analyse
 
+import sys
+printMV(sys.version)
+
+sys.path[:0] = ["src", "."]
 
 glob = Namespace()
 
+def jumpTo(cap, fraction):
+    frameCount = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    frameIndex = int(fraction * frameCount)
+    cap.set(cv2.CAP_PROP_POS_FRAMES, frameIndex)
 
 def main():
     with open("metravision.config.yml") as configFile:
         config = parseConfig.MvConfig.fromConfigFile(configFile)
+
+    windowName = config.raw.windowName
+    windowHeight = config.raw["window"]["height"]
+    windowWidth = config.raw["window"]["width"]
+    windowShape = (windowHeight, windowWidth)
 
     videoPath = random.choice(config.video.files)
     try:
@@ -35,17 +46,19 @@ def main():
     def jumpToFrameFunction(advancementPercentage):
         jumpTo(cap, advancementPercentage)
 
-    height = 800
-    width = 960
-    setupClickHook("Metravision", (height, width), 30, jumpToFrameFunction)
+    updateWindows, barProperties = window.setup(
+        windowName = windowName,
+        windowShape = windowShape,
+        jumpToFrameFunction = jumpToFrameFunction)
 
-    lecture(cap)
+    lecture(cap, windowName, updateWindows, windowShape, barProperties, config.raw.redCrossEnabled)
 
     # When everything done, release the capture
     cap.release()
     cv2.destroyAllWindows()
 
-def lecture(cap):
+
+def lecture(cap, windowName, updateWindows, windowShape, barProperties, redCrossEnabled):
     frameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -55,8 +68,10 @@ def lecture(cap):
     jumpTo(cap, random.random() * 3 / 4)
 
     last_fgMask = np.zeros((height, width), dtype = np.uint8) # Temporary value
+    oneBeforeLast_fgMask = last_fgMask
 
-    bgSub = cv2.createBackgroundSubtractorMOG2()
+    # Background subtractor initialisation
+    bgSub, blobDetector = analyse.setupAnalyseTools()
 
     referenceTime = time.clock()
     for loopIndex in range(1_000_000_000):
@@ -66,68 +81,24 @@ def lecture(cap):
         # Capture frame-by-frame
         ok, im["frame"] = cap.read()
 
-        if not ok:
-            return "break", None
 
-        analyse(bgSub, im, last_fgMask)
+        analyse.analyse(bgSub, blobDetector, im, last_fgMask, oneBeforeLast_fgMask)
 
         # End of image operations
+        oneBeforeLast_fgMask = last_fgMask
         last_fgMask = im["fgMask"]
 
         # Display the resulting frame
         advancementPercentage = cap.get(cv2.CAP_PROP_POS_FRAMES) / frameCount
-        window.window(im, advancementPercentage)
+        window.window(im, advancementPercentage, updateWindows, windowShape, barProperties)
 
         controlledTime = (referenceTime + timePerFrame * loopIndex) - time.clock()
-        continuing = window.waitkey(controlledTime)
+        continuing = window.waitkey(windowName, controlledTime, redCrossEnabled)
         last_fgMask = im["fgMask"]
 
-        if continuing == "break":
+        if continuing == "break" or not ok:
             break
 
-
-def analyse(bgSub, im, last_fgMask):
-    im["fgMask"] = bgSub.apply(image = im["frame"]) # , learningRate = 0.5)
-
-    # Two-frame and
-    im["bitwise_fgMask_and"] = cv2.bitwise_and(im["fgMask"], last_fgMask)
-
-    # erodeAndDilate
-    mask = im["bitwise_fgMask_and"]
-
-    erodeA = 2
-    dilateA = 30
-    erodeB = 35
-    dilateB = 30 # erodeA + erodeB - dilateA
-
-    mask = cv2.erode(mask, easyKernel(erodeA))
-    im["erodeMaskA"] = mask
-
-    mask = cv2.dilate(mask, easyKernel(dilateA))
-    im["dilateMaskA"] = mask
-
-    mask = cv2.erode(mask, easyKernel(erodeB))
-    im["erodeMaskB"] = mask
-
-    mask = cv2.dilate(mask, easyKernel(dilateB))
-    im["dilateMaskB"] = mask
-
-    # edMask = mask
-
-    im["bitwise_fgMask_dilateB_and"] = cv2.bitwise_and(mask, im["fgMask"])
-
-def easyKernel(size, sizeX = None):
-    """Generate an OpenCV kernel objet of given size.
-    Note: I haven't checked the sizeX parameter"""
-    sizeY = size
-    if sizeX is None:
-        sizeX = size
-    return cv2.getStructuringElement( cv2.MORPH_ELLIPSE, (sizeY, sizeX) )
-
-def jumpTo(cap, fraction):
-    frameCount = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-    frameIndex = int(fraction * frameCount)
-    cap.set(cv2.CAP_PROP_POS_FRAMES, frameIndex)
 
 if __name__ == "__main__":
     main()

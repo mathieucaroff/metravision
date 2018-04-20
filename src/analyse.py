@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 
+import time
+
 import util
 from util import printMV
 
@@ -180,6 +182,7 @@ def mvTracking(mvTrackerCreator, im, frame, blobKeypoints, trackerList, glob):
     # Add new trakers for blobs whose keypoint location isn't inside a tracker bbox.
     for blob in blobKeypoints:
         if any(util.pointInBbox(blob.pt, mvTracker.bbox) for mvTracker in trackerList):
+            printMV("Found tracker containing blobKeypoint. Leaving it there.")
             continue # Do not create a tracker = continue to next iteration
         # Get and draw bbox:
         bbox = util.bboxFromKeypoint(blob, width_on_height_ratio = 0.5)
@@ -188,12 +191,15 @@ def mvTracking(mvTrackerCreator, im, frame, blobKeypoints, trackerList, glob):
         # Create and register tracker:
         mvTracker = util.Namespace()
         mvTracker.tracker = mvTrackerCreator()
+        printMV(f"Found no tracker containing blobKeypoint. Creating one: {bbox}.")
         mvTracker.tracker.init(frame, bbox)
         mvTracker.ret = True
         mvTracker.bbox = bbox
+        mvTracker.pt = blob.pt
         blue = (255, 0, 0)
         showTracker(im["frame"], mvTracker, blue)
         trackerList.append(mvTracker)
+
 
 def showTracker(frame, mvTracker, color):
     cv2.rectangle(frame, *util.pointsFromBbox(mvTracker.bbox), color, thickness = 6)

@@ -86,7 +86,7 @@ def lecture(cap, windowName, updateWindows, windowShape, barProperties, redCross
             ok, im["frame"] = cap.read()
             if not ok:
                 notOkCount += 1
-                printMV("Not ok!")
+                printMV(f"Not ok! isOpened():{cap.isOpened()}")
                 if notOkCount >= 3:
                     printMV("Not ok >= 3 -- break")
                     break

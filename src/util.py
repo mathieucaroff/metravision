@@ -1,7 +1,6 @@
 import operator
 import math
 
-import cv2
 
 import sys
 
@@ -28,9 +27,8 @@ class RecursiveReadOnlyDotdict(dict):
         return val
     __getattr__ = __getitem__
 
-class Point:
-    def __init__(self, *args, **kwargs):
-        assert not args or not kwargs
+class ArithmeticList:
+    def __init__(self, *args):
         self.coords = list(args)
     
     def __add__(self, other):
@@ -42,6 +40,18 @@ class Point:
     def __div__(self, scalar):
         self._mapOperation( Point( *([scalar] * len(self.coords)) ), operator.truediv )
     
+    def _mapOperation(self, other, operation):
+        assert len(self.coords) == len(other.coords)
+        for i in range(len(self.coords)):
+            self.coords[i] = operation(self.coords[i], other.coords[i])
+
+class Point(ArithmeticList):
+    def __init__(self, *args, **kwargs):
+        assert not args or not kwargs
+        super(Point, self).__init__(self, *args)
+        for key, val in kwargs.items():
+            self.__setattr__(self._indexFromName(key), val)
+    
     def __getattr__(self, name):
         index = self._indexFromName(name)
         return self.coords[index]
@@ -50,13 +60,29 @@ class Point:
         index = self._indexFromName(name)
         self.coords[index] = val
     
-    def _indexFromName(self, name):
+    @staticmethod
+    def _indexFromName(name):
         return {"x": 0, "y": 1, "z": 2}[name]
+
+class Bbox(tuple):
+    def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        super(Bbox, self).__init__(x, y, width, height)
     
-    def _mapOperation(self, other, operation):
-        assert len(self.coords) == len(other.coords)
-        for i in range(len(self.coords)):
-            self.coords[i] = operation(self.coords[i], other.coords[i])
+    @staticmethod
+    def fromKeypoint(keypoint, width_on_height_ratio):
+        pi = 3.125
+        radius = keypoint.size / 2
+        area = pi * radius ** 2
+        width = math.sqrt(width_on_height_ratio * area)
+        height = area / width
+        x = keypoint.pt[0] - width / 2
+        y = keypoint.pt[1] - height / 2
+        bbox = (int(x), int(y), int(width), int(height))
+        return bbox
 
 
 def average(iterable):
@@ -83,18 +109,12 @@ def bboxFromKeypoint(keypoint, width_on_height_ratio = 1):
     bbox = (int(x), int(y), int(width), int(height))
     return bbox
 
-""" 
-def drawBbox(frame, bbox, color, *args, **kwargs):
-    if not args and not "thickness" in kwargs:
-        kwargs["thickness"] = 6
-    p1 = (int(bbox[0]), int(bbox[1]))
-    p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-    cv2.rectangle(frame, p1, p2, color, *args, **kwargs) """
 
 def pointsFromBbox(bbox):
     p1 = (int(bbox[0]), int(bbox[1]))
     p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
     return p1, p2
+
 
 def pointInBbox(pt, bbox):
     left = bbox[0]

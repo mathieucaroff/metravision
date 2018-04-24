@@ -135,6 +135,7 @@ class MvConfig(Dotdict):
     @classmethod
     def __expandImage(cls, imageDatasetDescription):
         """
+        Étends la description du jeu d'image en des
         @param imageDatasetDescription: A yaml-produced hierchy of dict, list and sets describing the image locations.
         @return MvDirectory imageDirectory: Lists of the available image files.
         """

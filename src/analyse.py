@@ -45,6 +45,9 @@ class AnalyseTool():
 
     # Run:
     def run(self, trackerList, im, last_fgMask, oneBeforeLast_fgMask, glob):
+        """
+            
+        """
         # sub = self.bgSub.apply(image = im["frame"]) #, learningRate = 0.05)
         # im["fgMask"] = sub
         im["fgMask"] = im["frame"]

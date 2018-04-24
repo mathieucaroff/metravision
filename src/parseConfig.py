@@ -78,13 +78,13 @@ video:
     assert len(config.image.notBike.test.files) == 3  # 8 / 3 = 2.66 -> ceil: 3
 
     # v Not working for some reason v
-    assert "/path/to/image-dataset\\bike\\000006.png" in config.image["bike"]["test"].files
-    assert "/path/to/image-dataset\\not-bike\\000001.png" in config.image.notBike.learn.files
+    assert os.path.join("/path/to/image-dataset", "bike", "000006.png") in config.image["bike"]["test"].files
+    assert os.path.join("/path/to/image-dataset", "not-bike", "000001.png") in config.image.notBike.learn.files
 
     # Test video file sets
     assert len(config.video.short.files) == 5
-    assert r"/path/to/video\short\8s.mp4" in config.video.short.files
-    assert r"/path/to/video\6min\DerniereSequence.avi" in config.video.medium.files
+    assert os.path.join("/path/to/video", "short", "8s.mp4") in config.video.short.files
+    assert os.path.join("/path/to/video", "6min", "DerniereSequence.avi") in config.video.medium.files
     assert len(config.video.files) == 8
 
 

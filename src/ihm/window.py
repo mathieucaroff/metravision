@@ -4,6 +4,7 @@ import numpy as np
 from util import Namespace
 from util import printMV
 
+from ihm.pausePlay import pauseVid
 import ihm.progressBar
 import ihm.multiView
 
@@ -46,14 +47,16 @@ class MvWindow:
 
     def waitkey(self, controlledTime, redCrossEnabled):
         continuing = "continue"
-        if cv2.waitKey(max(0, int(1000 * controlledTime)) + 1) & 0xFF == ord('q'):
+        key = cv2.waitKey(max(0, int(1000 * controlledTime)) + 1) & 0xFF
+        if key == ord('q'):
             continuing = "break"
+        #elif key == ord('')
         if redCrossEnabled:
             if self.windowClosed():
                 printMV("Window closed")
                 continuing = "break"
         return continuing
-
+        
     def windowClosed(self):
         """Checking for a property of the window to tell whether it is (still) open."""
         v = {"visible": cv2.getWindowProperty(self.windowName, cv2.WND_PROP_VISIBLE)}

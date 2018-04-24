@@ -22,6 +22,7 @@ def calculSD(Countset):
     x_a = x_a / n
 
     xdiff = 0
+    #Calcul of SD
     for j in n:
         x_i = Countset[j]
 
@@ -34,5 +35,5 @@ def calculSD(Countset):
 def creeList():
 
     lt = [1, 1, 1, 1]
-    sd = calculSD(lt)
+    sd = calculSD(lt) #Result expected = 0
     print(sd)

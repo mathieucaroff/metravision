@@ -59,7 +59,6 @@ def lecture(cap, mvWindow, redCrossEnabled, glob):
 
         timeIndex += 1
         controlledTime = (referenceTime + timePerFrame * timeIndex) - time.clock()
-        print(controlledTime)
         if controlledTime < -0.5:
             # Reset the time reference -- the program is too late, catching up will have effect on the playback.
             referenceTime = time.clock()

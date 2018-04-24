@@ -1,11 +1,8 @@
-"""
-Permet la mise en pause et le retour à la lecture de la vidéo dans une fenêtre.
-"""
 import cv2
 import numpy as np
 
-def pauseVid (cap):
-    #cap = cv2.VideoCapture(nom)
+def pausevid ():
+    cap = cv2.VideoCapture(r"C:\Users\eleve\Desktop\Cerema\soleil.avi")
     play = True
     while True:
 
@@ -23,3 +20,16 @@ def pauseVid (cap):
             break
     cap.release()
     cv2.destroyAllWindows()
+pausevid()
+            
+            
+                
+        
+        
+        
+        
+            
+        
+            
+    
+    

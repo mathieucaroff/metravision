@@ -116,7 +116,7 @@ def setupVideoSelectionHook(mouseCallbackList, windowShape):
 
     displayedImageNameList = []
 
-    def updateWindows(imageSet):
+    def updateSubWindows(imageSet):
         imageNameList, _ = zip(*imageSet.items())
 
         if share.press == True:
@@ -136,4 +136,4 @@ def setupVideoSelectionHook(mouseCallbackList, windowShape):
         for imageName in displayedImageNameList:
             cv2.imshow(imageName, imageSet[imageName])
 
-    return updateWindows
+    return updateSubWindows

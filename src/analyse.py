@@ -22,23 +22,24 @@ class AnalyseTool():
 
     @staticmethod
     def mvTrackerCreator():
+        """
+            Crée et renvoie un tracker du type spécifié par la variable.
+        """
         tracker_type = 'KCF'
-        if tracker_type == 'BOOSTING':
-            tracker = cv2.TrackerBoosting_create()
-        if tracker_type == 'MIL':
-            tracker = cv2.TrackerMIL_create()
-        if tracker_type == 'KCF':
-            tracker = cv2.TrackerKCF_create()
-        if tracker_type == 'TLD':
-            tracker = cv2.TrackerTLD_create()
-        if tracker_type == 'MEDIANFLOW':
-            tracker = cv2.TrackerMedianFlow_create()
-        if tracker_type == 'GOTURN':# Bugged
-            tracker = cv2.TrackerGOTURN_create()
-        if tracker_type == 'CSRT':
-            tracker = cv2.TrackerCSRT_create()
-        if tracker_type == 'MOSSE':
-            tracker = cv2.TrackerMOSSE_create()
+
+        tracker_create = {
+            "BOOSTING": cv2.TrackerBoosting_create,
+            "MIL": cv2.TrackerMIL_create,
+            "KCF": cv2.TrackerKCF_create,
+            "TLD": cv2.TrackerTLD_create,
+            "MEDIANFLOW": cv2.TrackerMedianFlow_create,
+            "GOTURN": cv2.TrackerGOTURN_create,
+            "CSRT": cv2.TrackerCSRT_create,
+            "MOSSE": cv2.TrackerMOSSE_create,
+        }[tracker_type]
+
+        tracker = tracker_create()
+
         return tracker
 
 

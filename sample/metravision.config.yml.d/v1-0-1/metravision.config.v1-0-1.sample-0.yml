@@ -31,7 +31,7 @@ image:
 video:
     directoryLocation: /path/to/videos
     short:
-        directoryName: "short"
+        directoryName: "SequencesCourtes"
         files: !!set
             ? 8s.mp4
             ? bouchon-40s.mp4
@@ -39,9 +39,33 @@ video:
             ? soleil-1m32.avi
             ? test-9s.avi
     medium:
-        directoryName: "6min"
+        directoryName: "Sequences6min"
         files: !!set
             ? 1ereSequence.avi
+            ? 08a.avi
+            ? 08b.avi
             ? DerniereSequence.avi
             ? HeureDePointe.avi
+            ? SequenceDebut.avi
+            ? SequenceFin.avi
+            ? SequenceHeureDePointe.avi
     long: null
+stat:
+    -
+        statFile: /path/to/stat1.yml
+        offset: 5m10 # To be adjusted
+        videoDirectoryLocation: /path/to/videos
+        videos: 
+            - 04.avi
+            - 05.avi
+            - 06.avi
+            - 07.avi
+    -
+        statFile: /path/to/stat2.yml
+        offset: 35m20 # ~To be adjusted
+        videoDirectoryLocation: /path/to/videos
+        videos: 
+            - 08.avi
+            - 09.avi
+            - 10.avi
+            - 11.avi

@@ -17,6 +17,10 @@ glob = Namespace()
 
 
 def test_MvConfig():
+    """
+    Test le bon fonctionnement de la classe MvConfig.
+    À mettre à jour à chaque changement ou ajout de fonctionnalité à MvConfig.
+    """
     configData = yaml.load("""
 networkDestination: /your/path
 networkLocation: /your/path.t7
@@ -89,7 +93,9 @@ video:
 
 
 class MvConfig(Dotdict):
-    # collections.namedtuple("AbstractMvConfig", "imageDataset, testVideoFileSets"))
+    """
+    Charge et rend facile l'accès à la configuration de Metravision depuis le reste du programme.
+    """
     def __init__(self):
         Dotdict.__init__(self)
         self.raw = None
@@ -99,6 +105,7 @@ class MvConfig(Dotdict):
     @staticmethod
     def fromConfigFile(configFile):
         """
+        Charge et renvoie la configuration de Metravision à partir d'un objet fichier.
         @param configFile: An opened metravision yaml configuration file.
         @return MvConfig mvConfigObject: An MvConfig object, corresponding to the data.
         """
@@ -108,7 +115,8 @@ class MvConfig(Dotdict):
     @classmethod
     def fromRawConfigData(cls, rawConfigData):
         """
-        @param rawConfigData: A hierchy of dict, list and sets containing the configuration informations
+        Charge et renvoie la configuration de Metravision à partir des données produite par yaml.load à la lecture d'un fichier.
+        @param rawConfigData: A hierarchy of dict, list and sets containing the configuration informations
         @return MvConfig resultConfig: An MvConfig object, corresponding to the data.
         """
         
@@ -127,6 +135,7 @@ class MvConfig(Dotdict):
     @classmethod
     def __expandImage(cls, imageDatasetDescription):
         """
+        Étends la description du jeu d'image en des
         @param imageDatasetDescription: A yaml-produced hierchy of dict, list and sets describing the image locations.
         @return MvDirectory imageDirectory: Lists of the available image files.
         """

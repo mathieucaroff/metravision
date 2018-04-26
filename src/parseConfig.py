@@ -13,7 +13,7 @@ from util import Namespace
 from util import Dotdict, ReadOnlyDotdict, RecursiveReadOnlyDotdict
 
 
-glob = Namespace()
+debug = Namespace()
 
 
 def test_MvConfig():
@@ -70,7 +70,7 @@ video:
     long: null
 """)
     config = MvConfig.fromRawConfigData(configData)
-    glob.config = config
+    debug.config = config
 
     # Image dataset
     assert len(config.image) == 2

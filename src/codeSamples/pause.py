@@ -21,15 +21,3 @@ def pausevid ():
     cap.release()
     cv2.destroyAllWindows()
 pausevid()
-            
-            
-                
-        
-        
-        
-        
-            
-        
-            
-    
-    

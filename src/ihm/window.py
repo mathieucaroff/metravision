@@ -56,7 +56,8 @@ class MvWindow:
                 printMV("Window closed")
                 continuing = "break"
         return continuing
-        
+
+
     def windowClosed(self):
         """Checking for a property of the window to tell whether it is (still) open."""
         v = {"visible": cv2.getWindowProperty(self.windowName, cv2.WND_PROP_VISIBLE)}

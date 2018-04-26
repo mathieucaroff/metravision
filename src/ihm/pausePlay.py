@@ -2,7 +2,6 @@
 Permet la mise en pause et le retour à la lecture de la vidéo dans une fenêtre.
 """
 import cv2
-import numpy as np
 
 def pauseVid (cap):
     #cap = cv2.VideoCapture(nom)

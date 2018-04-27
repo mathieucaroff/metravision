@@ -45,17 +45,16 @@ class MvWindow:
         self.updateSubWindows(imageSet = imageSet)
 
 
-    def waitkey(self, controlledTime, redCrossEnabled):
-        continuing = "continue"
+    def waitkey(self, controlledTime, playbackStatus, redCrossEnabled):
         key = cv2.waitKey(max(0, int(1000 * controlledTime)) + 1) & 0xFF
+        if key == 0xFF:
+            playbackStatus.play = not playbackStatus.play
         if key == ord('q'):
-            continuing = "break"
-        #elif key == ord('')
+            playbackStatus.quit = True
         if redCrossEnabled:
             if self.windowClosed():
                 printMV("Window closed")
-                continuing = "break"
-        return continuing
+                playbackStatus.quit = True
 
 
     def windowClosed(self):

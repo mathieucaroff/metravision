@@ -87,7 +87,10 @@ class Bbox(tuple):
 
 
 def average(iterable):
-    return float(sum(iterable)) / max(len(iterable), 1)
+    """
+        Gives the average of the values in the provided iterable.
+    """
+    return sum(iterable) / max(len(iterable), 1)
 
 
 def printMV(*args, **kwargs):
@@ -129,21 +132,6 @@ def typeVal(val):
     return f"{nl}<{strtype}> {strval}"
 
 
-def logged(func, printer = printMV):
-    """
-        Renvoie une version de la fonction donnée qui affiche les appèles, arguments et valeurs de retour.
-    """
-    @wraps(func)
-    def wrapped_func(*args, **kwargs):
-        argString = ", ".join([*map(str, map(typeVal, args)), *(f"{key} = {typeVal(val)}" for key, val in kwargs.items())])
-        header = f"{func.__name__}({argString})"
-        printer(header)
-        res = func(*args, **kwargs)
-        printer(f"{header} ::: {res}")
-        return res
-    return wrapped_func
-
-
 def bboxFromKeypoint(keypoint, width_on_height_ratio = 1):
     pi = 3.125
     radius = keypoint.size / 2
@@ -170,3 +158,59 @@ def pointInBbox(pt, bbox):
     x = pt[0]
     y = pt[1]
     return left <= x <= right and top <= y <= bottom
+
+
+
+def globbed(**kwargs):
+    """
+        Save the given value at the given key, to the `globbed` object for interactive inspection and debbuging.
+        The function will raise a ValueError if used with more than one keyword argument. It will also do so if used with less than one.
+
+        Usage:
+            In .py file::
+                import util
+                data = util.globbed([("green", "foo"), ("orange", "bar")]
+
+            Then in interactive console::
+                >>> import util
+                >>> print(globbed.data)
+    """
+    if len(kwargs) != 1:
+        raise ValueError
+    
+    key, value = kwargs.items()[0]
+    globbed.__setattr__(key, value)
+
+    return value
+
+
+def nope(*args, **kwargs):
+    "The 'Do nothing' function. Accept any kind of parameter and does nothing."
+    pass
+
+
+# DECORATORS
+def identity(x):
+    "The identity function. Accept one parameter and returns it."
+    return x
+
+
+def logged(func, printer = printMV):
+    """
+        Renvoie une version de la fonction donnée qui affiche les appèles, arguments et valeurs de retour.
+    """
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):
+        argString = ", ".join([*map(str, map(typeVal, args)), *(f"{key} = {typeVal(val)}" for key, val in kwargs.items())])
+        header = f"{func.__name__}({argString})"
+        printer(header)
+        res = func(*args, **kwargs)
+        printer(f"{header} ::: {res}")
+        return res
+    return wrapped_func
+
+
+def globbed(func):
+    """
+        Decorator to capture the returned va
+    """

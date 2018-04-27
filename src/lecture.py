@@ -8,6 +8,7 @@ import cv2
 # import matplotlib.pyplot as plt
 
 from util import printMV
+import util
 
 import analyse
 
@@ -53,6 +54,7 @@ class Lecteur:
         self.playbackStatus = PlaybackStatus(play = True)
         self.timeController = TimeController(self.timePerFrame)
 
+    @util.logged
     def run(self, mvWindow):
         self.timeController.init()
         while self.playbackStatus.play:
@@ -65,12 +67,16 @@ class Lecteur:
                 ok, imageSet["frame"] = self.cap.read()
                 if not ok:
                     notOkCount += 1
-                    printMV(f"Not ok! isOpened():{self.cap.isOpened()}")
+                    if self.cap.isOpened():
+                        printMV(f"Not ok! cap.isOpened() ::: {util.typeVal(self.cap.isOpened())}")
                     if notOkCount >= 3:
                         printMV("Not ok >= 3 -- break")
-                        break
+                        raise RuntimeError
                 else:
                     notOkCount = 0
+            
+            assert ok
+            assert imageSet["frame"] is not None
 
             self.analyseTool.run(imageSet)
 
@@ -80,7 +86,7 @@ class Lecteur:
             mvWindow.update(imageSet, advancementPercentage)
 
             controlledTime = self.timeController.getControlledTime()
-            mvWindow.waitkey(controlledTime, self.redCrossEnabled)
+            mvWindow.waitkey(controlledTime, self.playbackStatus, self.redCrossEnabled)
 
     def initVideoInfo(self, cap):
         self.cap = cap

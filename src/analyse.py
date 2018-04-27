@@ -6,6 +6,7 @@ from util import printMV
 
 class AnalyseTool():
     # Setup:
+    @util.logged
     def __init__(self, vidDimension, debug):
         """
             Parametre et crée le backgroundSubtractor () ainsi que le blob detector.
@@ -43,8 +44,8 @@ class AnalyseTool():
             "TLD": cv2.TrackerTLD_create,
             "MEDIANFLOW": cv2.TrackerMedianFlow_create,
             "GOTURN": cv2.TrackerGOTURN_create,
-            "CSRT": cv2.TrackerCSRT_create,
-            "MOSSE": cv2.TrackerMOSSE_create,
+            # "CSRT": cv2.TrackerCSRT_create,
+            # "MOSSE": cv2.TrackerMOSSE_create,
         }[tracker_type]
 
         tracker = tracker_create()
@@ -53,6 +54,7 @@ class AnalyseTool():
 
 
     # Run:
+    @util.logged
     def run(self, im):
         """
             
@@ -62,7 +64,7 @@ class AnalyseTool():
         
         # Two-frame bitwise AND
 
-        im["bitwise_fgMask_and"] = util.logged(cv2.bitwise_and)(im["fgMask"], self.last_fgMask, self.oneBeforeLast_fgMask)
+        im["bitwise_fgMask_and"] = cv2.bitwise_and(im["fgMask"], self.last_fgMask, self.oneBeforeLast_fgMask)
 
         # erodeAndDilate
         mask = self.erodeAndDilate(im)

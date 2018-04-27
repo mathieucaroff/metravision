@@ -3,37 +3,42 @@ import cv2
 import math
 
 
-from util import Namespace
+from util import Namespace, average
 """
 Calculate the standard deviation (quantify the amount of dispersion) of an ensemble of data.
 """
 
-def calculSD(Countset):
+def calculSD(li, liref):
 
-    n = len(Countset)
+    n = len(li)
+    m = len(liref)
 
-    x_a = 0
+    x_li = 0
+    x_ref = 0
 
-    #x_a = average(Countset)
-    for i in n:
-        x_i = Countset[i]
-        x_a += x_i
+    x_a = average(li)
+    x_aref = average(liref)
 
-    x_a = x_a / n
+    x_i = 0
+    x_iref = 0
 
-    xdiff = 0
-    #Calcul of SD
-    for j in n:
-        x_i = Countset[j]
+    #Calcul of SD - formula Wikipédia Ecart-type
+    for x_i, x_iref in zip(li, liref):
+      x_li += x_i ** 2
+      x_ref += x_iref ** 2  
 
-        xdiff += (x_i - x_a) ^ 2
+    s = ((x_li / n) - x_a ** 2) ** 0.5
+    sref = ((x_ref / m) - x_aref ** 2) ** 0.5
 
-    s = (xdiff / (n - 1)) ^ 0.5
-
-    return s
+    return s, sref
 
 def creeList():
 
     lt = [1, 1, 1, 1]
-    sd = calculSD(lt) #Result expected = 0
-    print(sd)
+    lref = [2, 2, -1, -3]
+    sd, sdref = calculSD(lt, lref) #Result expected = 0, 2.12
+    print(sd, sdref)
+
+
+if __name__ == "__main__":
+    creeList()

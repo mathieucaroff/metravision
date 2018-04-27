@@ -4,7 +4,6 @@ import random
 import time
 
 import cv2
-import numpy as np
 
 # import matplotlib.pyplot as plt
 
@@ -12,66 +11,87 @@ from util import printMV
 
 import analyse
 
-def lecture(cap, mvWindow, redCrossEnabled, glob):
-    frameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    timePerFrame = 1 / fps
+class PlaybackStatus:
+    def __init__(self, play = True, quitting = False):
+        self.play = play
+        self.quitting = quitting
 
-    jumpTo(cap, random.random() * 3 / 4)
 
-    last_fgMask = np.zeros((height, width), dtype = np.uint8) # Temporary value
-    oneBeforeLast_fgMask = last_fgMask
+class TimeController:
+    """
+        To ensure a regular time flow in the application.
+    """
+    def __init__(self, timePerFrame):
+        self.timePerFrame = timePerFrame
+        self.init()
+    
+    def init(self):
+        self.referenceTime = time.clock()
+        self.timeIndex = 0
 
-    # Background subtractor initialisation
-    analyseTool = analyse.AnalyseTool()
-    trackerList = []
-
-    referenceTime = time.clock()
-    timeIndex = 0
-    while True:
-        im = collections.OrderedDict()
-        #! viewSet = im
-
-        # Capture frame-by-frame
-        ok = False
-        notOkCount = 0
-        while not ok:
-            ok, im["frame"] = cap.read()
-            if not ok:
-                notOkCount += 1
-                printMV(f"Not ok! isOpened():{cap.isOpened()}")
-                if notOkCount >= 3:
-                    printMV("Not ok >= 3 -- break")
-                    break
-            else:
-                notOkCount = 0
-
-        # trackerList = analyseTool.run(trackerList, im, last_fgMask, oneBeforeLast_fgMask, glob)
-
-        # End of image operations
-        # oneBeforeLast_fgMask = last_fgMask
-        # last_fgMask = im["fgMask"]
-
-        # Display the resulting frame
-        advancementPercentage = cap.get(cv2.CAP_PROP_POS_FRAMES) / frameCount
-        mvWindow.update(im, advancementPercentage)
-
-        timeIndex += 1
-        controlledTime = (referenceTime + timePerFrame * timeIndex) - time.clock()
+    def getControlledTime(self):
+        self.timeIndex += 1
+        controlledTime = (self.referenceTime + self.timePerFrame * self.timeIndex) - time.clock()
         if controlledTime < -0.5:
-            # Reset the time reference -- the program is too late, catching up will have effect on the playback.
-            referenceTime = time.clock()
-            timeIndex = 0
-        continuing = mvWindow.waitkey(controlledTime, redCrossEnabled)
-        # last_fgMask = im["fgMask"]
-
-        if continuing == "break":
-            break
+            # Reset the time reference -- the program is too late, catching up will have perceptible effect on the playback.
+            self.init()
+        if controlledTime <= 0:
+            controlledTime = 0
+        return controlledTime
 
 
-def jumpTo(cap, fraction):
-    frameCount = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-    frameIndex = int(fraction * frameCount)
-    cap.set(cv2.CAP_PROP_POS_FRAMES, frameIndex)
+class Lecteur:
+    def __init__(self, cap, redCrossEnabled, debug):
+        self.initVideoInfo(cap)
+        self.redCrossEnabled = redCrossEnabled
+
+        self.jumpTo(random.random() * 3 / 4)
+
+        # Background subtractor initialisation
+        self.analyseTool = analyse.AnalyseTool(vidDimension = self.vidDimension, debug = debug)
+
+        self.playbackStatus = PlaybackStatus(play = True)
+        self.timeController = TimeController(self.timePerFrame)
+
+    def run(self, mvWindow):
+        self.timeController.init()
+        while self.playbackStatus.play:
+            imageSet = collections.OrderedDict()
+
+            # Capture frame-by-frame
+            ok = False
+            notOkCount = 0
+            while not ok:
+                ok, imageSet["frame"] = self.cap.read()
+                if not ok:
+                    notOkCount += 1
+                    printMV(f"Not ok! isOpened():{self.cap.isOpened()}")
+                    if notOkCount >= 3:
+                        printMV("Not ok >= 3 -- break")
+                        break
+                else:
+                    notOkCount = 0
+
+            self.analyseTool.run(imageSet)
+
+            # End of image operations
+            # Display the resulting frame
+            advancementPercentage = self.cap.get(cv2.CAP_PROP_POS_FRAMES) / self.frameCount
+            mvWindow.update(imageSet, advancementPercentage)
+
+            controlledTime = self.timeController.getControlledTime()
+            mvWindow.waitkey(controlledTime, self.redCrossEnabled)
+
+    def initVideoInfo(self, cap):
+        self.cap = cap
+        self.frameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        self.width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        self.fps = cap.get(cv2.CAP_PROP_FPS)
+        self.timePerFrame = 1 / self.fps
+        self.vidDimension = (self.height, self.width)
+
+    def jumpTo(self, fraction):
+        frameCount = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        frameIndex = int(fraction * frameCount)
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, frameIndex)

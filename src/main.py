@@ -13,7 +13,7 @@ printMV(sys.version)
 
 sys.path[:0] = ["src", "."]
 
-glob = Namespace()
+debug = Namespace()
 
 
 def main():
@@ -34,16 +34,19 @@ def main():
 
     cap = cv2.VideoCapture(videoPath)
 
-    def jumpToFrameFunction(advancementPercentage):
-        lecture.jumpTo(cap, advancementPercentage)
-
     try:
+
+        lecteur = lecture.Lecteur(cap, config.raw.redCrossEnabled, debug)
+
+        def jumpToFrameFunction(advancementPercentage):
+            lecteur.jumpTo(advancementPercentage)
+
         mvWindow = window.MvWindow(
             windowName = windowName,
             windowShape = windowShape,
             jumpToFrameFunction = jumpToFrameFunction)
 
-        lecture.lecture(cap, mvWindow, config.raw.redCrossEnabled, glob)
+        lecteur.run(mvWindow)
     finally:
         # When everything done, release the capture
         cap.release()

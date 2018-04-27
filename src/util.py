@@ -1,4 +1,5 @@
 import operator
+from functools import wraps
 import math
 
 
@@ -90,12 +91,57 @@ def average(iterable):
 
 
 def printMV(*args, **kwargs):
+    """
+        Affiche le texte donné, préfixé de l'acronyme de l'application.
+    """
     print("[MV]", *args, **kwargs)
 
 
 def printMVerr(*args, **kwargs):
+    """
+        Affiche le texte donné, préfixé de l'acronyme de l'application, sur la sortie d'erreur.
+    """
     kwargs["file"] = sys.stdout
     printMV(*args, **kwargs)
+
+
+def typeVal(val):
+    """
+        Renvoie la représentation sous forme de chaîne de caractère du type de
+        la valeur donnée et de la valeur elle même.
+
+        Si la représentation de la valeur contient plus de trois quatre lignes,
+        seul la première et la dernière sont concervées.
+
+        Si la représentation est multiligne ou que la chaine complète fait plus
+        de 60 caractère, la valeur renvoyée commence par un retour à la ligne
+    """
+    strtype = str(type(val))
+    strval = str(val)
+    nl = ""
+    if strval.count("\n") > 3:
+        split = strval.split("\n")
+        strval = "\n".join((*split[:1], "(...)", *split[-1:]))
+    if strval.count("\n") > 1:
+        nl = "\n"
+    if len(strtype) + len(strval) > 57:
+        nl = "\n"
+    return f"{nl}<{strtype}> {strval}"
+
+
+def logged(func, printer = printMV):
+    """
+        Renvoie une version de la fonction donnée qui affiche les appèles, arguments et valeurs de retour.
+    """
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):
+        argString = ", ".join([*map(str, map(typeVal, args)), *(f"{key} = {typeVal(val)}" for key, val in kwargs.items())])
+        header = f"{func.__name__}({argString})"
+        printer(header)
+        res = func(*args, **kwargs)
+        printer(f"{header} ::: {res}")
+        return res
+    return wrapped_func
 
 
 def bboxFromKeypoint(keypoint, width_on_height_ratio = 1):

@@ -6,7 +6,12 @@ from util import printMV
 
 class AnalyseTool():
     # Setup:
-    def __init__(self):
+    def __init__(self, vidDimension, debug):
+        """
+            Parametre et crée le backgroundSubtractor () ainsi que le blob detector.
+        """
+        self.debug = debug
+
         # Background subtractor initialisation
         self.bgSub = cv2.createBackgroundSubtractorMOG2()
 
@@ -20,10 +25,14 @@ class AnalyseTool():
         params.maxInertiaRatio = 2
         self.blobDetector = cv2.SimpleBlobDetector_create(params)
 
+        self.last_fgMask = self.oneBeforeLast_fgMask = np.zeros(shape = vidDimension, dtype = np.uint8) # Temporary value
+
+        self.trackerList = []
+
     @staticmethod
     def mvTrackerCreator():
         """
-            Crée et renvoie un tracker du type spécifié par la variable.
+            Crée et renvoie un tracker du type spécifié par la variable tracker_type.
         """
         tracker_type = 'KCF'
 
@@ -44,32 +53,32 @@ class AnalyseTool():
 
 
     # Run:
-    def run(self, trackerList, im, last_fgMask, oneBeforeLast_fgMask, glob):
+    def run(self, im):
         """
             
         """
-        # sub = self.bgSub.apply(image = im["frame"]) #, learningRate = 0.05)
-        # im["fgMask"] = sub
-        im["fgMask"] = im["frame"]
-
+        sub = self.bgSub.apply(image = im["frame"]) #, learningRate = 0.05)
+        im["fgMask"] = sub
+        
         # Two-frame bitwise AND
-        # im["bitwise_fgMask_and"] = cv2.bitwise_and(im["fgMask"], last_fgMask, oneBeforeLast_fgMask)
+
+        im["bitwise_fgMask_and"] = util.logged(cv2.bitwise_and)(im["fgMask"], self.last_fgMask, self.oneBeforeLast_fgMask)
 
         # erodeAndDilate
-        # mask = self.erodeAndDilate(im)
+        mask = self.erodeAndDilate(im)
 
         # Contour
-        #self.contour(im, mask)
+        self.contour(im, mask)
 
         # Blob Detector
-        #frame = im["dilateC"]
-        #blobKeypoints = self.blobDetection(im, frame = frame)
+        frame = im["dilateC"]
+        blobKeypoints = self.blobDetection(im, frame = frame)
 
         # Tracking
-        #frame = im["blob_dilateC"]
-        #self.mvTracking(im, frame, blobKeypoints, trackerList, glob)
+        frame = im["blob_dilateC"]
+        self.mvTracking(im, frame, blobKeypoints, self.debug)
 
-        return trackerList
+        self.last_fgMask, self.oneBeforeLast_fgMask = im["fgMask"], self.last_fgMask
 
     @classmethod
     def erodeAndDilate(cls, im):
@@ -155,9 +164,9 @@ class AnalyseTool():
         return blobKeypoints
 
 
-    def mvTracking(self, im, frame, blobKeypoints, trackerList, glob):
+    def mvTracking(self, im, frame, blobKeypoints, debug):
         # Update trakers
-        for i, mvTracker in enumerate(trackerList):
+        for i, mvTracker in enumerate(self.trackerList):
             mvTracker.ret, mvTracker.bbox = mvTracker.tracker.update(frame) # Error ?
             green = (0, 255, 0)
             printTraker("Updated", i, mvTracker)
@@ -165,16 +174,16 @@ class AnalyseTool():
 
         # Debug code
         try:
-            l = len(glob.trackerList)
+            l = len(debug.trackerList)
         except AttributeError:
             l = 0
-        if len(trackerList) > l:
-            glob.trackerList = trackerList
+        if len(self.trackerList) > l:
+            debug.trackerList = self.trackerList
         
         # bbox: Bounding Box
         # Add new trakers for blobs whose keypoint location isn't inside a tracker bbox.
         for blob in blobKeypoints:
-            if any(util.pointInBbox(blob.pt, mvTracker.bbox) for mvTracker in trackerList):
+            if any(util.pointInBbox(blob.pt, mvTracker.bbox) for mvTracker in self.trackerList):
                 ptx, pty = map(int, blob.pt)
                 printMV(f"Dismissed:: Blob at {ptx, pty}.")
                 continue # Do not create a tracker = continue to next iteration
@@ -190,9 +199,9 @@ class AnalyseTool():
             mvTracker.bbox = bbox
             mvTracker.pt = blob.pt
             blue = (255, 0, 0)
-            printTraker("Created", len(trackerList), mvTracker)
+            printTraker("Created", len(self.trackerList), mvTracker)
             showTracker(im["frame"], mvTracker, blue)
-            trackerList.append(mvTracker)
+            self.trackerList.append(mvTracker)
 
 
 def showTracker(frame, mvTracker, color):

@@ -6,10 +6,9 @@ from util import printMV
 
 class AnalyseTool():
     # Setup:
-    @util.logged
     def __init__(self, vidDimension, debug):
         """
-            Parametre et crée le backgroundSubtractor () ainsi que le blob detector.
+        Parametre et crée le backgroundSubtractor () ainsi que le blob detector.
         """
         self.debug = debug
 
@@ -33,7 +32,7 @@ class AnalyseTool():
     @staticmethod
     def mvTrackerCreator():
         """
-            Crée et renvoie un tracker du type spécifié par la variable tracker_type.
+        Crée et renvoie un tracker du type spécifié par la variable tracker_type.
         """
         tracker_type = 'KCF'
 
@@ -54,10 +53,9 @@ class AnalyseTool():
 
 
     # Run:
-    @util.logged
     def run(self, im):
         """
-            
+        Run the analyse of a frame.
         """
         sub = self.bgSub.apply(image = im["frame"]) #, learningRate = 0.05)
         im["fgMask"] = sub
@@ -78,7 +76,7 @@ class AnalyseTool():
 
         # Tracking
         frame = im["blob_dilateC"]
-        self.mvTracking(im, frame, blobKeypoints, self.debug)
+        self.mvTracking(im, frame, blobKeypoints)
 
         self.last_fgMask, self.oneBeforeLast_fgMask = im["fgMask"], self.last_fgMask
 
@@ -130,7 +128,7 @@ class AnalyseTool():
     @staticmethod
     def contour(im, mask):
         """
-        Detect les contours dans l'image et les dessine.
+        Detecte les contours dans l'image et les dessine.
         """
         red = (0, 0, 255)
 
@@ -166,42 +164,47 @@ class AnalyseTool():
         return blobKeypoints
 
 
-    def mvTracking(self, im, frame, blobKeypoints, debug):
+    def mvTracking(self, im, frame, blobKeypoints):
         # Update trakers
-        for i, mvTracker in enumerate(self.trackerList):
+        oldTrackerList = self.trackerList
+        self.trackerList = []
+        for i, mvTracker in enumerate(oldTrackerList):
             mvTracker.ret, mvTracker.bbox = mvTracker.tracker.update(frame) # Error ?
             green = (0, 255, 0)
-            printTraker("Updated", i, mvTracker)
+            printTracker("Updated", i, mvTracker)
             showTracker(im["frame"], mvTracker, green)
-
-        # Debug code
-        try:
-            l = len(debug.trackerList)
-        except AttributeError:
-            l = 0
-        if len(self.trackerList) > l:
-            debug.trackerList = self.trackerList
+            if not mvTracker.ret or not any(mvTracker in otherMvTracker for otherMvTracker in self.trackerList):
+                for j, otherMvTracker in reversed(list(enumerate(self.trackerList))):
+                    if otherMvTracker in mvTracker:
+                        self.trackerList.pop(j)
+                        printTracker("Removed", j, otherMvTracker)
+                self.trackerList.append(mvTracker)
+            else:
+                printTracker("Removed", i, mvTracker)
+                
+        
+        util.glob(trackerList = self.trackerList)
         
         # bbox: Bounding Box
         # Add new trakers for blobs whose keypoint location isn't inside a tracker bbox.
         for blob in blobKeypoints:
             if any(util.pointInBbox(blob.pt, mvTracker.bbox) for mvTracker in self.trackerList):
-                ptx, pty = map(int, blob.pt)
-                printMV(f"Dismissed:: Blob at {ptx, pty}.")
+                # ptx, pty = map(int, blob.pt)
+                # printMV(f"Dismissed:: Blob at {ptx, pty}.")
                 continue # Do not create a tracker = continue to next iteration
             # Get and draw bbox:
-            bbox = util.bboxFromKeypoint(blob, width_on_height_ratio = 0.5)
+            bbox = util.bboxFromCircle(blob, width_on_height_ratio = 0.5)
             blue = (255, 0, 0)
 
             # Create and register tracker:
-            mvTracker = util.Namespace()
+            mvTracker = util.MvTracker(*bbox)
             mvTracker.tracker = self.mvTrackerCreator()
             mvTracker.tracker.init(frame, bbox)
             mvTracker.ret = True
-            mvTracker.bbox = bbox
             mvTracker.pt = blob.pt
+            mvTracker.size = blob.size
             blue = (255, 0, 0)
-            printTraker("Created", len(self.trackerList), mvTracker)
+            printTracker("Created", len(self.trackerList), mvTracker)
             showTracker(im["frame"], mvTracker, blue)
             self.trackerList.append(mvTracker)
 
@@ -209,5 +212,5 @@ class AnalyseTool():
 def showTracker(frame, mvTracker, color):
     cv2.rectangle(frame, *util.pointsFromBbox(mvTracker.bbox), color, thickness = 6)
 
-def printTraker(msg, i, mvTracker):
-    printMV(f"{msg}:: Tracker {i}: ret {mvTracker.ret}, bbox {mvTracker.bbox} --")
+def printTracker(msg, i, mvTracker):
+    printMV(f"{msg}:: Tracker {i}: ret {mvTracker.ret}, bbox {[int(v) for v in mvTracker.bbox]} --")

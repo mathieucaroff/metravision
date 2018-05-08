@@ -4,7 +4,6 @@ import numpy as np
 from util import Namespace
 from util import printMV
 
-from ihm.pausePlay import pauseVid
 import ihm.progressBar
 import ihm.multiView
 
@@ -46,15 +45,16 @@ class MvWindow:
 
 
     def waitkey(self, controlledTime, playbackStatus, redCrossEnabled):
-        key = cv2.waitKey(max(0, int(1000 * controlledTime)) + 1) & 0xFF
-        if key == 0xFF:
+        key = 0xFF & cv2.waitKey(max(0, int(1000 * controlledTime)) + 1)
+        spacebar = 0x20
+        if key == spacebar:
             playbackStatus.play = not playbackStatus.play
         if key == ord('q'):
-            playbackStatus.quit = True
+            playbackStatus.quitting = True
         if redCrossEnabled:
             if self.windowClosed():
                 printMV("Window closed")
-                playbackStatus.quit = True
+                playbackStatus.quitting = True
 
 
     def windowClosed(self):

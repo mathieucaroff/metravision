@@ -13,6 +13,7 @@ def setupClickHook(mouseCallbackList, bufferShape, sensitivityHeight, jumpToFram
     height = bufferShape[0]
     width = bufferShape[1]
     def evListener(event, x, y, flags, param):
+        _ = flags, param
         if event == cv2.EVENT_LBUTTONDOWN:
             if y > height - sensitivityHeight:
                 jumpToFrameFunction(x / width)

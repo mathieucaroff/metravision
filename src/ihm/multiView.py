@@ -91,7 +91,7 @@ def renderNimages(imageSet, output = None, h = None, w = None):
     return output
 
 
-def setupVideoSelectionHook(mouseCallbackList, windowShape):
+def setupVideoSelectionHook(mouseCallbackList, windowShape, playbackStatus, windowClosed):
     """
     Select and expand the video selected by double click
     """
@@ -103,21 +103,30 @@ def setupVideoSelectionHook(mouseCallbackList, windowShape):
 
     # mouse callback function
     def getPosition(event, x, y, flags, param):
+        _ = flags, param
         """
         Identify double click
         """ 
-        if event == cv2.EVENT_LBUTTONDBLCLK:
+        if event == cv2.EVENT_LBUTTONDOWN:
             share.press = True
             share.pVy = y
             share.pVx = x
+            playbackStatus.refreshNeeded = True
     
-
     mouseCallbackList.append(getPosition)
 
+
     displayedImageNameList = []
+    displayedImageNameListAdd = []
 
     def updateSubWindows(imageSet):
         imageNameList, _ = zip(*imageSet.items())
+        
+        for imageName in list(displayedImageNameList):
+            if windowClosed(imageName):
+                displayedImageNameList.remove(imageName)
+            else:
+                cv2.imshow(imageName, imageSet[imageName])
 
         if share.press == True:
             n = len(imageSet)
@@ -129,11 +138,15 @@ def setupVideoSelectionHook(mouseCallbackList, windowShape):
             j = math.floor(share.pVx / imgwpx)
             m = j + i*w
             if m < n:
-                displayedImageNameList.append(imageNameList[m])
+                imageName = imageNameList[m]
+                if imageName not in displayedImageNameList:
+                    displayedImageNameListAdd.append(imageName)
             
             share.press = False
         
-        for imageName in displayedImageNameList:
+        for imageName in displayedImageNameListAdd:
             cv2.imshow(imageName, imageSet[imageName])
+        displayedImageNameList.extend(displayedImageNameListAdd)
+        displayedImageNameListAdd[:] = []
 
     return updateSubWindows

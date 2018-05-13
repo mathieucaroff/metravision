@@ -38,13 +38,11 @@ def main():
 
         lecteur = lecture.Lecteur(cap, config.raw.redCrossEnabled, debug)
 
-        def jumpToFrameFunction(advancementPercentage):
-            lecteur.jumpTo(advancementPercentage)
-
         mvWindow = window.MvWindow(
             windowName = windowName,
             windowShape = windowShape,
-            jumpToFrameFunction = jumpToFrameFunction)
+            playbackStatus = lecteur.playbackStatus,
+            jumpToFrameFunction = lecteur.jumpTo)
 
         lecteur.run(mvWindow)
     finally:

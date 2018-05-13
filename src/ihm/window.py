@@ -8,8 +8,17 @@ import ihm.progressBar
 import ihm.multiView
 
 
+def windowClosed(windowName):
+    """Checking for a property of the window to tell whether it is (still) open."""
+    v = {"visible": cv2.getWindowProperty(windowName, cv2.WND_PROP_VISIBLE), "windowName": windowName}
+    v["different"] = v["visible"] != 1.0
+    if v["different"]:
+        printMV(f"Window {windowName} closed")
+    return v["different"]
+
+
 class MvWindow:
-    def __init__(self, windowName, windowShape, jumpToFrameFunction):
+    def __init__(self, windowName, windowShape, playbackStatus, jumpToFrameFunction):
         cv2.namedWindow(windowName)
         self.windowName = windowName
         self.windowShape = windowShape
@@ -21,7 +30,7 @@ class MvWindow:
         
         cv2.setMouseCallback(windowName, mouseCallbackDispatcher)
 
-        self.updateSubWindows = ihm.multiView.setupVideoSelectionHook(mouseCallbackList, windowShape)
+        self.updateSubWindows = ihm.multiView.setupVideoSelectionHook(mouseCallbackList, windowShape, playbackStatus, windowClosed)
         ihm.progressBar.setupClickHook(mouseCallbackList, windowShape, 30, jumpToFrameFunction)
         
         bp = Namespace()
@@ -51,14 +60,8 @@ class MvWindow:
             playbackStatus.play = not playbackStatus.play
         if key == ord('q'):
             playbackStatus.quitting = True
+        if key == ord('f'):
+            playbackStatus.refreshNeeded = True
         if redCrossEnabled:
-            if self.windowClosed():
-                printMV("Window closed")
+            if windowClosed(self.windowName):
                 playbackStatus.quitting = True
-
-
-    def windowClosed(self):
-        """Checking for a property of the window to tell whether it is (still) open."""
-        v = {"visible": cv2.getWindowProperty(self.windowName, cv2.WND_PROP_VISIBLE)}
-        v["different"] = v["visible"] != 1.0
-        return v["different"]

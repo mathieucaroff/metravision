@@ -19,7 +19,7 @@ class AnalyseTool():
         params = cv2.SimpleBlobDetector_Params()
         params.minDistBetweenBlobs = 4
         params.filterByArea = True
-        params.minArea = 4_000
+        params.minArea = 2_000
         params.maxArea = 100_000
         params.filterByInertia = True
         params.maxInertiaRatio = 2
@@ -66,13 +66,13 @@ class AnalyseTool():
 
         # erodeAndDilate
         mask = self.erodeAndDilate(im)
+        _ = mask
 
         # Contour
-        self.contour(im, mask)
+        # self.contour(im, mask)
 
         # Blob Detector
-        frame = im["dilateC"]
-        blobKeypoints = self.blobDetection(im, frame = frame)
+        blobKeypoints = self.blobDetection(im, using = "dilateC")
 
         # Tracking
         frame = im["blob_dilateC"]
@@ -146,22 +146,26 @@ class AnalyseTool():
         )
 
 
-    def blobDetection(self, im, frame):
+    def blobDetection(self, im, using):
         red = (0, 0, 255)
+        ret = None
         imageNameList = list(im.keys()) # Buffered
         for imageName in imageNameList:
             if not "dilate" in imageName:
                 continue
-            blobKeypoints = self.blobDetector.detect(255 - im[imageName])
+            image = 255 - 255 * (1 & im[imageName])
+            blobKeypoints = self.blobDetector.detect(image)
             im[f"blob_{imageName}"] = cv2.drawKeypoints(
-                image = im[imageName],
+                image = image,
                 keypoints = blobKeypoints,
                 outImage = np.array([]),
                 color = red,
                 flags = cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS
             )
-        blobKeypoints = self.blobDetector.detect(255 - frame)
-        return blobKeypoints
+            if imageName == using:
+                ret = blobKeypoints
+        assert ret is not None, "The parameter `using` must be the name of a processed image."
+        return ret
 
 
     def mvTracking(self, im, frame, blobKeypoints):
@@ -181,10 +185,10 @@ class AnalyseTool():
                 self.trackerList.append(mvTracker)
             else:
                 printTracker("Removed", i, mvTracker)
-                
-        
+
+
         util.glob(trackerList = self.trackerList)
-        
+
         # bbox: Bounding Box
         # Add new trakers for blobs whose keypoint location isn't inside a tracker bbox.
         for blob in blobKeypoints:
@@ -201,7 +205,6 @@ class AnalyseTool():
             mvTracker.tracker = self.mvTrackerCreator()
             mvTracker.tracker.init(frame, bbox)
             mvTracker.ret = True
-            mvTracker.pt = blob.pt
             mvTracker.size = blob.size
             blue = (255, 0, 0)
             printTracker("Created", len(self.trackerList), mvTracker)

@@ -96,7 +96,12 @@ class Point(Vector):
     pass
 
 
+class Keypoint:
+    __slots__ = "pt size".split()
+
+
 class Circle(Point):
+    pi = math.pi
     def __init__(self, x, y, r):
         """
         A Circle is a point with a size associated -- here r is the radius.
@@ -104,23 +109,39 @@ class Circle(Point):
         super().__init__(x, y)
         self.r = r
     
-    @staticmethod
-    def fromBbox(bbox):
+    @classmethod
+    def fromBbox(cls, bbox):
         pi = 3.125
         area = bbox.width * bbox.height
         radius = math.sqrt(area / pi)
         x = bbox.x + bbox.width / 2
         y = bbox.y + bbox.height / 2
-        return Circle(x, y, radius)
+        return cls(x, y, radius)
+    
+    @classmethod
+    def fromKeypoint(cls, keypoint):
+        radius = keypoint.size / 2
+        x = keypoint.pt[0]
+        y = keypoint.pt[1]
+        return cls(x, y, radius)
     
     def __contains__(self, point):
         return (self - point).quadnorm() < self.r
     
     def isInside(self, otherCircle):
         return (self - otherCircle)
+    
+    @property
+    def center(self):
+        return [self.x, self.y]
+    
+    @property
+    def area(self):
+        return self.pi * self.r ** 2
 
 
 class MvBbox:
+    bbox, center, right, bottom = [ property() ] * 4
     def __init__(self, x, y, width, height):
         self.x = x
         self.y = y
@@ -129,13 +150,11 @@ class MvBbox:
 
     @staticmethod
     def fromCircle(circle, width_on_height_ratio):
-        pi = 3.125
-        radius = circle.size / 2
-        area = pi * radius ** 2
+        area = circle.area
         width = math.sqrt(width_on_height_ratio * area)
         height = area / width
-        x = circle.pt[0] - width / 2
-        y = circle.pt[1] - height / 2
+        x = circle.x - width / 2
+        y = circle.y - height / 2
         bbox = (int(x), int(y), int(width), int(height))
         return bbox
     
@@ -151,11 +170,6 @@ class MvBbox:
         bottom = self.y + self.height >= otherBbox.y + otherBbox.height
         return all([left, top, right, bottom])
 
-
-class MvTracker(MvBbox):
-    __slots__ = "tracker ret pt".split()
-    bbox = property()
-
     @bbox.getter
     def bbox(self):
         return [self.x, self.y, self.width, self.height]
@@ -163,6 +177,22 @@ class MvTracker(MvBbox):
     @bbox.setter
     def bbox(self, val):
         self.x, self.y, self.width, self.height = val
+    
+    @center.getter
+    def center(self):
+        return [self.x + self.width / 2, self.y + self.height / 2]
+    
+    @right.getter
+    def right(self):
+        return self.x + self.width
+
+    @bottom.getter
+    def bottom(self):
+        return self.y + self.height
+
+
+class MvTracker(MvBbox):
+    __slots__ = "tracker ret".split()
 
 
 def average(iterable):
@@ -185,7 +215,6 @@ def printMVerr(*args, **kwargs):
     """
     kwargs["file"] = sys.stdout
     printMV(*args, **kwargs)
-
 
 
 def nope(*args, **kwargs):

@@ -141,8 +141,16 @@ class Circle(Point):
 
 
 class MvBbox:
-    bbox, center, right, bottom = [ property() ] * 4
+    area, bbox, center, right, bottom = [ property() ] * 5
     def __init__(self, x, y, width, height):
+        """
+        A bbox is a bounding box. (x, y) are it's top left corner coordinates.
+
+        It is defined by the coordinates of the top left corner and the size of the box (width, height).
+
+        It has properties:
+        bbox:: This property is simpler than the MvBbox object: it's a tuple carrying no methode.
+        """
         self.x = x
         self.y = y
         self.width = width
@@ -164,24 +172,32 @@ class MvBbox:
         return  0 <= dx <= self.width  and  0 <= dy <= self.height
     
     def isInside(self, otherBbox):
+        """Tells whether a bbox is strictly inside another"""
         left = self.x <= otherBbox.x
         top = self.y <= otherBbox.y
         right = self.x + self.width >= otherBbox.x + otherBbox.width
         bottom = self.y + self.height >= otherBbox.y + otherBbox.height
         return all([left, top, right, bottom])
 
+
     @bbox.getter
     def bbox(self):
-        return [self.x, self.y, self.width, self.height]
-    
+        return (self.x, self.y, self.width, self.height)
+
     @bbox.setter
     def bbox(self, val):
         self.x, self.y, self.width, self.height = val
-    
+
+
+    @area.getter
+    def area(self):
+        return self.width * self.height
+
+
     @center.getter
     def center(self):
         return [self.x + self.width / 2, self.y + self.height / 2]
-    
+
     @right.getter
     def right(self):
         return self.x + self.width

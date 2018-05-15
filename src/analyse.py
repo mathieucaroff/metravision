@@ -10,6 +10,7 @@ class AnalyseTool():
         """
         Parametre et crée le backgroundSubtractor () ainsi que le blob detector.
         """
+        self.vidDimension = vidDimension
         self.debug = debug
 
         # Background subtractor initialisation
@@ -27,6 +28,8 @@ class AnalyseTool():
 
         self.last_fgMask = self.oneBeforeLast_fgMask = np.zeros(shape = vidDimension, dtype = np.uint8) # Temporary value
 
+        # Tracker initialisation
+        self.smallestAllowedTrackerArea = 1_000
         self.trackerList = []
 
     @staticmethod
@@ -72,7 +75,7 @@ class AnalyseTool():
         # self.contour(im, mask)
 
         # Blob Detector
-        blobKeypoints = self.blobDetection(im, using = "dilateC")
+        blobKeypoints = self.blobDetection(im, nameOfImageToUse = "dilateC")
 
         # Tracking
         frame = im["blob_dilateC"]
@@ -146,7 +149,10 @@ class AnalyseTool():
         )
 
 
-    def blobDetection(self, im, using):
+    def blobDetection(self, im, nameOfImageToUse):
+        """
+        Detecte les blobs sur les images dont le nom contient "dilate".
+        """
         red = (0, 0, 255)
         ret = None
         imageNameList = list(im.keys()) # Buffered
@@ -162,35 +168,56 @@ class AnalyseTool():
                 color = red,
                 flags = cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS
             )
-            if imageName == using:
+            if imageName == nameOfImageToUse:
                 ret = blobKeypoints
-        assert ret is not None, "The parameter `using` must be the name of a processed image."
+        assert ret is not None, "The parameter `nameOfImageToUse` must be the name of a processed image."
         return ret
 
 
     def mvTracking(self, im, frame, blobKeypoints):
-        # Update trakers
+        # A - Update trackers
+        for mvTracker in self.trackerList:
+            mvTracker.ret, mvTracker.bbox = mvTracker.tracker.update(frame) # Error ?
+            green = (0, 255, 0)
+            # printTracker("Updated", i, mvTracker)
+        numberOfUpdates = len(self.trackerList)
+
+        # B - Remove trackers duplicates
+        indexToBeRemoved = self.getIndexSetOfDuplicatedTrackersToBeRemoved()
         oldTrackerList = self.trackerList
         self.trackerList = []
         for i, mvTracker in enumerate(oldTrackerList):
-            mvTracker.ret, mvTracker.bbox = mvTracker.tracker.update(frame) # Error ?
-            green = (0, 255, 0)
-            printTracker("Updated", i, mvTracker)
-            showTracker(im["frame"], mvTracker, green)
-            if not mvTracker.ret or not any(mvTracker in otherMvTracker for otherMvTracker in self.trackerList):
-                for j, otherMvTracker in reversed(list(enumerate(self.trackerList))):
-                    if otherMvTracker in mvTracker:
-                        self.trackerList.pop(j)
-                        printTracker("Removed", j, otherMvTracker)
-                self.trackerList.append(mvTracker)
+            if i in indexToBeRemoved:
+                pass
+                # printTracker("Removed dup", i, mvTracker)
             else:
-                printTracker("Removed", i, mvTracker)
+                self.trackerList.append(mvTracker)
+        numberOfDeletions = len(indexToBeRemoved)
 
+        # C - Remove finished trackers (out of screen / too small trackers)
+        numberOfFinishs = 0
+        oldTrackerList = self.trackerList
+        self.trackerList = []
+        for mvTracker in oldTrackerList:
+            if self.isFinishedTracker(mvTracker):
+                numberOfFinishs += 1
+                # printTracker("Removed fin", i, mvTracker)
+            else:
+                self.trackerList.append(mvTracker)
 
         util.glob(trackerList = self.trackerList)
 
-        # bbox: Bounding Box
+        # D - Show existing trackers
+        for mvTracker in self.trackerList:
+            mvTracker.ret, mvTracker.bbox = mvTracker.tracker.update(frame) # Error ?
+            green = (0, 255, 0)
+            # printTracker("Updated", i, mvTracker)
+            showTracker(im["frame"], mvTracker, green)
+
+        # E - Create trackers
+        # bbox :: Bounding Box
         # Add new trakers for blobs whose keypoint location isn't inside a tracker bbox.
+        numberOfAdditions = 0
         for blob in blobKeypoints:
             if any(util.pointInBbox(blob.pt, mvTracker.bbox) for mvTracker in self.trackerList):
                 # ptx, pty = map(int, blob.pt)
@@ -202,14 +229,60 @@ class AnalyseTool():
 
             # Create and register tracker:
             mvTracker = util.MvTracker(*bbox)
+            if self.isFinishedTracker(mvTracker):
+                continue
             mvTracker.tracker = self.mvTrackerCreator()
             mvTracker.tracker.init(frame, bbox)
             mvTracker.ret = True
             mvTracker.size = blob.size
             blue = (255, 0, 0)
-            printTracker("Created", len(self.trackerList), mvTracker)
+            # printTracker("Created", len(self.trackerList), mvTracker)
             showTracker(im["frame"], mvTracker, blue)
             self.trackerList.append(mvTracker)
+            numberOfAdditions += 1
+
+        printMV(f"[Trackers] Updated {numberOfUpdates} then Rmvd dups {numberOfDeletions}, Rmvd fin {numberOfFinishs}, Created {numberOfAdditions}.")
+
+
+    def isFinishedTracker(self, mvTracker):
+        finished = False
+        height, _width = self.vidDimension
+        if mvTracker.bottom > height:
+            finished = True
+        if mvTracker.area < self.smallestAllowedTrackerArea:
+            finished = True
+        return finished
+
+
+    def getIndexSetOfDuplicatedTrackersToBeRemoved(self):
+        """
+        For each pair of tracker, if one is contained in the other, remove it.
+        The exception is when both trackers contain each other, then the one with the smaller area is removed.
+        In case they are the same area, the one appearing earlier in the list is removed.
+        """
+        indexSet = set()
+        for b, trackerA in enumerate(self.trackerList):
+            for a, trackerB in enumerate(self.trackerList):
+                if a >= b:
+                    break
+                # ^ # So we are sure we always have a < b #
+                abInclusion = trackerA in trackerB
+                baInclusion = trackerB in trackerA
+                # v # x is the index to remove, if any. #
+                if not abInclusion and not baInclusion:
+                    # x = None
+                    continue
+                elif abInclusion:
+                    x = a
+                elif baInclusion:
+                    x = b
+                else:
+                    if trackerA.area <= trackerB.area:
+                        x = a
+                    else:
+                        x = b
+                indexSet.add(x)
+        return sorted(indexSet)
 
 
 def showTracker(frame, mvTracker, color):

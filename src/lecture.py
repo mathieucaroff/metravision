@@ -13,7 +13,7 @@ import util
 import analyse
 
 class PlaybackStatus:
-    __slots__ = ["play", "quitting", "refreshNeeded"]
+    __slots__ = ["play", "quitting", "refreshNeeded", "debugNeeded"]
     def __init__(self, play = True, quitting = False, refreshNeeded = False):
         self.play = play
         self.quitting = quitting
@@ -61,6 +61,7 @@ class Lecteur:
 
     @util.logged
     def run(self, mvWindow):
+        """Plays the video, frame by frame, or wait for the video to be unpaused, until quitting."""
         self.timeController.init()
         while not self.playbackStatus.quitting:
             if self.playbackStatus.play or self.playbackStatus.refreshNeeded:
@@ -70,28 +71,19 @@ class Lecteur:
 
                 imageSet = collections.OrderedDict()
 
-                # Capture frame-by-frame
-                ok = False
-                notOkCount = 0
-                while not ok:
-                    ok, imageSet["frame"] = self.cap.read()
-                    if not ok:
-                        notOkCount += 1
-                        if self.cap.isOpened():
-                            printMV(f"Not ok! cap.isOpened() ::: {util.typeVal(self.cap.isOpened())}")
-                        if notOkCount >= 3:
-                            printMV("Not ok >= 3 -- break")
-                            raise RuntimeError
-                    else:
-                        notOkCount = 0
+                self.playbackStatus.quitting, imageSet["frame"] = type(self).getFrame(self.cap)
+                if self.playbackStatus.quitting:
+                    break
 
-                assert ok
                 assert imageSet["frame"] is not None
 
                 self.analyseTool.run(imageSet)
 
                 advancementPercentage = self.cap.get(cv2.CAP_PROP_POS_FRAMES) / self.frameCount
                 mvWindow.update(imageSet, advancementPercentage)
+
+                controlledTime = self.timeController.getControlledTime()
+                mvWindow.waitkey(controlledTime, self.playbackStatus, self.redCrossEnabled)
             else:
                 duration = 0.05
                 mvWindow.waitkey(duration, self.playbackStatus, self.redCrossEnabled)
@@ -112,3 +104,20 @@ class Lecteur:
         frameIndex = int(fraction * frameCount)
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, frameIndex)
         self.playbackStatus.refreshNeeded = True
+
+    @staticmethod
+    def getFrame(cap):
+        quitting = False
+        notOkCount = 0
+        ok = False
+        while not ok:
+            ok, frame = cap.read()
+            if not ok:
+                notOkCount += 1
+                if notOkCount >= 3:
+                    printMV("Not ok >= 3 -- quitting.")
+                    quitting = True
+                    break
+            else:
+                notOkCount = 0
+        return quitting, frame

@@ -91,11 +91,11 @@ def renderNimages(imageSet, output = None, h = None, w = None):
     return output
 
 
-def setupVideoSelectionHook(mouseCallbackList, windowShape, playbackStatus, windowClosed):
+def setupVideoSelectionHook(mouseCallbackList, displayShape, playbackStatus, windowClosed):
     """
     Select and expand the video selected by double click
     """
-    height, width = windowShape
+    height, width = displayShape
     share = Namespace()
     share.press = False
     share.pVy = 0

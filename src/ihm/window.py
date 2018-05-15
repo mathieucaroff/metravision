@@ -27,17 +27,20 @@ class MvWindow:
         def mouseCallbackDispatcher(event, x, y, flags, param):
             for fun in mouseCallbackList:
                 fun(event, x, y, flags, param)
-        
+
         cv2.setMouseCallback(windowName, mouseCallbackDispatcher)
 
-        self.updateSubWindows = ihm.multiView.setupVideoSelectionHook(mouseCallbackList, windowShape, playbackStatus, windowClosed)
-        ihm.progressBar.setupClickHook(mouseCallbackList, windowShape, 30, jumpToFrameFunction)
-        
+
         bp = Namespace()
         bp.bgCol = [255, 255, 255]
         bp.fgCol = [255, 191, 127]
         bp.shape = (30, windowShape[1])
         self.barProperties = bp
+
+
+        displayShape = (windowShape[0] - bp.shape[0], windowShape[1])
+        self.updateSubWindows = ihm.multiView.setupVideoSelectionHook(mouseCallbackList, displayShape, playbackStatus, windowClosed)
+        ihm.progressBar.setupClickHook(mouseCallbackList, windowShape, 30, jumpToFrameFunction)
 
 
     def update(self, imageSet, advancementPercentage):

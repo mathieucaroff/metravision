@@ -2,14 +2,19 @@ import random
 import sys
 
 import cv2
+import numpy as np
 
 from util import Namespace, printMV, printMVerr
+import util
 import ihm.window as window
 
 import parseConfig
 import lecture
 
-printMV(sys.version)
+printMV("Versions:")
+printMV(f"[Python] {sys.version}")
+printMV(f"[Numpy] {np.__version__}")
+printMV(f"[OpenCV] {cv2.__version__}")
 
 sys.path[:0] = ["src", "."]
 
@@ -35,7 +40,6 @@ def main():
     cap = cv2.VideoCapture(videoPath)
 
     try:
-
         lecteur = lecture.Lecteur(cap, config.raw.redCrossEnabled, debug)
 
         mvWindow = window.MvWindow(
@@ -44,7 +48,10 @@ def main():
             playbackStatus = lecteur.playbackStatus,
             jumpToFrameFunction = lecteur.jumpTo)
 
-        lecteur.run(mvWindow)
+        with util.neutralContextManager():
+        # with util.interactOnExceptionEnabled():
+        # with util.pdbPostMortem():
+            lecteur.run(mvWindow)
     finally:
         # When everything done, release the capture
         cap.release()

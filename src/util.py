@@ -1,216 +1,12 @@
 import operator
+import contextlib
 from functools import wraps
 import math
+import cv2
 
 import sys
 
-
-
-class Namespace:
-    pass
-
-
-class Dotdict(dict):
-    """dot.notation access to dictionary attributes"""
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-
-
-class ReadOnlyDotdict(dict):
-    """dot.notation readonly access to dictionary attributes"""
-    __getattr__ = dict.__getitem__
-
-
-class RecursiveReadOnlyDotdict(dict):
-    """dot.notation readonly access to dictionary attributes, propagated to children dictionaries upon acess."""
-    def __getitem__(self, key):
-        val = dict.__getitem__(self, key)
-        if type(val) == dict:
-            val = RecursiveReadOnlyDotdict(val)
-        return val
-    __getattr__ = __getitem__
-
-
-class ArithmeticList:
-    def __init__(self, *args):
-        self.coords = list(args)
-    
-    def __add__(self, other):
-        self._mapOperation(other, operator.add)
-    def __sub__(self, other):
-        self._mapOperation(other, operator.sub)
-    def __mul__(self, scalar):
-        self._mapOperation( Point( *([scalar] * len(self.coords)) ), operator.mul )
-    def __div__(self, scalar):
-        self._mapOperation( Point( *([scalar] * len(self.coords)) ), operator.truediv )
-    
-    def _mapOperation(self, other, operation):
-        assert len(self.coords) == len(other.coords)
-        for i in range(len(self.coords)):
-            self.coords[i] = operation(self.coords[i], other.coords[i])
-
-
-class Vector(ArithmeticList):
-    def __init__(self, *args, **kwargs):
-        assert not args or not kwargs
-        super(Vector, self).__init__(self, *args)
-        for key, val in kwargs.items():
-            index = self._indexFromName(key)
-            assert index is not None
-            coords = self.coords
-            l = len(coords)
-            if index >= l:
-                coords[l:] = [None] * (1 + index - l)
-            coords[index] = val
-    
-    def __getattr__(self, name):
-        index = self._indexFromName(name)
-        if index is not None:
-            return self.coords[index]
-        else:
-            return object.__getattribute__(self, name)
-    
-    def __setattr__(self, name, val):
-        index = self._indexFromName(name)
-        if index is not None:
-            self.coords[index] = val
-        else:
-            object.__setattr__(self, name, val)
-    
-    def quadnorm(self):
-        return sum(v ** 2 for v in self.coords)
-    
-    def norm(self):
-        return math.sqrt(self.quadnorm())
-    
-    @staticmethod
-    def _indexFromName(name):
-        try:
-            return {"x": 0, "y": 1, "z": 2}[name]
-        except KeyError:
-            return None
-        
-
-class Point(Vector):
-    pass
-
-
-class Keypoint:
-    __slots__ = "pt size".split()
-
-
-class Circle(Point):
-    pi = math.pi
-    def __init__(self, x, y, r):
-        """
-        A Circle is a point with a size associated -- here r is the radius.
-        """
-        super().__init__(x, y)
-        self.r = r
-    
-    @classmethod
-    def fromBbox(cls, bbox):
-        pi = 3.125
-        area = bbox.width * bbox.height
-        radius = math.sqrt(area / pi)
-        x = bbox.x + bbox.width / 2
-        y = bbox.y + bbox.height / 2
-        return cls(x, y, radius)
-    
-    @classmethod
-    def fromKeypoint(cls, keypoint):
-        radius = keypoint.size / 2
-        x = keypoint.pt[0]
-        y = keypoint.pt[1]
-        return cls(x, y, radius)
-    
-    def __contains__(self, point):
-        return (self - point).quadnorm() < self.r
-    
-    def isInside(self, otherCircle):
-        return (self - otherCircle)
-    
-    @property
-    def center(self):
-        return [self.x, self.y]
-    
-    @property
-    def area(self):
-        return self.pi * self.r ** 2
-
-
-class MvBbox:
-    area, bbox, center, right, bottom = [ property() ] * 5
-    def __init__(self, x, y, width, height):
-        """
-        A bbox is a bounding box. (x, y) are it's top left corner coordinates.
-
-        It is defined by the coordinates of the top left corner and the size of the box (width, height).
-
-        It has properties:
-        bbox:: This property is simpler than the MvBbox object: it's a tuple carrying no methode.
-        """
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-
-    @staticmethod
-    def fromCircle(circle, width_on_height_ratio):
-        area = circle.area
-        width = math.sqrt(width_on_height_ratio * area)
-        height = area / width
-        x = circle.x - width / 2
-        y = circle.y - height / 2
-        bbox = (int(x), int(y), int(width), int(height))
-        return bbox
-    
-    def __contains__(self, point):
-        dx = point.x - self.x
-        dy = point.y - self.y
-        return  0 <= dx <= self.width  and  0 <= dy <= self.height
-    
-    def isInside(self, otherBbox):
-        """Tells whether a bbox is strictly inside another"""
-        left = self.x <= otherBbox.x
-        top = self.y <= otherBbox.y
-        right = self.x + self.width >= otherBbox.x + otherBbox.width
-        bottom = self.y + self.height >= otherBbox.y + otherBbox.height
-        return all([left, top, right, bottom])
-
-
-    @bbox.getter
-    def bbox(self):
-        return (self.x, self.y, self.width, self.height)
-
-    @bbox.setter
-    def bbox(self, val):
-        self.x, self.y, self.width, self.height = val
-
-
-    @area.getter
-    def area(self):
-        return self.width * self.height
-
-
-    @center.getter
-    def center(self):
-        return [self.x + self.width / 2, self.y + self.height / 2]
-
-    @right.getter
-    def right(self):
-        return self.x + self.width
-
-    @bottom.getter
-    def bottom(self):
-        return self.y + self.height
-
-
-class MvTracker(MvBbox):
-    __slots__ = "tracker ret".split()
-
-
+# Simplest functions
 def average(iterable):
     """
     Gives the average of the values in the provided iterable.
@@ -289,6 +85,37 @@ def logged(func, printer = printMV):
     return wrapped_func
 
 
+# https://stackoverflow.com/q/15299878/how-to-use-python-decorators-to-check-function-arguments
+# Overall, not so good when used. Prefer the good old-style assert at the beginning of function.
+def assertAccepts(*types):
+    """Specify the types the arguments of a function must match. Is enforced by assertion."""
+    def check_accepts(func):
+        #assert len(types) == func.func_code.co_argcount, f"The function {func.__name__} doesn't have the specified number of arguments ({len(types)})."
+        # ^ AttributeError: 'function' object has no attribute 'func_code'
+        @wraps(func)
+        def wrapped_func(*args, **kwargs):
+            assert(len(args) + len(kwargs) == len(types))
+            for i, (a, t) in enumerate(zip(args, types)):
+                assert isinstance(a, t), \
+                    f"The {i}th argument of function `{func.__name__}` is expected to be of type `{t}`, but it's value is `{a}`"
+            return func(*args, **kwargs)
+        return wrapped_func
+    return check_accepts
+
+
+def assertReturns(rtype):
+    """Specify the type a function returns. Is enforced by assertion."""
+    def check_returns(func):
+        @wraps(func)
+        def wrapped_func(*args, **kwds):
+            retval = func(*args, **kwds)
+            assert isinstance(retval, rtype), \
+                f"Retval `{retval}` of function `{func.__name__}` is expected to be of type `{rtype}`"
+            return retval
+        return wrapped_func
+    return check_returns
+
+
 def globbed(gname = None):
     """
     Parameterable decorator to capture the returned value of a function using util.glob.
@@ -319,6 +146,7 @@ def globbed(gname = None):
 
 
 def shown(func):
+    """Decorating make the function show its result when returning."""
     name = f"{func.__name__}( )"
     @wraps(func)
     def wrapped_func(*args, **kwargs):
@@ -338,6 +166,263 @@ def _parameterable_decorator_sample(param):
         return wrapped_func
     return decorator
 
+
+
+class Namespace:
+    pass
+
+
+class Dotdict(dict):
+    """dot.notation access to dictionary attributes"""
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+
+class ReadOnlyDotdict(dict):
+    """dot.notation readonly access to dictionary attributes"""
+    __getattr__ = dict.__getitem__
+
+
+class RecursiveReadOnlyDotdict(dict):
+    """dot.notation readonly access to dictionary attributes, propagated to children dictionaries upon acess."""
+    def __getitem__(self, key):
+        val = dict.__getitem__(self, key)
+        if type(val) == dict:
+            val = RecursiveReadOnlyDotdict(val)
+        return val
+    __getattr__ = __getitem__
+
+
+class ArithmeticList:
+    def __init__(self, *args):
+        assert args[0] != self
+        self.coords = list(args)
+    
+    def __add__(self, other):
+        self._mapOperation(other, operator.add)
+    def __sub__(self, other):
+        self._mapOperation(other, operator.sub)
+    def __mul__(self, scalar):
+        self._mapOperation( Point( *([scalar] * len(self.coords)) ), operator.mul )
+    def __div__(self, scalar):
+        self._mapOperation( Point( *([scalar] * len(self.coords)) ), operator.truediv )
+    
+    def _mapOperation(self, other, operation):
+        assert len(self.coords) == len(other.coords)
+        for i in range(len(self.coords)):
+            self.coords[i] = operation(self.coords[i], other.coords[i])
+    
+    def __iter__(self):
+        return self.coords.__iter__()
+
+
+class Vector(ArithmeticList):
+    def __init__(self, *args, **kwargs):
+        assert not args or not kwargs
+        super(Vector, self).__init__(*args)
+        for key, val in kwargs.items():
+            index = self._indexFromName(key)
+            assert index is not None
+            coords = self.coords
+            l = len(coords)
+            if index >= l:
+                coords[l:] = [None] * (1 + index - l)
+            coords[index] = val
+    
+    def __getattr__(self, name):
+        index = self._indexFromName(name)
+        if index is not None:
+            return self.coords[index]
+        else:
+            return object.__getattribute__(self, name)
+    
+    def __setattr__(self, name, val):
+        index = self._indexFromName(name)
+        if index is not None:
+            self.coords[index] = val
+        else:
+            object.__setattr__(self, name, val)
+    
+    def quadnorm(self):
+        return sum(v ** 2 for v in self.coords)
+    
+    def norm(self):
+        return math.sqrt(self.quadnorm())
+    
+    @staticmethod
+    def _indexFromName(name):
+        try:
+            return {"x": 0, "y": 1, "z": 2}[name]
+        except KeyError:
+            return None
+        
+
+class Point(Vector):
+    pass
+
+
+class Keypoint:
+    __slots__ = "pt size".split()
+
+
+class Circle(Point):
+    pi = math.pi
+    def __init__(self, x, y, r):
+        """
+        A Circle is a point with a size associated -- here r is the radius.
+        """
+        super().__init__(x, y)
+        self.r = r
+    
+    @classmethod
+    def fromBbox(cls, bbox):
+        pi = 3.125
+        radius = math.sqrt(bbox.area / pi)
+        x, y = bbox.center
+        return cls(x, y, radius)
+    
+    @classmethod
+    def fromKeypoint(cls, keypoint):
+        radius = keypoint.size / 2
+        x = keypoint.pt[0]
+        y = keypoint.pt[1]
+        return cls(x, y, radius)
+    
+    def __contains__(self, point):
+        return (self - point).quadnorm() < self.r
+    
+    def isInside(self, otherCircle):
+        return (self - otherCircle)
+    
+    @property
+    def center(self):
+        return Point(self.x, self.y)
+    
+    @property
+    def area(self):
+        return self.pi * self.r ** 2
+
+
+class MvBbox:
+    area, bbox, center, right, bottom = [ property() ] * 5
+    def __init__(self, x, y, width, height):
+        """
+        A bbox is a bounding box. (x, y) are it's top left corner coordinates.
+
+        It is defined by the coordinates of the top left corner and the size of the box (width, height).
+
+        It has properties:
+        bbox:: This property is simpler than the MvBbox object: it's a tuple carrying no methode.
+        """
+        assert type(x) == int
+        assert type(y) == int
+        assert type(width) == int
+        assert type(height) == int
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+
+    @staticmethod
+    def fromCircle(circle, width_on_height_ratio):
+        area = circle.area
+        width = math.sqrt(width_on_height_ratio * area)
+        height = area / width
+        x = circle.x - width / 2
+        y = circle.y - height / 2
+        bbox = (int(x), int(y), int(width), int(height))
+        return bbox
+    
+    def __contains__(self, point):
+        dx = point.x - self.x
+        dy = point.y - self.y
+        return  0 <= dx <= self.width  and  0 <= dy <= self.height
+    
+    def isInside(self, otherBbox):
+        """Tells whether a bbox is strictly inside another"""
+        left = self.x <= otherBbox.x
+        top = self.y <= otherBbox.y
+        right = self.x + self.width >= otherBbox.x + otherBbox.width
+        bottom = self.y + self.height >= otherBbox.y + otherBbox.height
+        return all([left, top, right, bottom])
+    
+    def draw(self, frame, color, *args, **kwargs):
+        cv2.rectangle(frame, (self.x, self.y), (self.right, self.bottom), color, *args, **kwargs)
+
+
+    @bbox.getter
+    def bbox(self):
+        return (self.x, self.y, self.width, self.height)
+
+    @bbox.setter
+    def bbox(self, val):
+        self.x, self.y, self.width, self.height = map(int, val)
+
+
+    @area.getter
+    def area(self):
+        return self.width * self.height
+
+    @center.getter
+    def center(self):
+        return Point(self.x + self.width // 2, self.y + self.height // 2)
+
+    @right.getter
+    @assertReturns(int)
+    def right(self):
+        return self.x + self.width
+
+    @bottom.getter
+    @assertReturns(int)
+    def bottom(self):
+        assert type(self.y) == int, typeVal(self.y)
+        assert type(self.height) == int
+        return self.y + self.height
+
+
+class MvTracker(MvBbox):
+    __slots__ = "tracker ret".split()
+
+
+
+# CONTEXTE MANAGERS
+# https://stackoverflow.com/q/242485/starting-python-debugger-automatically-on-error
+@contextlib.contextmanager
+def pdbPostMortemEnabled():
+    try:
+        yield
+    except Exception:
+        import pdb, traceback
+        traceback.print_exc()
+        pdb.post_mortem()
+
+
+# https://stackoverflow.com/q/242485/starting-python-debugger-automatically-on-error
+@contextlib.contextmanager
+def interactOnExceptionEnabled():
+    try:
+        yield
+    except Exception:
+        import code, traceback
+        _type, _value, tb_ = sys.exc_info()
+        traceback.print_exc()
+        last_frame = lambda tb=tb_: last_frame(tb.tb_next) if tb.tb_next else tb
+        frame = last_frame().tb_frame
+        ns = dict(frame.f_globals)
+        ns.update(frame.f_locals)
+        code.interact(local=ns)
+
+
+@contextlib.contextmanager
+def neutralContextManager():
+    """This context manager has no effect.
+
+    Usage:
+        with neutralContextManager():
+            print("The context hasn't changed.")
+    """
+    yield
 
 
 # Non Decorators

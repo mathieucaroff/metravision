@@ -8,7 +8,7 @@ class AnalyseTool():
     # Setup:
     def __init__(self, vidDimension, debug):
         """
-        Parametre et crée le backgroundSubtractor () ainsi que le blob detector.
+        Paramètre et crée le backgroundSubtractor () ainsi que le blob detector.
         """
         self.vidDimension = vidDimension
         self.debug = debug
@@ -23,7 +23,7 @@ class AnalyseTool():
         params.minArea = 2_000
         params.maxArea = 100_000
         params.filterByInertia = True
-        params.maxInertiaRatio = 2
+        params.maxInertiaRatio = 3
         self.blobDetector = cv2.SimpleBlobDetector_create(params)
 
         self.last_fgMask = self.oneBeforeLast_fgMask = np.zeros(shape = vidDimension, dtype = np.uint8) # Temporary value
@@ -58,7 +58,7 @@ class AnalyseTool():
     # Run:
     def run(self, im):
         """
-        Run the analyse of a frame.
+        Run the analysis of a frame.
         """
         sub = self.bgSub.apply(image = im["frame"]) #, learningRate = 0.05)
         im["fgMask"] = sub
@@ -94,7 +94,7 @@ class AnalyseTool():
         dilateA = 20
         erodeB = 26
         dilateB = 15 # previously erodeA + erodeB - dilateA
-        dilateC = 20
+        dilateC = 15
 
         mask = cv2.erode(mask, cls.easyKernel(erodeA))
         im["erodeMaskA"] = mask
@@ -177,7 +177,9 @@ class AnalyseTool():
     def mvTracking(self, im, frame, blobKeypoints):
         # A - Update trackers
         for mvTracker in self.trackerList:
-            mvTracker.ret, mvTracker.bbox = mvTracker.tracker.update(frame) # Error ?
+            mvTracker.ret, bbox = mvTracker.tracker.update(frame) # Error ?
+            if mvTracker.ret:
+                mvTracker.bbox = bbox
             green = (0, 255, 0)
             # printTracker("Updated", i, mvTracker)
         numberOfUpdates = len(self.trackerList)
@@ -200,11 +202,24 @@ class AnalyseTool():
         self.trackerList = []
         for mvTracker in oldTrackerList:
             if self.isFinishedTracker(mvTracker):
+                center = mvTracker.center
+                left, right, up, down = getBlobDimension(im["dilateC"], center.x, center.y)
+                width, height = (left + right, up + down)
+                if width > 0:
+                    ratio = height / width
+                    isMoto = ratio > 1.5
+                    kind = ["Car", "Moto"][isMoto]
+                    magenta = (255, 0, 255)
+                    cyan = (255, 255, 0)
+                    color = [magenta, cyan][isMoto]
+                    printMV(f":: Got : {width}, {height}, with ratio {ratio} for finished blob. [{kind}]")
+                    showVehicle(im["frame"], mvTracker.center, (width, height), color)
                 numberOfFinishs += 1
                 # printTracker("Removed fin", i, mvTracker)
             else:
                 self.trackerList.append(mvTracker)
 
+        # Can help for debugging purpose
         util.glob(trackerList = self.trackerList)
 
         # D - Show existing trackers
@@ -212,19 +227,24 @@ class AnalyseTool():
             mvTracker.ret, mvTracker.bbox = mvTracker.tracker.update(frame) # Error ?
             green = (0, 255, 0)
             # printTracker("Updated", i, mvTracker)
-            showTracker(im["frame"], mvTracker, green)
+            mvTracker.draw(im["frame"], green, thickness = 6)
 
         # E - Create trackers
         # bbox :: Bounding Box
         # Add new trakers for blobs whose keypoint location isn't inside a tracker bbox.
         numberOfAdditions = 0
-        for blob in blobKeypoints:
-            if any(util.pointInBbox(blob.pt, mvTracker.bbox) for mvTracker in self.trackerList):
+        for keypoint in blobKeypoints:
+            if any(util.pointInBbox(keypoint.pt, mvTracker.bbox) for mvTracker in self.trackerList):
                 # ptx, pty = map(int, blob.pt)
                 # printMV(f"Dismissed:: Blob at {ptx, pty}.")
                 continue # Do not create a tracker = continue to next iteration
             # Get and draw bbox:
-            bbox = util.bboxFromCircle(blob, width_on_height_ratio = 0.5)
+            x, y = keypoint.pt
+            left, right, up, down = getBlobDimension(im["dilateC"], x, y)
+            width, height = (left + right, up + down)
+            width_on_height_ratio = width / height
+            # width_on_height_ratio = 0.5
+            bbox = util.bboxFromCircle(keypoint, width_on_height_ratio = width_on_height_ratio)
             blue = (255, 0, 0)
 
             # Create and register tracker:
@@ -234,10 +254,10 @@ class AnalyseTool():
             mvTracker.tracker = self.mvTrackerCreator()
             mvTracker.tracker.init(frame, bbox)
             mvTracker.ret = True
-            mvTracker.size = blob.size
+            mvTracker.size = keypoint.size
             blue = (255, 0, 0)
             # printTracker("Created", len(self.trackerList), mvTracker)
-            showTracker(im["frame"], mvTracker, blue)
+            mvTracker.draw(im["frame"], blue, thickness = 6)
             self.trackerList.append(mvTracker)
             numberOfAdditions += 1
 
@@ -245,9 +265,10 @@ class AnalyseTool():
 
 
     def isFinishedTracker(self, mvTracker):
+        """Tell whether the given tracker should still be updated or is too small / out of screen and thus should be "Finished"."""
         finished = False
         height, _width = self.vidDimension
-        if mvTracker.bottom > height:
+        if mvTracker.bottom > height * (1 - 0.08):
             finished = True
         if mvTracker.area < self.smallestAllowedTrackerArea:
             finished = True
@@ -261,11 +282,14 @@ class AnalyseTool():
         In case they are the same area, the one appearing earlier in the list is removed.
         """
         indexSet = set()
+        iterCount = 0
+        n = len(self.trackerList)
         for b, trackerA in enumerate(self.trackerList):
             for a, trackerB in enumerate(self.trackerList):
                 if a >= b:
                     break
                 # ^ # So we are sure we always have a < b #
+                iterCount += 1
                 abInclusion = trackerA in trackerB
                 baInclusion = trackerB in trackerA
                 # v # x is the index to remove, if any. #
@@ -282,11 +306,63 @@ class AnalyseTool():
                     else:
                         x = b
                 indexSet.add(x)
+        assert iterCount == n * (n - 1) / 2
         return sorted(indexSet)
+
+
+
+def getBlobDimension(mask, xx, yy):
+    """Explore the mask, left, right, up and down to determine the width and height of the blob at given point."""
+    xx, yy = int(xx), int(yy)
+    height, width = mask.shape
+    assert xx < width
+    assert yy < height
+    left = 0
+    for x in range(xx, -1, -1):
+        if mask[yy, x] == 0:
+            break
+        left += 1
+    right = 0
+    for x in range(xx, width):
+        if mask[yy, x] == 0:
+            break
+        right += 1
+
+    up = 0
+    for y in range(yy, -1, -1):
+        if mask[y, xx] == 0:
+            break
+        up += 1
+    down = 0
+    for y in range(yy, height):
+        if mask[y, xx] == 0:
+            break
+        down += 1
+    return (left, right, up, down)
 
 
 def showTracker(frame, mvTracker, color):
     cv2.rectangle(frame, *util.pointsFromBbox(mvTracker.bbox), color, thickness = 6)
 
+
 def printTracker(msg, i, mvTracker):
     printMV(f"{msg}:: Tracker {i}: ret {mvTracker.ret}, bbox {[int(v) for v in mvTracker.bbox]} --")
+
+
+def showVehicle(frame, pt, vDim, color):
+    (vWidth, vHeight) = vDim
+    (x, y) = pt
+    semiWidth = vWidth // 2
+    semiHeight = vHeight // 2
+    assert type(color) == tuple
+    assert len(color) == 3
+    cv2.rectangle(frame,
+        tuple([ int(v) for v in (x - semiWidth, y - semiHeight) ]),
+        tuple([ int(v) for v in (x + semiWidth, y + semiHeight) ]),
+        color,
+        6
+    )
+    """
+    left, right, top, bottom = map(int, (x - semiWidth, x + semiWidth, y - semiHeight, y + semiHeight))
+    frame[top : bottom, left : right] = [color]
+    """

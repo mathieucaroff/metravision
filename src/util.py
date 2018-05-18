@@ -306,6 +306,8 @@ class Circle(Point):
 
 class MvBbox:
     area, bbox, center, right, bottom = [ property() ] * 5
+    __slots__ = "x y width height".split()
+
     def __init__(self, x, y, width, height):
         """
         A bbox is a bounding box. (x, y) are it's top left corner coordinates.
@@ -348,6 +350,8 @@ class MvBbox:
         return all([left, top, right, bottom])
     
     def draw(self, frame, color, *args, **kwargs):
+        if len(args) == 0 and "thickness" not in kwargs:
+            kwargs["thickness"] = 6
         cv2.rectangle(frame, (self.x, self.y), (self.right, self.bottom), color, *args, **kwargs)
 
 
@@ -379,11 +383,6 @@ class MvBbox:
         assert type(self.y) == int, typeVal(self.y)
         assert type(self.height) == int
         return self.y + self.height
-
-
-class MvTracker(MvBbox):
-    __slots__ = "tracker ret".split()
-
 
 
 # CONTEXTE MANAGERS

@@ -22,8 +22,15 @@ debug = Namespace()
 
 
 def main():
-    with open("metravision.config.yml") as configFile:
-        config = parseConfig.MvConfig.fromConfigFile(configFile)
+    from pathlib import Path
+    for x in list(range(3)) + [0]:
+        p = Path("../" * x + "metravision.config.yml")
+        if p.is_file():
+            with p.open() as configFile:
+                config = parseConfig.MvConfig.fromConfigFile(configFile)
+            break
+    else:
+        p.open().close() # raise FileNotFoundError
 
     windowName = config.raw.windowName
     windowHeight = config.raw["window"]["height"]

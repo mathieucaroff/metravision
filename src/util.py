@@ -14,6 +14,15 @@ def average(iterable):
     return sum(iterable) / max(len(iterable), 1)
 
 
+def median(iterable):
+    values = sorted(iterable)
+    le = len(values)
+    if le % 2 == 1:
+        return values[le // 2 + 1]
+    else:
+        return (values[le // 2] + values[le // 2 + 1]) / 2
+
+
 def printMV(*args, **kwargs):
     """
     Affiche le texte donné, préfixé de l'acronyme de l'application.
@@ -391,7 +400,7 @@ class MvBbox:
 def pdbPostMortemEnabled():
     try:
         yield
-    except Exception:
+    except Exception: # pylint: disable=broad-except
         import pdb, traceback
         traceback.print_exc()
         pdb.post_mortem()
@@ -402,7 +411,7 @@ def pdbPostMortemEnabled():
 def interactOnExceptionEnabled():
     try:
         yield
-    except Exception:
+    except Exception: # pylint: disable=broad-except
         import code, traceback
         _type, _value, tb_ = sys.exc_info()
         traceback.print_exc()

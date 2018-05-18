@@ -48,8 +48,8 @@ class Lecteur:
     frameIndex = property()
 
     def getData(self):
-        data = [(0.6, "Moto"), (4.5, "Automobile")]
-        # self.analyseTool.data
+        # data = [(0.6, "Moto"), (4.5, "Automobile")]
+        data = self.analyseTool.getData()
         return data
 
     def __init__(self, cap, redCrossEnabled, debug):
@@ -57,7 +57,7 @@ class Lecteur:
         self.redCrossEnabled = redCrossEnabled
 
         # Background subtractor initialisation
-        self.analyseTool = analyse.AnalyseTool(vidDimension = self.vidDimension, debug = debug)
+        self.analyseTool = analyse.AnalyseTool(vidDimension = self.vidDimension, timePerFrame = self.timePerFrame, debug = debug)
 
         self.playbackStatus = PlaybackStatus(play = True)
         self.timeController = TimeController(self.timePerFrame)

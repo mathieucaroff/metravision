@@ -1,5 +1,6 @@
 import random
 import sys
+from pprint import pprint
 
 from pathlib import Path
 
@@ -24,7 +25,6 @@ debug = Namespace()
 
 
 def main():
-    from pathlib import Path
     for x in list(range(3)) + [0]:
         p = Path("../" * x + "metravision.config.yml")
         if p.is_file():
@@ -64,7 +64,7 @@ def main():
         # with util.interactOnExceptionEnabled():
         # with util.pdbPostMortem():
             lecteur.run(mvWindow)
-        # print(lecteur.getData())
+        pprint(lecteur.getData())
     finally:
         # When everything done, release the capture
         cap.release()
@@ -72,4 +72,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import traceback
+    try:
+        main()
+    except Exception: # pylint: disable=broad-except
+        traceback.print_exc()
+        input()

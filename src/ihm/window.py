@@ -18,10 +18,11 @@ def windowClosed(windowName):
 
 
 class MvWindow:
-    def __init__(self, windowName, windowShape, playbackStatus, jumpToFrameFunction):
+    def __init__(self, windowName, windowShape, videoName, playbackStatus, jumpToFrameFunction):
         cv2.namedWindow(windowName)
         self.windowName = windowName
         self.windowShape = windowShape
+        self.videoName = videoName
 
         mouseCallbackList = []
         def mouseCallbackDispatcher(event, x, y, flags, param):
@@ -49,7 +50,7 @@ class MvWindow:
         output = np.zeros(shape = shape, dtype = np.uint8)
         barHeight = self.barProperties.shape[0]
 
-        ihm.multiView.renderNimages(imageSet, output = output[:-barHeight])
+        ihm.multiView.renderNimages(self.videoName, imageSet, output = output[:-barHeight])
         ihm.progressBar.drawBar(self.barProperties, buffer = output, advancementPercentage = advancementPercentage)
         cv2.imshow("Metravision", output)
 

@@ -27,7 +27,7 @@ class TimeController:
     def __init__(self, timePerFrame):
         self.timePerFrame = timePerFrame
         self.init()
-    
+
     def init(self):
         self.referenceTime = time.clock()
         self.timeIndex = 0
@@ -45,6 +45,7 @@ class TimeController:
 
 class Lecteur:
     __slots__ = "redCrossEnabled analyseTool playbackStatus timeController cap frameCount height width fps timePerFrame vidDimension".split()
+    frameIndex = property()
 
     def __init__(self, cap, redCrossEnabled, debug):
         self.initVideoInfo(cap)
@@ -71,13 +72,13 @@ class Lecteur:
 
                 imageSet = collections.OrderedDict()
 
-                self.playbackStatus.quitting, imageSet["frame"] = type(self).getFrame(self.cap)
+                self.playbackStatus.quitting, imageSet["frame"] = self.getFrame()
                 if self.playbackStatus.quitting:
                     break
 
                 assert imageSet["frame"] is not None
 
-                self.analyseTool.run(imageSet)
+                self.analyseTool.run(imageSet, self.frameIndex)
 
                 advancementPercentage = self.cap.get(cv2.CAP_PROP_POS_FRAMES) / self.frameCount
                 mvWindow.update(imageSet, advancementPercentage)
@@ -105,14 +106,27 @@ class Lecteur:
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, frameIndex)
         self.playbackStatus.refreshNeeded = True
 
-    @staticmethod
-    def getFrame(cap):
+    @frameIndex.getter
+    def frameIndex(self):
+        return self.cap.get(cv2.CAP_PROP_POS_FRAMES)
+    
+    @frameIndex.setter
+    def frameIndex(self, index):
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, index)
+    
+    def reachedEnd(self):
+        return self.cap.get(cv2.CAP_PROP_FRAME_COUNT) - self.frameIndex <= 1
+
+    def getFrame(self):
         quitting = False
         notOkCount = 0
         ok = False
         while not ok:
-            ok, frame = cap.read()
+            ok, frame = self.cap.read()
             if not ok:
+                if self.reachedEnd():
+                    quitting = True
+                    break
                 notOkCount += 1
                 if notOkCount >= 3:
                     printMV("Not ok >= 3 -- quitting.")

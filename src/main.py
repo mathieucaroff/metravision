@@ -1,5 +1,6 @@
 import random
 import sys
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -30,14 +31,16 @@ def main():
     windowWidth = config.raw["window"]["width"]
     windowShape = (windowHeight, windowWidth)
 
-    videoPath = random.choice(config.video.files)
+    videoPath = Path(random.choice(config.video.files))
+    videoName = videoPath.name
+
     try:
-        open(videoPath).close()
+        videoPath.open().close()
     except FileNotFoundError:
         printMVerr(f"The specified video {videoPath} coudln't be open. (Missing file?)")
         raise
 
-    cap = cv2.VideoCapture(videoPath)
+    cap = cv2.VideoCapture(str(videoPath))
 
     try:
         lecteur = lecture.Lecteur(cap, config.raw.redCrossEnabled, debug)
@@ -45,6 +48,7 @@ def main():
         mvWindow = window.MvWindow(
             windowName = windowName,
             windowShape = windowShape,
+            videoName = videoName,
             playbackStatus = lecteur.playbackStatus,
             jumpToFrameFunction = lecteur.jumpTo)
 

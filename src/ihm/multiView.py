@@ -24,7 +24,7 @@ def viewDimensionsFromN(n = 1):
         w += 1
     return (h, w)
 
-def renderNimages(imageSet, output = None, h = None, w = None):
+def renderNimages(videoName, imageSet, output = None, h = None, w = None):
     """
     Gather the images from the given collection into one image. All images must have the same dimension.
     If no output image buffer is given, the output dimension is that of one input image.
@@ -79,14 +79,16 @@ def renderNimages(imageSet, output = None, h = None, w = None):
         cv2.resize(
             src = image, dsize = destination.shape[:2][::-1],
             dst = destination)
-
-        if name != "frame":
-            orange = (0, 128, 256)
-            cv2.putText(
-                img = destination, text = name, org = (16, 16),
-                fontFace = cv2.FONT_HERSHEY_SIMPLEX, fontScale = 0.6,
-                color = orange, thickness = 2
-            )
+        
+        if name == "frame":
+            name = videoName
+        
+        orange = (0, 128, 256)
+        cv2.putText(
+            img = destination, text = name, org = (16, 16),
+            fontFace = cv2.FONT_HERSHEY_SIMPLEX, fontScale = 0.6,
+            color = orange, thickness = 2
+        )
 
     return output
 

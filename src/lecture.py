@@ -47,6 +47,11 @@ class Lecteur:
     __slots__ = "redCrossEnabled analyseTool playbackStatus timeController cap frameCount height width fps timePerFrame vidDimension".split()
     frameIndex = property()
 
+    def getData(self):
+        data = [(0.6, "Moto"), (4.5, "Automobile")]
+        # self.analyseTool.data
+        return data
+
     def __init__(self, cap, redCrossEnabled, debug):
         self.initVideoInfo(cap)
         self.redCrossEnabled = redCrossEnabled

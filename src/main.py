@@ -1,5 +1,6 @@
 import random
 import sys
+
 from pathlib import Path
 
 import cv2
@@ -63,6 +64,7 @@ def main():
         # with util.interactOnExceptionEnabled():
         # with util.pdbPostMortem():
             lecteur.run(mvWindow)
+        # print(lecteur.getData())
     finally:
         # When everything done, release the capture
         cap.release()

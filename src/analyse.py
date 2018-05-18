@@ -109,7 +109,7 @@ class AnalyseTool():
         """
         Run the analysis of a frame.
         """
-        sub = self.bgSub.apply(image = im["frame"]) #, learningRate = 0.05)
+        sub = self.bgSub.apply(image = im["frame"], learningRate = 0.02)
         im["fgMask"] = sub
         
         # Two-frame bitwise AND

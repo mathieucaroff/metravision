@@ -44,7 +44,7 @@ class TimeController:
 
 
 class Lecteur:
-    __slots__ = "redCrossEnabled analyseTool playbackStatus timeController cap frameCount height width fps timePerFrame vidDimension".split()
+    __slots__ = "redCrossEnabled analyseTool playbackStatus timeController cap frameCount height width fps timePerFrame vidDimension perspectiveCorrector".split()
     frameIndex = property()
 
     def getData(self):
@@ -52,12 +52,13 @@ class Lecteur:
         data = self.analyseTool.getData()
         return data
 
-    def __init__(self, cap, redCrossEnabled, debug):
+    def __init__(self, cap, redCrossEnabled, perspectiveCorrector):
         self.initVideoInfo(cap)
         self.redCrossEnabled = redCrossEnabled
+        self.perspectiveCorrector = perspectiveCorrector
 
         # Background subtractor initialisation
-        self.analyseTool = analyse.AnalyseTool(vidDimension = self.vidDimension, timePerFrame = self.timePerFrame, debug = debug)
+        self.analyseTool = analyse.AnalyseTool(vidDimension = self.vidDimension, timePerFrame = self.timePerFrame)
 
         self.playbackStatus = PlaybackStatus(play = True)
         self.timeController = TimeController(self.timePerFrame)
@@ -77,11 +78,12 @@ class Lecteur:
 
                 imageSet = collections.OrderedDict()
 
-                self.playbackStatus.quitting, imageSet["frame"] = self.getFrame()
+                self.playbackStatus.quitting, frame = self.getFrame()
                 if self.playbackStatus.quitting:
                     break
-
-                assert imageSet["frame"] is not None
+                
+                imageSet["video"] = frame
+                imageSet["frame"] = util.timed(self.perspectiveCorrector.correct)(frame)
 
                 self.analyseTool.run(imageSet, self.frameIndex)
 
@@ -139,4 +141,5 @@ class Lecteur:
                     break
             else:
                 notOkCount = 0
+        assert frame is not None
         return quitting, frame

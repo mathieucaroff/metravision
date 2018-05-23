@@ -5,6 +5,7 @@ import math
 import cv2
 
 import sys
+import time
 
 # Simplest functions
 def average(iterable):
@@ -92,6 +93,28 @@ def logged(func, printer = printMV):
         printer(f"\\/{func.__name__} ::: {res}")
         return res
     return wrapped_func
+
+
+def timed(func):
+    """
+    Decorateur pour chronométrer le temps total passé dans la fonction donnée.
+    """
+    timed.__setattr__(func.__name__, 0)
+    if func.__name__ not in timed.functionIndex:
+        timed.functionIndex.append(func.__name__)
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):
+        beginning = time.time()
+        res = func(*args, **kwargs)
+        end = time.time()
+
+        lastTime = getattr(timed, func.__name__)
+        newTime = lastTime + end - beginning
+        assert type(lastTime) == int
+        timed.__setattr__(func.__name__, newTime)
+        return res
+    return wrapped_func
+timed.functionIndex = []
 
 
 # https://stackoverflow.com/q/15299878/how-to-use-python-decorators-to-check-function-arguments
@@ -488,12 +511,6 @@ def bboxFromCircle(circle, width_on_height_ratio = 1):
     return bbox
 
 
-def pointsFromBbox(bbox):
-    p1 = (int(bbox[0]), int(bbox[1]))
-    p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-    return p1, p2
-
-
 def pointInBbox(pt, bbox):
     left = bbox[0]
     right = left + bbox[2]
@@ -520,6 +537,11 @@ def show(key, value):
     printMV(key, "::", value)
     return value
 show = singleKeyValueFunction(show)
+
+
+def showTypeVal(key, value):
+    printMV(key, "::", typeVal(value))
+showTypeVal = singleKeyValueFunction(showTypeVal)
 
 
 def glob(key, value):

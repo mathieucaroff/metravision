@@ -11,7 +11,7 @@ class AnalyseData:
         self._data = []
     
     def addVehicle(self, veHistory):
-        time = max(veHistory.keys()) / self.timePerFrame
+        time = max(veHistory.keys()) * self.timePerFrame
 
         getRatio = lambda mvBbox: mvBbox[3] / mvBbox[2] # width / height
         ratios = map(getRatio, veHistory.values())
@@ -74,15 +74,13 @@ class MvTracker(util.MvBbox):
 
 
 
-
 class AnalyseTool():
     # Setup:
-    def __init__(self, vidDimension, timePerFrame, debug):
+    def __init__(self, vidDimension, timePerFrame):
         """
         Paramètre et crée le backgroundSubtractor () ainsi que le blob detector.
         """
         self.vidDimension = vidDimension
-        self.debug = debug
 
         # Background subtractor initialisation
         self.bgSub = cv2.createBackgroundSubtractorMOG2()
@@ -136,26 +134,26 @@ class AnalyseTool():
         """
         Run the analysis of a frame.
         """
-        sub = self.bgSub.apply(image = im["frame"], learningRate = 0.02)
+        sub = util.timed(self.bgSub.apply)(image = im["frame"], learningRate = 0.009)
         im["fgMask"] = sub
         
         # Two-frame bitwise AND
 
-        im["bitwise_fgMask_and"] = cv2.bitwise_and(im["fgMask"], self.last_fgMask, self.oneBeforeLast_fgMask)
+        im["bitwise_fgMask_and"] = util.timed(cv2.bitwise_and)(im["fgMask"], self.last_fgMask, self.oneBeforeLast_fgMask)
 
         # erodeAndDilate
-        mask = self.erodeAndDilate(im)
+        mask = util.timed(self.erodeAndDilate)(im)
         _ = mask
 
         # Contour
         # self.contour(im, mask)
 
         # Blob Detector
-        blobKeypoints = self.blobDetection(im, nameOfImageToUse = "dilateC")
+        blobKeypoints = util.timed(self.blobDetection)(im, nameOfImageToUse = "dilateC")
 
         # Tracking
         frame = im["blob_dilateC"]
-        self.mvTracking(im, frameIndex, frame, blobKeypoints)
+        util.timed(self.mvTracking)(im, frameIndex, frame, blobKeypoints)
 
         self.last_fgMask, self.oneBeforeLast_fgMask = im["fgMask"], self.last_fgMask
 

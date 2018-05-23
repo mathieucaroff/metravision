@@ -7,12 +7,13 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from util import Namespace, printMV, printMVerr
+from util import printMV, printMVerr
 import util
 import ihm.window as window
 
 import parseConfig
 import lecture
+import perspective
 
 printMV("Versions:")
 printMV(f"[Python] {sys.version}")
@@ -20,9 +21,6 @@ printMV(f"[Numpy] {np.__version__}")
 printMV(f"[OpenCV] {cv2.__version__}")
 
 sys.path[:0] = ["src", "."]
-
-debug = Namespace()
-
 
 def main():
     for x in list(range(3)) + [0]:
@@ -39,7 +37,24 @@ def main():
     windowWidth = config.raw["window"]["width"]
     windowShape = (windowHeight, windowWidth)
 
-    videoPath = Path(random.choice(config.video.files))
+
+
+    if config.raw.usePerspectiveCorrection:
+        pInfo = config.raw.videoPerspectiveInformation
+        filesWithPerspectiveInformation = [path for path in config.video.files if any(pattern in path for pattern in pInfo.keys())]
+        videoPath = Path(random.choice(filesWithPerspectiveInformation))
+
+        firstOf = next
+        vpInfo = firstOf(info for (patternKey, info) in pInfo.items() if patternKey in str(videoPath))
+        
+        perspectiveCorrector = perspective.PerspectiveCorrector(
+            xLeftEdge = vpInfo["xLeftEdge"],
+            xRightEdge = vpInfo["xRightEdge"],
+            vanishingPoint = vpInfo["vanishingPoint"])
+    else:
+        videoPath = Path(random.choice(config.video.files))
+        perspectiveCorrector = perspective.DummyPerspectiveCorrector()
+
     videoName = videoPath.name
 
     try:
@@ -51,7 +66,10 @@ def main():
     cap = cv2.VideoCapture(str(videoPath))
 
     try:
-        lecteur = lecture.Lecteur(cap, config.raw.redCrossEnabled, debug)
+        lecteur = lecture.Lecteur(
+            cap = cap,
+            redCrossEnabled = config.raw.redCrossEnabled,
+            perspectiveCorrector = perspectiveCorrector)
 
         mvWindow = window.MvWindow(
             windowName = windowName,
@@ -65,6 +83,12 @@ def main():
         # with util.pdbPostMortem():
             lecteur.run(mvWindow)
         pprint(lecteur.getData())
+
+        printMV("[:Recorded times totals:]")
+        for fname in util.timed.functionIndex:
+            time = getattr(util.timed, fname)
+            printMV("Function {fname} ::: {time:.04} seconds".format(fname = fname, time = time))
+            
     finally:
         # When everything done, release the capture
         cap.release()

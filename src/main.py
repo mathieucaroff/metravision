@@ -12,6 +12,7 @@ import ihm.window as window
 
 import parseConfig
 import lecture
+import fileresults
 
 printMV("Versions:")
 printMV(f"[Python] {sys.version}")
@@ -65,6 +66,8 @@ def main():
         # with util.pdbPostMortem():
             lecteur.run(mvWindow)
         # print(lecteur.getData())
+        fileresults.writeFile(lecteur.getData())
+        
     finally:
         # When everything done, release the capture
         cap.release()

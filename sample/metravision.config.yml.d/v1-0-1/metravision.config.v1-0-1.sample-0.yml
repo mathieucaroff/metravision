@@ -49,20 +49,42 @@ video:
             ? SequenceDebut.avi
             ? SequenceFin.avi
             ? SequenceHeureDePointe.avi
-    long: null
+    long:
+        directoryName: "SequencesLongues"
+        files: !!set
+            ? 01.avi
+            ? 02.avi
+            ? 03.avi
+            ? 04.avi
+            ? 05.avi
+            ? 06.avi
+            ? 07.avi
+            ? 08.avi
+            ? 09.avi
+            ? 10.avi
+            ? 11.avi
+            ? demo-40min.avi
+usePerspectiveCorrection: true
+videoPerspectiveInformation:
+    09.avi:
+        xLeftEdge: 136
+        xRightEdge: 743
+        vanishingPoint: [548, 130]
 stat:
     -
         statFile: /path/to/stat1.yml
-        offset: 5m10 # To be adjusted
+        timeOffset: 5m10 # To be adjusted
+        segmentDuration: 6m00
         videoDirectoryLocation: /path/to/videos
         videos: 
             - 04.avi
-            - 05.avi
+            - 05.avi    
             - 06.avi
             - 07.avi
     -
         statFile: /path/to/stat2.yml
-        offset: 35m20 # ~To be adjusted
+        timeOffset: 35m20 # ~To be adjusted
+        segmentDuration: 6m00
         videoDirectoryLocation: /path/to/videos
         videos: 
             - 08.avi

@@ -5,6 +5,24 @@ import util
 from util import printMV
 
 
+class AnalyseData:
+    def __init__(self, timePerFrame):
+        self.timePerFrame = timePerFrame
+        self._data = []
+    
+    def addVehicle(self, veHistory):
+        time = max(veHistory.keys()) * self.timePerFrame
+
+        getRatio = lambda mvBbox: mvBbox[3] / mvBbox[2] # width / height
+        ratios = map(getRatio, veHistory.values())
+        medianRatio = util.median(ratios)
+        vehicle = "Moto" if medianRatio > 1.6 else "Automobile"
+        self._data.append((time, vehicle))
+    
+    def getData(self):
+        return self._data
+
+
 
 class MvTracker(util.MvBbox):
     __slots__ = "tracker ret errCount history".split()
@@ -49,19 +67,20 @@ class MvTracker(util.MvBbox):
         """
         Replace the given tracker. Supposes that the "sender" tracker will be abandoned, and that we have to replace it.
         """
-        self.history.update(sender.history)
-
+        if max(sender.history.keys()) + 1 < min(self.history.keys()) or min(sender.history.keys()) - 1 > max(self.history.keys()):
+            printMV("[Warning] trackers with non-matching history merged -- canceled.")
+        else:
+            self.history.update(sender.history)
 
 
 
 class AnalyseTool():
     # Setup:
-    def __init__(self, vidDimension, debug):
+    def __init__(self, vidDimension, timePerFrame):
         """
         Paramètre et crée le backgroundSubtractor () ainsi que le blob detector.
         """
         self.vidDimension = vidDimension
-        self.debug = debug
 
         # Background subtractor initialisation
         self.bgSub = cv2.createBackgroundSubtractorMOG2()
@@ -80,6 +99,12 @@ class AnalyseTool():
 
         # Tracker initialisation
         self.trackerList = []
+
+        # Where to store results
+        self.analyseData = AnalyseData(timePerFrame)
+    
+    def getData(self):
+        return self.analyseData.getData()
 
     @staticmethod
     def mvTrackerCreator():
@@ -109,26 +134,26 @@ class AnalyseTool():
         """
         Run the analysis of a frame.
         """
-        sub = self.bgSub.apply(image = im["frame"], learningRate = 0.02)
+        sub = util.timed(self.bgSub.apply)(image = im["frame"], learningRate = 0.009)
         im["fgMask"] = sub
         
         # Two-frame bitwise AND
 
-        im["bitwise_fgMask_and"] = cv2.bitwise_and(im["fgMask"], self.last_fgMask, self.oneBeforeLast_fgMask)
+        im["bitwise_fgMask_and"] = util.timed(cv2.bitwise_and)(im["fgMask"], self.last_fgMask, self.oneBeforeLast_fgMask)
 
         # erodeAndDilate
-        mask = self.erodeAndDilate(im)
+        mask = util.timed(self.erodeAndDilate)(im)
         _ = mask
 
         # Contour
         # self.contour(im, mask)
 
         # Blob Detector
-        blobKeypoints = self.blobDetection(im, nameOfImageToUse = "dilateC")
+        blobKeypoints = util.timed(self.blobDetection)(im, nameOfImageToUse = "dilateC")
 
         # Tracking
         frame = im["blob_dilateC"]
-        self.mvTracking(im, frameIndex, frame, blobKeypoints)
+        util.timed(self.mvTracking)(im, frameIndex, frame, blobKeypoints)
 
         self.last_fgMask, self.oneBeforeLast_fgMask = im["fgMask"], self.last_fgMask
 
@@ -255,9 +280,13 @@ class AnalyseTool():
                 magenta = (255, 0, 255)
                 cyan = (255, 255, 0)
                 color = [magenta, cyan][isMoto]
-                printMV(f":: Got ratio {ratio} for finished blob. [{kind}]")
                 blobMvBbox.draw(im["frame"], color)
             if mvTracker.isFinishedTracker(self.vidDimension):
+                self.analyseData.addVehicle(mvTracker.history)
+                white = (255, 255, 255)
+                mvTracker.draw(im["frame"], white)
+                kind = self.analyseData.getData()[-1][1]
+                printMV(f":: Finished vehicle [{kind}]")
                 numberOfFinishs += 1
                 # mvTracker.printTracker("Removed fin", i)
             else:
@@ -293,8 +322,6 @@ class AnalyseTool():
             blobMvbbox = getBlobMvBbox(im["dilateC"], x, y)
             # width_on_height_ratio = blobMvbbox.width / blobMvbbox.height
             # width_on_height_ratio = 0.5
-            white = (255, 255, 255)
-            blobMvbbox.draw(im["frame"], white)
             # bbox = util.bboxFromCircle(keypoint, width_on_height_ratio = width_on_height_ratio)
 
             # Create and register tracker:
@@ -313,7 +340,7 @@ class AnalyseTool():
             self.trackerList.append(mvTracker)
             numberOfAdditions += 1
 
-        printMV(f"[Trackers] Updated {numberOfUpdates} then Rmvd dups {numberOfDeletions}, Rmvd fin {numberOfFinishs}, Created {numberOfAdditions}.")
+        # printMV(f"[Trackers] Updated {numberOfUpdates} then Rmvd dups {numberOfDeletions}, Rmvd fin {numberOfFinishs}, Created {numberOfAdditions}.")
 
 
     def getTrackerDuplicates(self):

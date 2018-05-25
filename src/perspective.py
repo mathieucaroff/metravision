@@ -13,13 +13,13 @@ class PerspectiveCorrector:
         h, w, _colorNumber = frame.shape
         vanishingPoint = np.array(self.vanishingPoint)
 
-        roadWidth = self.xRightEdge - self.xLeftEdge
+        #roadWidth = self.xRightEdge - self.xLeftEdge
         # margin = 0.1 * roadWidth
         bottomLeftCorner  = np.array([self.xLeftEdge, h - 1])
         bottomRightCorner = np.array([self.xRightEdge, h - 1])
 
-        topLeftCorner = 0.2 * bottomLeftCorner + 0.8 * vanishingPoint
-        topRightCorner = 0.2 * bottomRightCorner + 0.8 * vanishingPoint
+        topLeftCorner = 0.4 * bottomLeftCorner + 0.6 * vanishingPoint
+        topRightCorner = 0.4 * bottomRightCorner + 0.6 * vanishingPoint
         
         leftSide = 0.5 * bottomLeftCorner + 0.5 * topLeftCorner
         rightSide = 0.5 * bottomRightCorner + 0.5 * topRightCorner
@@ -37,13 +37,21 @@ class PerspectiveCorrector:
 
         dstLeftSide = 0.5 * dstBottomLeftCorner + 0.5 * dstTopLeftCorner
         dstRightSide = 0.5 * dstBottomRightCorner + 0.5 * dstTopRightCorner
+        #Analisis zone
+        tlp = (320,int(0.55*h))
+        trp = (610,int(0.55*h))
+        blp = (150, 500)
+        brp = (710, 500)
+        cv2.circle(img = frame, center = blp, radius = 15, color = (255,0,0), thickness = -1)
+        cv2.circle(img = frame, center = brp, radius = 15, color = (255,0,0), thickness = -1)
+        cv2.circle(img = frame, center = tlp, radius = 5, color = (255,0,0), thickness = -1)
+        cv2.circle(img = frame, center = trp, radius = 5, color = (255,0,0), thickness = -1)
 
-        cv2.circle(img = frame, center = tuple(dstBottomLeftCorner), radius = 15, color = (255,0,0), thickness = -1)
-
-        pts_src = np.array([topLeftCorner, topRightCorner, bottomLeftCorner, bottomRightCorner, leftSide, rightSide])
-        pts_dst = np.array([dstTopLeftCorner, dstTopRightCorner, dstBottomLeftCorner, dstBottomRightCorner, dstLeftSide, dstRightSide])
+        #pts_src = np.array([topLeftCorner, topRightCorner, bottomLeftCorner, bottomRightCorner, leftSide, rightSide]) #this didn't work very well
+        #pts_dst = np.array([dstTopLeftCorner, dstTopRightCorner, dstBottomLeftCorner, dstBottomRightCorner, dstLeftSide, dstRightSide])
+        pts_src = np.array([tlp, trp, blp, brp])
+        pts_dst = np.array([[0, 0], [700, 0], [0, h-1], [780, h-1]])
         dsize = w, h
-
         homographyMatrix, _status = cv2.findHomography(pts_src, pts_dst)
         warped = cv2.warpPerspective(frame, homographyMatrix, dsize)
         return warped

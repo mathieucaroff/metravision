@@ -89,7 +89,7 @@ def main():
         data = lecteur.getData()
 
         assert type(data) == list
-        fileresults.writeFile(data)
+        #fileresults.writeFile(data)
         
         pprint(lecteur.getData())
 

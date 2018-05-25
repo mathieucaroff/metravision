@@ -84,7 +84,12 @@ def main():
         # with util.pdbPostMortem():
             lecteur.run(mvWindow)
         # print(lecteur.getData())
-        fileresults.writeFile(lecteur.getData())
+
+
+        data = lecteur.getData()
+
+        assert type(data) == list
+        fileresults.writeFile(data)
         
         pprint(lecteur.getData())
 

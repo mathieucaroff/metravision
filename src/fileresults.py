@@ -13,9 +13,9 @@ def writeFile(fileData):
     ws = wb.active
     i=0
     print(len(fileData))
-    for i in len(fileData):
-        ws.cell(row=i+1, column=1).value = fileData[i][1]
-        ws.cell(row=i+1, column=2).value = fileData[i][2]
+    for i, par in enumerate(fileData):
+        ws.cell(row=i+1, column=1).value = par[0]
+        ws.cell(row=i+1, column=2).value = par[1]
     
     # Save the file
     wb.save("results.xlsx")

@@ -44,7 +44,7 @@ class TimeController:
 
 
 class Lecteur:
-    __slots__ = "redCrossEnabled analyseTool playbackStatus timeController cap frameCount height width fps timePerFrame vidDimension perspectiveCorrector".split()
+    __slots__ = "redCrossEnabled analyseTool playbackStatus timeController cap frameCount height width fps timePerFrame vidDimension perspectiveCorrector jumpEventSubscriber".split()
     frameIndex = property()
 
     def getData(self):
@@ -56,9 +56,10 @@ class Lecteur:
         self.initVideoInfo(cap)
         self.redCrossEnabled = redCrossEnabled
         self.perspectiveCorrector = perspectiveCorrector
+        self.jumpEventSubscriber = []
 
         # Background subtractor initialisation
-        self.analyseTool = analyse.AnalyseTool(vidDimension = self.vidDimension, timePerFrame = self.timePerFrame)
+        self.analyseTool = analyse.AnalyseTool(vidDimension = self.vidDimension, timePerFrame = self.timePerFrame, jumpEventSubscriber = self.jumpEventSubscriber)
 
         self.playbackStatus = PlaybackStatus(play = True)
         self.timeController = TimeController(self.timePerFrame)
@@ -112,6 +113,9 @@ class Lecteur:
         frameIndex = int(fraction * frameCount)
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, frameIndex)
         self.playbackStatus.refreshNeeded = True
+
+        for f in self.jumpEventSubscriber:
+            f(cap = self.cap, playbackStatus = self.playbackStatus, frameIndex = frameIndex)
 
     @frameIndex.getter
     def frameIndex(self):

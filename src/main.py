@@ -1,12 +1,20 @@
+"""
+The file main is the entry point of Metravision. It reads the configuration and starts the other modules.
+"""
+
+
+# Python io modules
 import random
 import sys
-from pprint import pprint
-
 from pathlib import Path
 
+
+# Dependecies
 import cv2
 import numpy as np
 
+
+# Metravision modules
 from util import printMV, printMVerr
 import util
 import ihm.window as window
@@ -58,11 +66,8 @@ def main():
 
     videoName = videoPath.name
 
-    try:
-        videoPath.open().close()
-    except FileNotFoundError:
-        printMVerr(f"The specified video {videoPath} coudln't be open. (Missing file?)")
-        raise
+    if not videoPath.is_file():
+        raise FileNotFoundError(f"The specified video {videoPath} coudln't be open. (Missing file?)")
 
     cap = cv2.VideoCapture(str(videoPath))
 
@@ -88,10 +93,19 @@ def main():
 
         data = lecteur.getData()
 
-        assert type(data) == list
-        fileresults.writeFile(data)
+        results = fileresults.segmenting(
+            vehiclesInformations = data,
+            segmentDuration = 6, # seconds
+            timeOffset = 6 * 60 # seconds # :: 6 minutes
+        )
         
-        pprint(lecteur.getData())
+        pprint(data)
+        pprint(results)
+
+        resultFileName = fileresults.genResultFileName(videoFileName = videoPath.name, ext = "xlsx")
+
+        xlsdoc = fileresults.createXLS(results, sheetHeader = ["Index", "Time", "Automobiles", "Motos"])
+        xlsdoc.save(resultFileName)
 
         printMV("[:Recorded times totals:]")
         for fname in util.timed.functionIndex:

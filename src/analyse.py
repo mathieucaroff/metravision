@@ -6,9 +6,11 @@ from util import printMV
 
 
 class AnalyseData:
-    def __init__(self, timePerFrame):
+    def __init__(self, timePerFrame, jumpEventSubscriber):
         self.timePerFrame = timePerFrame
         self._data = []
+
+        jumpEventSubscriber.append(self.addJumpNotice)
     
     def addVehicle(self, veHistory):
         time = max(veHistory.keys()) * self.timePerFrame
@@ -18,6 +20,10 @@ class AnalyseData:
         medianRatio = util.median(ratios)
         vehicle = "Moto" if medianRatio > 1.6 else "Automobile"
         self._data.append((time, vehicle))
+    
+    def addJumpNotice(self, frameIndex, **kwargs):
+        time = frameIndex * self.timePerFrame
+        self._data.append((time, "<Jumping>"))
     
     def getData(self):
         return self._data
@@ -76,10 +82,11 @@ class MvTracker(util.MvBbox):
 
 class AnalyseTool():
     # Setup:
-    def __init__(self, vidDimension, timePerFrame):
+    def __init__(self, vidDimension, timePerFrame, jumpEventSubscriber):
         """
         Paramètre et crée le backgroundSubtractor () ainsi que le blob detector.
         """
+
         self.vidDimension = vidDimension
 
         # Background subtractor initialisation
@@ -101,7 +108,7 @@ class AnalyseTool():
         self.trackerList = []
 
         # Where to store results
-        self.analyseData = AnalyseData(timePerFrame)
+        self.analyseData = AnalyseData(timePerFrame, jumpEventSubscriber)
     
     def getData(self):
         return self.analyseData.getData()

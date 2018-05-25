@@ -9,6 +9,11 @@
 __pycache__
 *.pyc
 
+*.xlsx
+
 .vscode
 
 ctags.exe
+/lib/conda
+/lib/miniconda
+/lib/miniconda3

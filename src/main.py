@@ -98,9 +98,6 @@ def main():
             segmentDuration = 6, # seconds
             timeOffset = 6 * 60 # seconds # :: 6 minutes
         )
-        
-        pprint(data)
-        pprint(results)
 
         resultFileName = fileresults.genResultFileName(videoFileName = videoPath.name, ext = "xlsx")
 

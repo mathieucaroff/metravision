@@ -40,8 +40,8 @@ class PerspectiveCorrector:
         #Analisis zone
         tlp = (339,int(0.45*h))
         trp = (589,int(0.45*h))
-        blp = (130, 500)
-        brp = (720, 500)
+        blp = (130, 600)
+        brp = (720, 600)
         dblp = (0, 0)
         dbrp = (720, 0)
         dtlp = (100, h-1)
@@ -56,12 +56,15 @@ class PerspectiveCorrector:
         cv2.circle(img = frame, center = dtrp, radius = 5, color = (0,255,0), thickness = -1)
         #pts_src = np.array([topLeftCorner, topRightCorner, bottomLeftCorner, bottomRightCorner, leftSide, rightSide]) #this didn't work very well
         #pts_dst = np.array([dstTopLeftCorner, dstTopRightCorner, dstBottomLeftCorner, dstBottomRightCorner, dstLeftSide, dstRightSide])
-        pts_src = np.array([tlp, trp, blp, brp])
-        pts_dst = np.array([dblp, dbrp, dtlp, dtrp])
+        pts_src = np.array([tlp, trp, blp, brp], dtype = "float32")
+        pts_dst = np.array([dblp, dbrp, dtlp, dtrp], dtype = "float32")
+        pts_src = np.float32(pts_src)
+        pts_dst = np.float32(pts_dst)
         dsize = w, h
         homographyMatrix, _status = cv2.findHomography(pts_src, pts_dst)
         #affine = cv2.getAffineTransform(pts_src, pts_dst) #error: (-215) src.checkVector(2, 5) == 3 && dst.checkVector(2, 5) == 3 in function cv::getAffineTransform
-        
+        #getPers = cv2.getPerspectiveTransform(pts_src, pts_dst) #same results of homofraphy
+
         warped = cv2.warpPerspective(frame, homographyMatrix, dsize)
         return warped
 

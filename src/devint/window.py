@@ -4,8 +4,8 @@ import numpy as np
 from util import Namespace
 from util import printMV
 
-import ihm.progressBar
-import ihm.multiView
+import  devint.multiView
+import devint.progressBar
 
 
 def windowClosed(windowName):
@@ -40,8 +40,8 @@ class MvWindow:
 
 
         displayShape = (windowShape[0] - bp.shape[0], windowShape[1])
-        self.updateSubWindows = ihm.multiView.setupVideoSelectionHook(mouseCallbackList, displayShape, playbackStatus, windowClosed)
-        ihm.progressBar.setupClickHook(mouseCallbackList, windowShape, 30, jumpToFrameFunction)
+        self.updateSubWindows = devint.multiView.setupVideoSelectionHook(mouseCallbackList, displayShape, playbackStatus, windowClosed)
+        devint.progressBar.setupClickHook(mouseCallbackList, windowShape, 30, jumpToFrameFunction)
 
 
     def update(self, imageSet, advancementPercentage):
@@ -50,8 +50,8 @@ class MvWindow:
         output = np.zeros(shape = shape, dtype = np.uint8)
         barHeight = self.barProperties.shape[0]
 
-        ihm.multiView.renderNimages(self.videoName, imageSet, output = output[:-barHeight])
-        ihm.progressBar.drawBar(self.barProperties, buffer = output, advancementPercentage = advancementPercentage)
+        devint.multiView.renderNimages(self.videoName, imageSet, output = output[:-barHeight])
+        devint.progressBar.drawBar(self.barProperties, buffer = output, advancementPercentage = advancementPercentage)
         cv2.imshow("Metravision", output)
 
         self.updateSubWindows(imageSet = imageSet)

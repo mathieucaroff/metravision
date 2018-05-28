@@ -15,14 +15,17 @@ import numpy as np
 
 
 # Metravision modules
-from util import printMV, printMVerr
+from util import printMV
 import util
-import ihm.window as window
+import devint.window as window
 
 import parseConfig
 import lecture
 import perspective
 import fileresults
+
+import os, sys
+util.printMV(os.path.basename(__file__), "<><>", sys.path)
 
 printMV("Versions:")
 printMV(f"[Python] {sys.version}")
@@ -30,6 +33,9 @@ printMV(f"[Numpy] {np.__version__}")
 printMV(f"[OpenCV] {cv2.__version__}")
 
 sys.path[:0] = ["src", "."]
+
+import os, sys
+util.printMV(os.path.basename(__file__), "<><>", sys.path)
 
 def main():
     for x in list(range(3)) + [0]:
@@ -45,8 +51,6 @@ def main():
     windowHeight = config.raw["window"]["height"]
     windowWidth = config.raw["window"]["width"]
     windowShape = (windowHeight, windowWidth)
-
-
 
     if config.raw.usePerspectiveCorrection:
         pInfo = config.raw.videoPerspectiveInformation

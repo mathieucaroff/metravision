@@ -7,6 +7,8 @@ from openpyxl import Workbook
 
 import util
 
+import os, sys
+util.printMV(os.path.basename(__file__), "<><>", sys.path)
 
 """
 Parse data obtained from analyzing the video into video count segments and write the results into an xlsx file.

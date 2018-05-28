@@ -7,16 +7,18 @@ Currently, the *project* is **based** on it's little-brother, Traqu'moto, made
 in 2017. It uses Torch and OpenCV and is available under the BSD-3-Clause
 license.
 
-
 ## Installing
 
 The project depends on anaconda packages. To retrieve them, you should install miniconda or anaconda, then use
-```
+
+```sh
 conda install -c conda-forge opencv pyyaml ipython
 ```
+
 to install them. If you are on Windows, you'll want to use the Anaconda Prompt.
 If you want to develop the project, you may want to install the python packages `pylint` and `rope`. You can do so with the command:
-```
+
+```sh
 conda install pylint rope
 ```
 
@@ -30,13 +32,13 @@ page [Learn git in Y minutes](https://learnxinyminutes.com/docs/git/).
 The below command presentations are copy-pasted from that page. This page
 will likely be harder to understand than the above linked page.
 
-### Récapitulatif des commandes :
+### Récapitulatif des commandes
 
 ![Git data transport commands](https://i.stack.imgur.com/MgaV9.png)
 
 Source: [q/2745076](https://stackoverflow.com/q/2745076)
 
-### Détail des commandes :
+### Détail des commandes
 
 #### config
 
@@ -77,7 +79,7 @@ $ git init --help
 #### clone
 
 Clones, or copies, an existing repository into a new directory. It also adds
-remote-tracking branches for each branch in the cloned repo, which allows you 
+remote-tracking branches for each branch in the cloned repo, which allows you
 to push to a remote branch.
 
 ```bash
@@ -106,7 +108,7 @@ $ git help status
 
 #### add
 
-To add files to the staging area/index. If you do not `git add` new files to 
+To add files to the staging area/index. If you do not `git add` new files to
 the staging area/index, they will not be included in commits!
 
 ```bash
@@ -128,7 +130,7 @@ working directory/repo.
 
 #### commit
 
-Stores the current contents of the index in a new "commit." This commit 
+Stores the current contents of the index in a new "commit." This commit
 contains the changes made and a message created by the user.
 
 ```bash
@@ -175,11 +177,11 @@ Pulls from a repository and merges it with another branch.
 $ git pull origin master
 
 # By default, git pull will update your current branch
-# by merging in new changes from its remote-tracking branch 
+# by merging in new changes from its remote-tracking branch
 $ git pull
 
 # Merge in changes from remote branch and rebase
-# branch commits onto your local repo, like: "git fetch <remote> <branch>, git 
+# branch commits onto your local repo, like: "git fetch <remote> <branch>, git
 # rebase <remote>/<branch>"
 $ git pull origin master --rebase
 ```
@@ -195,7 +197,7 @@ Push and merge changes from a branch to a remote & branch.
 $ git push origin master
 
 # By default, git push will push and merge changes from
-# the current branch to its remote-tracking branch 
+# the current branch to its remote-tracking branch
 $ git push
 
 # To link up current local branch with a remote branch, add -u flag:

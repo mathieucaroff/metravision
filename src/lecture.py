@@ -10,7 +10,10 @@ import cv2
 from util import printMV
 import util
 
-import analyse
+import analyse.processing as processing
+
+import os, sys
+util.printMV(os.path.basename(__file__), "<><>", sys.path)
 
 class PlaybackStatus:
     __slots__ = ["play", "quitting", "refreshNeeded", "debugNeeded"]
@@ -59,7 +62,7 @@ class Lecteur:
         self.jumpEventSubscriber = []
 
         # Background subtractor initialisation
-        self.analyseTool = analyse.AnalyseTool(vidDimension = self.vidDimension, timePerFrame = self.timePerFrame, jumpEventSubscriber = self.jumpEventSubscriber)
+        self.analyseTool = processing.AnalyseTool(vidDimension = self.vidDimension, timePerFrame = self.timePerFrame, jumpEventSubscriber = self.jumpEventSubscriber)
 
         self.playbackStatus = PlaybackStatus(play = True)
         self.timeController = TimeController(self.timePerFrame)

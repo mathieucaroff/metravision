@@ -101,7 +101,6 @@ def timed(func):
     """
     Decorateur pour chronométrer le temps total passé dans la fonction donnée.
     """
-    timed.__setattr__(func.__name__, 0)
     if func.__name__ not in timed.functionIndex:
         timed.functionIndex.append(func.__name__)
     @wraps(func)
@@ -110,9 +109,11 @@ def timed(func):
         res = func(*args, **kwargs)
         end = time.time()
 
-        lastTime = getattr(timed, func.__name__)
+        try:
+            lastTime = getattr(timed, func.__name__)
+        except AttributeError:
+            lastTime = 0.0
         newTime = lastTime + end - beginning
-        assert type(lastTime) == int
         timed.__setattr__(func.__name__, newTime)
         return res
     return wrapped_func
@@ -201,10 +202,15 @@ def _parameterable_decorator_sample(param):
     return decorator
 
 
-
-class Namespace:
+# CLASSES
+# Exceptions
+class DeveloperInterruption(Exception):
     pass
 
+
+# Namespace / Dict
+class Namespace:
+    pass
 
 class Dotdict(dict):
     """dot.notation access to dictionary attributes"""
@@ -220,14 +226,31 @@ class ReadOnlyDotdict(dict):
 
 class RecursiveReadOnlyDotdict(dict):
     """dot.notation readonly access to dictionary attributes, propagated to children dictionaries upon acess."""
-    def __getitem__(self, key):
+    __slots__ = []
+    def __getattr__(self, key):
         val = dict.__getitem__(self, key)
         if type(val) == dict:
             val = RecursiveReadOnlyDotdict(val)
         return val
-    __getattr__ = __getitem__
+    __getitem__ = __getattr__
+
+def test_RecursiveReadOnlyDotdict():
+    d = {"a": {"b": {"c": "value"}}, "z": {"y": "nothing"}}
+    dd = RecursiveReadOnlyDotdict(d)
+    assert dd.a.b.c == "value"
+    assert dd.z.y == "nothing"
+    assert list(dd.a.b.items()) == [("c", "value")]
+
+    assert dd["a"].b["c"] == "value"
+    assert dd["z"].y == "nothing"
+    assert list(dd.a["b"].items()) == [("c", "value")]
+
+    assert dd["a"]["b"]["c"] == "value"
+    assert dd["z"]["y"] == "nothing"
+    assert list(dd["a"]["b"].items()) == [("c", "value")]
 
 
+# Vector
 class ArithmeticList:
     def __init__(self, *args):
         assert args[0] != self
@@ -292,10 +315,12 @@ class Vector(ArithmeticList):
             return None
         
 
+# More geometric objects
 class Point(Vector):
     pass
 
 
+# OpenCV-like keypoint
 class Keypoint:
     __slots__ = "pt size".split()
 
@@ -422,10 +447,10 @@ class MvBbox:
 # CONTEXTE MANAGERS
 # https://stackoverflow.com/q/242485/starting-python-debugger-automatically-on-error
 @contextlib.contextmanager
-def pdbPostMortemEnabled():
+def pdbPostMortemUpon(exception):
     try:
         yield
-    except Exception: # pylint: disable=broad-except
+    except exception: # pylint: disable=broad-except
         import pdb, traceback
         traceback.print_exc()
         pdb.post_mortem()
@@ -433,10 +458,10 @@ def pdbPostMortemEnabled():
 
 # https://stackoverflow.com/q/242485/starting-python-debugger-automatically-on-error
 @contextlib.contextmanager
-def interactOnExceptionEnabled():
+def interactPostMortemUpon(exception = Exception):
     try:
         yield
-    except Exception: # pylint: disable=broad-except
+    except exception: # pylint: disable=broad-except
         import code, traceback
         _type, _value, tb_ = sys.exc_info()
         traceback.print_exc()

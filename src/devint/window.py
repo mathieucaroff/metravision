@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 
+import util
 from util import Namespace
 from util import printMV
 
@@ -66,6 +67,8 @@ class MvWindow:
             playbackStatus.quitting = True
         if key == ord('f'):
             playbackStatus.refreshNeeded = True
+        if key == ord('d'):
+            raise util.DeveloperInterruption
         if redCrossEnabled:
             if windowClosed(self.windowName):
                 playbackStatus.quitting = True

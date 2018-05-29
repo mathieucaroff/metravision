@@ -9,9 +9,6 @@ from analyse.segmenting import AnalyseData
 
 from analyse.tracking import MvTracker
 
-import os, sys
-util.printMV(os.path.basename(__file__), "<><>", sys.path)
-
 class AnalyseTool():
     # Setup:
     def __init__(self, vidDimension, timePerFrame, jumpEventSubscriber):
@@ -22,14 +19,14 @@ class AnalyseTool():
         self.vidDimension = vidDimension
 
         # Background subtractor initialisation
-        self.bgSub = cv2.createBackgroundSubtractorMOG2()
+        self.bgSub = cv2.createBackgroundSubtractorKNN()
 
         # blobDetector initialisation
         params = cv2.SimpleBlobDetector_Params()
         params.minDistBetweenBlobs = 4
         params.filterByArea = True
         params.minArea = 2_000
-        params.maxArea = 100_000
+        params.maxArea = 20_000
         params.filterByInertia = True
         params.maxInertiaRatio = 3
         self.blobDetector = cv2.SimpleBlobDetector_create(params)
@@ -78,7 +75,7 @@ class AnalyseTool():
         
         # Two-frame bitwise AND
 
-        im["bitwise_fgMask_and"] = util.timed(cv2.bitwise_and)(im["fgMask"], self.last_fgMask, self.oneBeforeLast_fgMask)
+        im["bitwise_fgMask_and"] = cv2.bitwise_and(im["fgMask"], self.last_fgMask, self.oneBeforeLast_fgMask)
 
         # erodeAndDilate
         mask = util.timed(self.erodeAndDilate)(im)

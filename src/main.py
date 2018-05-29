@@ -22,20 +22,17 @@ import devint.window as window
 import parseConfig
 import lecture
 import perspective
+import analyse.segmenting
 import fileresults
 
-import os, sys
-util.printMV(os.path.basename(__file__), "<><>", sys.path)
 
 printMV("Versions:")
 printMV(f"[Python] {sys.version}")
 printMV(f"[Numpy] {np.__version__}")
 printMV(f"[OpenCV] {cv2.__version__}")
 
-sys.path[:0] = ["src", "."]
+sys.path = [str(Path("./src").absolute), *sys.path]
 
-import os, sys
-util.printMV(os.path.basename(__file__), "<><>", sys.path)
 
 def main():
     for x in list(range(3)) + [0]:
@@ -46,6 +43,9 @@ def main():
             break
     else:
         p.open().close() # raise FileNotFoundError
+
+    if config.raw.configurationVersion != "1.0.2":
+        raise ValueError("Apparently, the version of your configuration file isn't the last available.")
 
     windowName = config.raw.windowName
     windowHeight = config.raw["window"]["height"]
@@ -80,6 +80,8 @@ def main():
             cap = cap,
             redCrossEnabled = config.raw.redCrossEnabled,
             perspectiveCorrector = perspectiveCorrector)
+        
+        lecteur.jumpTo(2 / 3) # (random.random() * 3 / 4)
 
         mvWindow = window.MvWindow(
             windowName = windowName,
@@ -88,25 +90,31 @@ def main():
             playbackStatus = lecteur.playbackStatus,
             jumpToFrameFunction = lecteur.jumpTo)
 
-        with util.neutralContextManager():
-        # with util.interactOnExceptionEnabled():
-        # with util.pdbPostMortem():
-            lecteur.run(mvWindow)
+        # with util.neutralContextManager():
+        # with util.interactPostMortemUpon():
+        with util.pdbPostMortemUpon(Exception):
+            with util.pdbPostMortemUpon(util.DeveloperInterruption):
+                lecteur.run(mvWindow)
         # print(lecteur.getData())
 
+        # -------
 
+        ### Getting data and writing results
         data = lecteur.getData()
 
-        results = fileresults.segmenting(
+        results = analyse.segmenting.segmenting(
             vehiclesInformations = data,
             segmentDuration = 6, # seconds
             timeOffset = 6 * 60 # seconds # :: 6 minutes
         )
 
-        resultFileName = fileresults.genResultFileName(videoFileName = videoPath.name, ext = "xlsx")
+        resultPathTemplate = config.raw.resultDestinationTemplates.counts
+
+        resultFilePath = fileresults.fillPathTemplate(videoPath = videoPath, ext = "xlsx", pathTemplate = resultPathTemplate)
+        Path(resultFilePath).absolute().parent.mkdir(parents = True, exist_ok = True)
 
         xlsdoc = fileresults.createXLS(results, sheetHeader = ["Index", "Time", "Automobiles", "Motos"])
-        xlsdoc.save(resultFileName)
+        xlsdoc.save(resultFilePath)
 
         printMV("[:Recorded times totals:]")
         for fname in util.timed.functionIndex:

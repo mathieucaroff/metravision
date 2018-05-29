@@ -109,7 +109,7 @@ def setupVideoSelectionHook(mouseCallbackList, displayShape, playbackStatus, win
         """
         Identify double click
         """ 
-        if event == cv2.EVENT_LBUTTONDOWN:
+        if event == cv2.EVENT_LBUTTONDBLCLK:
             share.press = True
             share.pVy = y
             share.pVx = x

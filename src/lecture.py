@@ -1,6 +1,5 @@
 import collections
 
-import random
 import time
 
 import cv2
@@ -11,9 +10,6 @@ from util import printMV
 import util
 
 import analyse.processing as processing
-
-import os, sys
-util.printMV(os.path.basename(__file__), "<><>", sys.path)
 
 class PlaybackStatus:
     __slots__ = ["play", "quitting", "refreshNeeded", "debugNeeded"]
@@ -66,8 +62,6 @@ class Lecteur:
 
         self.playbackStatus = PlaybackStatus(play = True)
         self.timeController = TimeController(self.timePerFrame)
-
-        self.jumpTo(random.random() * 3 / 4)
 
 
     @util.logged

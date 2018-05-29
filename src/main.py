@@ -102,14 +102,7 @@ def main():
         # -------
 
         ### Getting data and writing results
-        data = lecteur.getData()
-
-        results = analyse.segmenting.segmenting(
-            vehiclesInformations = data,
-            segmentDuration = 6, # seconds
-            timeOffset = 6 * 60 # seconds # :: 6 minutes
-        )
-
+        results = lecteur.getData()
 
         templates = config.raw.resultDestinationTemplates
         if util.developementMode == True:

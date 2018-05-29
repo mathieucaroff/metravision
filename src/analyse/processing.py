@@ -5,7 +5,7 @@ import util
 from util import printMV
 
 
-from analyse.segmenting import AnalyseData
+from analyse.segmenting import AnalyseData, RealSegmenter
 
 from analyse.tracking import MvTracker
 
@@ -36,11 +36,15 @@ class AnalyseTool():
         # Tracker initialisation
         self.trackerList = []
 
-        # Where to store results
-        self.analyseData = AnalyseData(timePerFrame, jumpEventSubscriber)
+        # Where to store results, together with the vehicle counter (segmenter)
+        segmentDuration = 6
+        numberOfFramePerSegment = int(0.5 + segmentDuration / timePerFrame)
+        segmenter = RealSegmenter(numberOfFramePerSegment, timePerFrame)
+        self.analyseData = AnalyseData(timePerFrame, jumpEventSubscriber, segmenter)
     
     def getData(self):
-        return self.analyseData.getData()
+        # return self.analyseData.getData()
+        return self.analyseData.segmenter.getData()
 
     @staticmethod
     def mvTrackerCreator():
@@ -90,6 +94,8 @@ class AnalyseTool():
         # Tracking
         frame = im["blob_dilateC"]
         util.timed(self.mvTracking)(im, frameIndex, frame, blobKeypoints)
+
+        self.analyseData.tick()
 
         self.last_fgMask, self.oneBeforeLast_fgMask = im["fgMask"], self.last_fgMask
 

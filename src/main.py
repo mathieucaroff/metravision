@@ -27,9 +27,11 @@ import fileresults
 
 
 printMV("Versions:")
-printMV(f"[Python] {sys.version}")
-printMV(f"[Numpy] {np.__version__}")
-printMV(f"[OpenCV] {cv2.__version__}")
+printMV(f"[Python]      {sys.version}")
+printMV(f"[Numpy]       {np.__version__}")
+printMV(f"[OpenCV]      {cv2.__version__}")
+__version__ = Path("VERSION.txt").read_text()
+printMV(f"[Metravision] {__version__}")
 
 sys.path = [str(Path("./src").absolute), *sys.path]
 
@@ -100,15 +102,12 @@ def main():
         # -------
 
         ### Getting data and writing results
-        data = lecteur.getData()
+        results = lecteur.getData()
 
-        results = analyse.segmenting.segmenting(
-            vehiclesInformations = data,
-            segmentDuration = 6, # seconds
-            timeOffset = 6 * 60 # seconds # :: 6 minutes
-        )
-
-        resultPathTemplate = config.raw.resultDestinationTemplates.counts
+        templates = config.raw.resultDestinationTemplates
+        if util.developementMode == True:
+            templates = templates.developer
+        resultPathTemplate = templates.counts
 
         resultFilePath = fileresults.fillPathTemplate(videoPath = videoPath, ext = "xlsx", pathTemplate = resultPathTemplate)
         Path(resultFilePath).absolute().parent.mkdir(parents = True, exist_ok = True)

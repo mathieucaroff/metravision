@@ -1,11 +1,20 @@
 from enum import Enum
 
 import util
+from util import printMV
 
 class AnalyseData:
-    def __init__(self, timePerFrame, jumpEventSubscriber):
+    def __init__(self, timePerFrame, jumpEventSubscriber, segmenter):
+        """
+        Beware, the analyse data / segmenter thing is a real mess.
+        Ideally, you should remove the "AnalyseData" class, and only use RealSegmenter.
+
+        Sorry to my future self too, but refactoring would've taken too much time.
+        Hopefully, the test code will help you understand what it does.
+        """
         self.timePerFrame = timePerFrame
         self._data = []
+        self.segmenter = segmenter
 
         jumpEventSubscriber.append(self.addJumpNotice)
     
@@ -17,13 +26,18 @@ class AnalyseData:
         medianRatio = util.median(ratios)
         vehicle = "Moto" if medianRatio > 1.6 else "Automobile"
         self._data.append((time, vehicle))
+        self.segmenter.addVehicle(vehicle)
     
     def addJumpNotice(self, frameIndex, **_kwargs):
         time = frameIndex * self.timePerFrame
         self._data.append((time, "<Jumping>"))
+        self.segmenter.jumpToFrame(frameIndex)
     
     def getData(self):
         return self._data
+    
+    def tick(self):
+        self.segmenter.incrementFrameIndex()
 
 
 
@@ -31,74 +45,105 @@ class AnalyseData:
 Parse data obtained from analyzing the video into video count segments and write the results into an xlsx file.
 """
 
-
 class SegmenterStatus(Enum):
     counting = 0
     awaitingBeginning = 1
 
 
 class Segmenter:
-    def __init__(self, vehiclesInformations, segmentDuration):
-        self.vehiclesInformations = vehiclesInformations
-        self.segmentDuration = segmentDuration
+    __slots__ = "_numberOfFramePerSegment _frameIndex _timePerFrame".split()
+
+
+class DummySegmenter(Segmenter):
+    def __init__(self, numberOfFramePerSegment, timePerFrame):
+        self._numberOfFramePerSegment = numberOfFramePerSegment
+        self._timePerFrame = timePerFrame
+        self._frameIndex = 0
     
-
-
-def segmenting(vehiclesInformations, segmentDuration, timeOffset = 0):
-    """
-    Takes a list of recognised vehicles and for each, counts them into segments using the given groups.
-    Counts nothing until the first jump notification is met.
+    def incrementFrameIndex(self):
+        self._frameIndex += 1
     
-    timeOffset is subtracted from all times when determining the indexes of the segments.
-    Nothing is counted before timeOffset.
-    """
-    segments = dict()
-
-    viIterator = iter(vehiclesInformations)
-
-    oldSegmentIndex = 0
-    status = SegmenterStatus.awaitingBeginning
-    currentSegmentVehicleCounts = dict()
-    try:
-        while True:
-            vtime, vehicleName = next(viIterator)
-            segmentIndex = int((vtime - timeOffset) // segmentDuration)
-            changingOfSegment = (segmentIndex != oldSegmentIndex)
-            jumping = (vehicleName == "<Jumping>")
-
-            if changingOfSegment and not jumping:
-                if status == SegmenterStatus.awaitingBeginning:
-                    status = SegmenterStatus.counting
-                    currentSegmentVehicleCounts = dict()
-                elif status == SegmenterStatus.counting:
-                    for i in range(oldSegmentIndex, segmentIndex):
-                        segments[i] = currentSegmentVehicleCounts
-                        currentSegmentVehicleCounts = dict()
-                else:
-                    raise ValueError()
-
-            if jumping:
-                status = SegmenterStatus.awaitingBeginning
-
-            if status == SegmenterStatus.counting and not jumping:
-                currentSegmentVehicleCounts[vehicleName] = currentSegmentVehicleCounts.get(vehicleName, 0) + 1
-
-            oldSegmentIndex = segmentIndex
-    except StopIteration:
+    def jumpToFrame(self, frameIndex):
+        self._frameIndex = frameIndex
+    
+    def addVehicle(self, vehicle):
         pass
+    
+    def getSegments(self):
+        return []
 
-    segmentList = sorted(segments.items())
 
-    results = []
+class RealSegmenter(Segmenter):
+    __slots__ = "_segments _segementDuration _currentSegment _mode".split()
+    acceptedVehicleNames = "Automobile Moto".split()
 
-    for segmentIndex, countDict in segmentList:
-        assert len(countDict.keys()) <= 2, f"<=2: len: {len(countDict.keys())} ::: {countDict.keys()}"
-        i = segmentIndex
-        if i < 0:
-            continue
-        t = i * segmentDuration + timeOffset
-        auto = countDict.get("Automobile", 0)
-        moto = countDict.get("Moto", 0)
-        results.append([i, t, auto, moto])
+    def __init__(self, numberOfFramePerSegment, timePerFrame):
+        self._numberOfFramePerSegment = numberOfFramePerSegment
+        self._timePerFrame = timePerFrame
+        self._segementDuration = timePerFrame * numberOfFramePerSegment
+        self._frameIndex = 0
 
-    return results
+        self._segments = {} # Indexed from 0
+        self._mode = "Counting" # "Waiting"
+        self._currentSegment = self._newSegment()
+
+    @staticmethod
+    def _newSegment():
+        return {"Automobile": 0, "Moto": 0}
+    
+    def incrementFrameIndex(self):
+        self._frameIndex += 1
+        if self._frameIndex % self._numberOfFramePerSegment == 0:
+            if self._mode == "Counting":
+                i = int(self._frameIndex / self._numberOfFramePerSegment) - 1
+                self._segments[i] = self._currentSegment
+            self._currentSegment = self._newSegment()
+            printMV(f"Was {self._mode}, now Counting")
+            self._mode = "Counting"
+
+        """ 
+        if self._mode == "Counting":
+            if self._frameIndex % self._numberOfFramePerSegment == 0:
+                i = int(self._frameIndex / self._numberOfFramePerSegment)
+                self._segments[i] = self._currentSegment
+                self._currentSegment = self._newSegment()
+        elif self._mode == "Awaiting":
+            if self._frameIndex % self._numberOfFramePerSegment == 0:
+                self._currentSegment = self._newSegment()
+                self._mode = "Counting"
+        else:
+            raise RuntimeError(f"self._mode: {self._mode}") """
+    
+    def jumpToFrame(self, frameIndex):
+        self._mode = "Awaiting"
+        printMV("Awaiting")
+        self._currentSegment = None
+        self._frameIndex = frameIndex - 1
+        self.incrementFrameIndex()
+    
+    def addVehicle(self, vehicleName):
+        if self._mode == "Counting":
+            self._currentSegment[vehicleName] += 1
+        elif self._mode == "Awaiting":
+            pass
+    
+    def getData(self):
+        return [ (i, self._segementDuration * i, counts["Automobile"], counts["Moto"]) for (i, counts) in sorted(self._segments.items()) ]
+
+
+def test_RealSegmenter():
+    fps = 25
+    rs = RealSegmenter(numberOfFramePerSegment = 4 * fps, timePerFrame = (1/fps))
+    for i in range(4):
+        rs.addVehicle("Moto")
+    for j in range(7):
+        rs.addVehicle("Automobile")
+        rs.incrementFrameIndex()
+    for k in range(93):
+        rs.incrementFrameIndex()
+    firstResult = rs.getData()
+    for l in range(100):
+        rs.incrementFrameIndex()
+    secondResult = rs.getData()
+    assert firstResult == [(0, 0.0, 7, 4),], f"firstResult: {firstResult}"
+    assert secondResult == firstResult + [(1, 4.0, 0, 0),], f"secondResult: {secondResult}"

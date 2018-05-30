@@ -5,7 +5,7 @@ import util
 from util import Namespace
 from util import printMV
 
-import  devint.multiView
+import devint.multiView
 import devint.progressBar
 
 

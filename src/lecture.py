@@ -43,12 +43,12 @@ class TimeController:
 
 
 class Lecteur:
-    __slots__ = "redCrossEnabled analyseTool playbackStatus timeController cap frameCount height width fps timePerFrame vidDimension perspectiveCorrector jumpEventSubscriber".split()
+    __slots__ = "redCrossEnabled processingTool playbackStatus timeController cap frameCount height width fps timePerFrame vidDimension perspectiveCorrector jumpEventSubscriber".split()
     frameIndex = property()
 
     def getData(self):
         # data = [(0.6, "Moto"), (4.5, "Automobile")]
-        data = self.analyseTool.getData()
+        data = self.processingTool.getData()
         return data
 
     def __init__(self, cap, redCrossEnabled, perspectiveCorrector):
@@ -58,7 +58,7 @@ class Lecteur:
         self.jumpEventSubscriber = []
 
         # Background subtractor initialisation
-        self.analyseTool = processing.AnalyseTool(vidDimension = self.vidDimension, timePerFrame = self.timePerFrame, jumpEventSubscriber = self.jumpEventSubscriber)
+        self.processingTool = processing.ProcessingTool(vidDimension = self.vidDimension, timePerFrame = self.timePerFrame, jumpEventSubscriber = self.jumpEventSubscriber)
 
         self.playbackStatus = PlaybackStatus(play = True)
         self.timeController = TimeController(self.timePerFrame)
@@ -83,7 +83,7 @@ class Lecteur:
                 imageSet["video"] = frame
                 imageSet["frame"] = util.timed(self.perspectiveCorrector.correct)(frame)
 
-                self.analyseTool.run(imageSet, self.frameIndex)
+                self.processingTool.run(imageSet, self.frameIndex)
 
                 advancementPercentage = self.cap.get(cv2.CAP_PROP_POS_FRAMES) / self.frameCount
                 mvWindow.update(imageSet, advancementPercentage)

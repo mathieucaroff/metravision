@@ -1,0 +1,115 @@
+%YAML 1.2
+---
+configurationVersion: 1.0.3
+backgroundMode: false
+developerMode: true
+resultDestinationTemplates:
+    counts: "{video_directory}/mv-results/mv--{video_filename}.{ext}"
+
+    example:
+        counts: "{video_directory}/mv-results/mv--{mv_version}--year%Y-month%m-day%d-hour%H-minutes%m-seconds%s----{mv_date}--{video_filename}.{ext}"
+    developer:
+        counts: "C:/pi/mv-results/mv--{mv_version}--{mv_date}--{video_filename}--{segementIndexes}.{ext}"
+    usableProperties:
+        video_directory: The directory of the analysed video.
+        video_filename: The name of the video file, without extension.
+        video_extension: The extension of the video file.
+        mv_date: The date of the day the result was compute, in local time.
+        mv_datetime: Same as mv_date, but contains the hour as well.
+        mv_utcdatetime: Same as mv_datetime, but in utc time.
+        mv_version: The version of Metravision used to get the result. Mostly usefull for developers
+        ext: The extension of the result file. Just leave it at the end of the template.
+        segementIndexes: |
+        The index of the first and last segment that where treated.
+        They are joined by a single hypens if all segments between them were treated as well (example 0-35).
+        If they are joined by a double hypens (example 0--35), it means at least one segment is missing.
+windowName: Metravision
+redCrossEnabled: true
+training:
+    iterationCount: 1
+    threashold: 0.60
+network:
+    imgWidth: 60
+    imgHeight: 120 # Dimensions normalisées en entrée du réseau de neuronne.
+window:
+    height: 800
+    width: 960
+usePerspectiveCorrection: true
+videoPerspectiveInformation:
+    09.avi:
+        xLeftEdge: 136
+        xRightEdge: 743
+        vanishingPoint: [548, 130]
+image:
+    directoryLocation: /path/to/image-dataset
+    nameFormat: "%06d.png"
+    categories:
+        bike:
+            dirname: bike
+            first: 1
+            count: 1300
+            learningFraction: [2, 3]  # 2 / 3
+        notBike:
+            dirname: not-bike
+            first: 1
+            count: 1800
+            learningFraction: [2, 3]  # 2 / 3
+video:
+    directoryLocation: /path/to/videos
+    short:
+        directoryName: "SequencesCourtes"
+        files: !!set
+            ? 8s.mp4
+            ? bouchon-40s.mp4
+            ? embouteillage-21s.mp4
+            ? soleil-1m32.avi
+            ? test-9s.avi
+    medium:
+        directoryName: "Sequences6min"
+        files: !!set
+            ? 1ereSequence.avi
+            ? 08a.avi
+            ? 08b.avi
+            ? DerniereSequence.avi
+            ? HeureDePointe.avi
+            ? SequenceDebut.avi
+            ? SequenceFin.avi
+            ? SequenceHeureDePointe.avi
+    long:
+        directoryName: "SequencesLongues"
+        files: !!set
+            ? 01.avi
+            ? 02.avi
+            ? 03.avi
+            ? 04.avi
+            ? 05.avi
+            ? 06.avi
+            ? 07.avi
+            ? 08.avi
+            ? 09.avi
+            ? 10.avi
+            ? 11.avi
+            ? demo-40min.avi
+stat:
+    -
+        statFile: /path/to/stat1.yml
+        timeOffset: 5m10 # To be adjusted
+        segmentDuration: 6m00
+        videoDirectoryLocation: /path/to/videos
+        videos: 
+            - 04.avi
+            - 05.avi    
+            - 06.avi
+            - 07.avi
+    -
+        statFile: /path/to/stat2.yml
+        timeOffset: 35m20 # ~To be adjusted
+        segmentDuration: 6m00
+        videoDirectoryLocation: /path/to/videos
+        videos: 
+            - 08.avi
+            - 09.avi
+            - 10.avi
+            - 11.avi
+networkDestination: /your/path
+networkLocation: /your/path.t7

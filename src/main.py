@@ -24,7 +24,6 @@ import devint.window as window
 import parseConfig
 import lecture
 import perspective
-import analyse.segmenting
 import fileresults
 
 
@@ -52,8 +51,8 @@ def main():
         raise ValueError("Apparently, the version of your configuration file isn't the last available.")
 
     windowName = config.raw.windowName
-    windowHeight = config.raw["window"]["height"]
-    windowWidth = config.raw["window"]["width"]
+    windowHeight = config.raw.window.height #raw["window"]["height"]
+    windowWidth = config.raw.window.width  #raw["window"]["width"]
     windowShape = (windowHeight, windowWidth)
 
     if config.raw.usePerspectiveCorrection:
@@ -73,12 +72,11 @@ def main():
         perspectiveCorrector = perspective.DummyPerspectiveCorrector()
     
     try:
-        _ = config.raw.backgroundMode
+        backgroundMode = config.raw.backgroundMode
     except AttributeError:
         if StrictVersion(config.raw.configurationVersion) > StrictVersion("1.0.2"):
             raise
-        config.raw.backgroundMode = False
-        assert config.raw.backgroundMode == False
+        backgroundMode = False
 
     videoName = videoPath.name
 
@@ -93,12 +91,16 @@ def main():
             redCrossEnabled = config.raw.redCrossEnabled,
             perspectiveCorrector = perspectiveCorrector)
         
-        lecteur.jumpTo(2 / 3) # (random.random() * 3 / 4)
+        if backgroundMode:
+            lecteur.jumpTo(0)
+        else:
+            lecteur.jumpTo(2 / 3) # (random.random() * 3 / 4)
 
         mvWindow = window.MvWindow(
             windowName = windowName,
             windowShape = windowShape,
             videoName = videoName,
+            backgroundMode = backgroundMode,
             playbackStatus = lecteur.playbackStatus,
             jumpToFrameFunction = lecteur.jumpTo)
 

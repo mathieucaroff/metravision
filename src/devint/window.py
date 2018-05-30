@@ -19,11 +19,21 @@ def windowClosed(windowName):
 
 
 class MvWindow:
-    def __init__(self, windowName, windowShape, videoName, playbackStatus, jumpToFrameFunction):
+    def __init__(self, windowName, windowShape, videoName, backgroundMode, playbackStatus, jumpToFrameFunction):
+        if backgroundMode:
+            windowName = "Bg" + windowName
+            self.windowName = windowName
         cv2.namedWindow(windowName)
-        self.windowName = windowName
         self.windowShape = windowShape
         self.videoName = videoName
+        self.backgroundMode = backgroundMode
+        if backgroundMode:
+            self.backgroundModeTextFrame = np.full(shape = [50, 400], fill_value = [255], dtype=np.uint8)
+            cv2.putText(
+                img = self.backgroundModeTextFrame, text = "[background mode]", org = (12, 30),
+                fontFace = cv2.FONT_HERSHEY_SIMPLEX, fontScale = 1,
+                color = [0], thickness = 2
+            )
 
         mouseCallbackList = []
         def mouseCallbackDispatcher(event, x, y, flags, param):
@@ -53,7 +63,10 @@ class MvWindow:
 
         devint.multiView.renderNimages(self.videoName, imageSet, output = output[:-barHeight])
         devint.progressBar.drawBar(self.barProperties, buffer = output, advancementPercentage = advancementPercentage)
-        cv2.imshow("Metravision", output)
+        if self.backgroundMode:
+            cv2.imshow(self.windowName, self.backgroundModeTextFrame)
+        else:
+            cv2.imshow(self.windowName, output)
 
         self.updateSubWindows(imageSet = imageSet)
 

@@ -158,16 +158,16 @@ class ProcessingTool():
         for imageName in imageNameList:
             if not "dilate" in imageName:
                 continue
-            image = 255 - 255 * (1 & im[imageName])
-            blobKeypoints = self.blobDetector.detect(image)
-            im[f"blob_{imageName}"] = cv2.drawKeypoints(
-                image = image,
-                keypoints = blobKeypoints,
-                outImage = np.array([]),
-                color = red,
-                flags = cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS
-            )
             if imageName == nameOfImageToUse:
+                image = 255 - 255 * (1 & im[imageName])
+                blobKeypoints = self.blobDetector.detect(image)
+                im[f"blob_{imageName}"] = cv2.drawKeypoints(
+                    image = image,
+                    keypoints = blobKeypoints,
+                    outImage = np.array([]),
+                    color = red,
+                    flags = cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS
+                )
                 ret = blobKeypoints
         assert ret is not None, "The parameter `nameOfImageToUse` must be the name of a processed image."
         return ret

@@ -2,6 +2,8 @@
 The file main is the entry point of Metravision. It reads the configuration and starts the other modules.
 """
 
+# Python utils
+from distutils.version import StrictVersion
 
 # Python io modules
 import random
@@ -9,7 +11,7 @@ import sys
 from pathlib import Path
 
 
-# Dependecies
+# Dependencies
 import cv2
 import numpy as np
 
@@ -69,6 +71,14 @@ def main():
     else:
         videoPath = Path(random.choice(config.video.files))
         perspectiveCorrector = perspective.DummyPerspectiveCorrector()
+    
+    try:
+        _ = config.raw.backgroundMode
+    except AttributeError:
+        if StrictVersion(config.raw.configurationVersion) > StrictVersion("1.0.2"):
+            raise
+        config.raw.backgroundMode = False
+        assert config.raw.backgroundMode == False
 
     videoName = videoPath.name
 

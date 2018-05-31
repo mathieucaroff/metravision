@@ -47,7 +47,7 @@ def main():
     else:
         p.open().close() # raise FileNotFoundError
 
-    if config.raw.configurationVersion != "1.0.2":
+    if config.raw.configurationVersion != "1.0.3":
         raise ValueError("Apparently, the version of your configuration file isn't the last available.")
 
     windowName = config.raw.windowName
@@ -117,7 +117,7 @@ def main():
         results = lecteur.getData()
 
         templates = config.raw.resultDestinationTemplates
-        if util.developementMode == True:
+        if config.raw.developerMode == True:
             templates = templates.developer
         resultPathTemplate = templates.counts
 

@@ -10,9 +10,12 @@ from analyse.tracking import MvMultiTracker
 
 class ProcessingTool():
     # Setup:
-    def __init__(self, vidDimension, timePerFrame, jumpEventSubscriber):
+    def __init__(self, vidDimension, timePerFrame, jumpEventSubscriber, segmentDuration = 60):
         """
-        Paramètre et crée le backgroundSubtractor () ainsi que le blob detector.
+        Initialisation -- Crée le backgroundSubtractor, paramètre le blob detector, initialise MultiTracker et AnalyseData.
+
+        :param: vidDimension est la paire (width, height) pour le flux video traié
+        :param: segmentDuration est exprimé en secondes
         """
 
         self.vidDimension = vidDimension

@@ -9,14 +9,24 @@ license.
 
 ## Installing
 
-The project depends on anaconda packages. To retrieve them, you should install miniconda or anaconda, then use
+The project depends on anaconda packages. To retrieve them, you should install
+miniconda or anaconda, then install them, using:
 
 ```sh
 conda install -c conda-forge opencv pyyaml ipython
+conda install -c anaconda python-daemon
 ```
 
-to install them. If you are on Windows, you'll want to use the Anaconda Prompt.
-If you want to develop the project, you may want to install the python packages `pylint` and `rope`. You can do so with the command:
+If you are on Windows, these commands should be copied to the "Anaconda Prompt"
+window.
+
+### Developement environnement
+
+This project used Pylint to perform basic quality checking on the code.
+Rope was used to perform refactoring tasks.
+
+If you want to develop the project, you may want to install the python packages
+`pylint` and `rope`. You can do so with the command:
 
 ```sh
 conda install pylint rope
@@ -29,8 +39,8 @@ on a git project.
 
 To get a more robust presentation of git basics, you might want to read the
 page [Learn git in Y minutes](https://learnxinyminutes.com/docs/git/).
-The below command presentations are copy-pasted from that page. This page
-will likely be harder to understand than the above linked page.
+The below command presentations are copy-pasted from that page. Though shorter,
+this page will likely be harder to understand than the above linked page.
 
 ### Récapitulatif des commandes
 

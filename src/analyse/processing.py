@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 
 import util
-from util import printMV
 
 
 from analyse.segmenting import AnalyseData, RealSegmenter

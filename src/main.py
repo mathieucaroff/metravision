@@ -52,7 +52,7 @@ def main():
 
     windowName = config.raw.windowName
     windowHeight = config.raw.window.height #raw["window"]["height"]
-    windowWidth = config.raw.window.width  #raw["window"]["width"]
+    windowWidth =  config.raw.window.width  #raw["window"]["width"]
     windowShape = (windowHeight, windowWidth)
 
     if config.raw.usePerspectiveCorrection:
@@ -77,7 +77,18 @@ def main():
         if StrictVersion(config.raw.configurationVersion) > StrictVersion("1.0.2"):
             raise
         backgroundMode = False
+    
+    templates = config.raw.resultDestinationTemplates
+    if config.raw.developerMode == True:
+        templates = templates.developer
+    resultPathTemplate = templates.counts
 
+    redCrossEnabled = config.raw.redCrossEnabled
+
+    processVideo(redCrossEnabled, resultPathTemplate, perspectiveCorrector, backgroundMode, windowName, windowShape, videoPath)
+
+
+def processVideo(redCrossEnabled, resultPathTemplate, perspectiveCorrector, backgroundMode, windowName, windowShape, videoPath):
     videoName = videoPath.name
 
     if not videoPath.is_file():
@@ -88,9 +99,9 @@ def main():
     try:
         lecteur = lecture.Lecteur(
             cap = cap,
-            redCrossEnabled = config.raw.redCrossEnabled,
+            redCrossEnabled = redCrossEnabled,
             perspectiveCorrector = perspectiveCorrector)
-        
+
         if backgroundMode:
             lecteur.jumpTo(0)
         else:
@@ -116,11 +127,6 @@ def main():
         ### Getting data and writing results
         results = lecteur.getData()
 
-        templates = config.raw.resultDestinationTemplates
-        if config.raw.developerMode == True:
-            templates = templates.developer
-        resultPathTemplate = templates.counts
-
         resultFilePath = fileresults.fillPathTemplate(videoPath = videoPath, ext = "xlsx", pathTemplate = resultPathTemplate)
         Path(resultFilePath).absolute().parent.mkdir(parents = True, exist_ok = True)
 
@@ -131,7 +137,7 @@ def main():
         for fname in util.timed.functionIndex:
             time = getattr(util.timed, fname)
             printMV("Function {fname} ::: {time:.04} seconds".format(fname = fname, time = time))
-            
+
     finally:
         # When everything done, release the capture
         cap.release()

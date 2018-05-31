@@ -1,6 +1,7 @@
 %YAML 1.2
 ---
 configurationVersion: 1.0.2
+backgroundMode: false
 resultDestinationTemplates:
     counts: "{video_directory}/mv-results/mv--{video_filename}.{ext}"
 

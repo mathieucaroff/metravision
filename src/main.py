@@ -2,6 +2,8 @@
 The file main is the entry point of Metravision. It reads the configuration and starts the other modules.
 """
 
+# Python utils
+from distutils.version import StrictVersion
 
 # Python io modules
 import random
@@ -9,7 +11,7 @@ import sys
 from pathlib import Path
 
 
-# Dependecies
+# Dependencies
 import cv2
 import numpy as np
 
@@ -22,7 +24,6 @@ import devint.window as window
 import parseConfig
 import lecture
 import perspective
-import analyse.segmenting
 import fileresults
 
 
@@ -50,8 +51,8 @@ def main():
         raise ValueError("Apparently, the version of your configuration file isn't the last available.")
 
     windowName = config.raw.windowName
-    windowHeight = config.raw["window"]["height"]
-    windowWidth = config.raw["window"]["width"]
+    windowHeight = config.raw.window.height #raw["window"]["height"]
+    windowWidth = config.raw.window.width  #raw["window"]["width"]
     windowShape = (windowHeight, windowWidth)
 
     if config.raw.usePerspectiveCorrection:
@@ -69,6 +70,13 @@ def main():
     else:
         videoPath = Path(random.choice(config.video.files))
         perspectiveCorrector = perspective.DummyPerspectiveCorrector()
+    
+    try:
+        backgroundMode = config.raw.backgroundMode
+    except AttributeError:
+        if StrictVersion(config.raw.configurationVersion) > StrictVersion("1.0.2"):
+            raise
+        backgroundMode = False
 
     videoName = videoPath.name
 
@@ -83,12 +91,16 @@ def main():
             redCrossEnabled = config.raw.redCrossEnabled,
             perspectiveCorrector = perspectiveCorrector)
         
-        lecteur.jumpTo(2 / 3) # (random.random() * 3 / 4)
+        if backgroundMode:
+            lecteur.jumpTo(0)
+        else:
+            lecteur.jumpTo(2 / 3) # (random.random() * 3 / 4)
 
         mvWindow = window.MvWindow(
             windowName = windowName,
             windowShape = windowShape,
             videoName = videoName,
+            backgroundMode = backgroundMode,
             playbackStatus = lecteur.playbackStatus,
             jumpToFrameFunction = lecteur.jumpTo)
 

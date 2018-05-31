@@ -72,7 +72,7 @@ class Lecteur:
             if self.playbackStatus.play or self.playbackStatus.refreshNeeded:
                 self.playbackStatus.refreshNeeded = False
                 controlledTime = self.timeController.getControlledTime()
-                mvWindow.waitkey(controlledTime, self.playbackStatus, self.redCrossEnabled)
+                util.timed(mvWindow.waitkey)(controlledTime, self.playbackStatus, self.redCrossEnabled)
 
                 imageSet = collections.OrderedDict()
 
@@ -123,7 +123,7 @@ class Lecteur:
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, index)
     
     def reachedEnd(self):
-        return self.cap.get(cv2.CAP_PROP_FRAME_COUNT) - self.frameIndex <= 1
+        return self.frameIndex >= self.cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1
 
     def getFrame(self):
         quitting = False
@@ -142,5 +142,5 @@ class Lecteur:
                     break
             else:
                 notOkCount = 0
-        assert frame is not None
+        assert frame is not None or quitting
         return quitting, frame

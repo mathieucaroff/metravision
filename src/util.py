@@ -7,8 +7,6 @@ import cv2
 import sys
 import time
 
-developementMode = True
-
 # Simplest functions
 def average(iterable):
     """

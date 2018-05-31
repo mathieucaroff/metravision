@@ -94,11 +94,12 @@ class RealSegmenter(Segmenter):
     def incrementFrameIndex(self):
         self._frameIndex += 1
         if self._frameIndex % self._numberOfFramePerSegment == 0:
+            i = int(self._frameIndex / self._numberOfFramePerSegment) - 1
             if self._mode == "Counting":
-                i = int(self._frameIndex / self._numberOfFramePerSegment) - 1
                 self._segments[i] = self._currentSegment
+                printMV(f"Saved segment {i}.")
             self._currentSegment = self._newSegment()
-            printMV(f"Was {self._mode}, now Counting")
+            printMV(f"Starting to count for segment {i + 1}.")
             self._mode = "Counting"
 
         """ 
@@ -134,15 +135,15 @@ class RealSegmenter(Segmenter):
 def test_RealSegmenter():
     fps = 25
     rs = RealSegmenter(numberOfFramePerSegment = 4 * fps, timePerFrame = (1/fps))
-    for i in range(4):
+    for _i in range(4):
         rs.addVehicle("Moto")
-    for j in range(7):
+    for _j in range(7):
         rs.addVehicle("Automobile")
         rs.incrementFrameIndex()
-    for k in range(93):
+    for _k in range(93):
         rs.incrementFrameIndex()
     firstResult = rs.getData()
-    for l in range(100):
+    for _l in range(100):
         rs.incrementFrameIndex()
     secondResult = rs.getData()
     assert firstResult == [(0, 0.0, 7, 4),], f"firstResult: {firstResult}"

@@ -72,8 +72,8 @@ video:
             ? 08b.avi
             ? DerniereSequence.avi
             ? HeureDePointe.avi
-            ? SequenceDebut.avi
-            ? SequenceFin.avi
+            ? SequenceDebut.avi #? 08a.avi
+            ? SequenceFin.avi   #? 08b.avi
             ? SequenceHeureDePointe.avi
     long:
         directoryName: "SequencesLongues"

@@ -96,11 +96,13 @@ class MvConfig(Dotdict):
     """
     Charge et rend facile l'accès à la configuration de Metravision depuis le reste du programme.
     """
-    def __init__(self):
+    __slot__ = "raw image video backgroundVideo".split()
+    def __init__(self, raw, image, video, backgroundVideo):
         Dotdict.__init__(self)
-        self.raw = None
-        self.image = None
-        self.video = None
+        self.raw = raw
+        self.image = image
+        self.video = video
+        self.backgroundVideo = backgroundVideo
 
     @staticmethod
     def fromConfigFile(configFile):
@@ -119,16 +121,13 @@ class MvConfig(Dotdict):
         @param rawConfigData: A hierarchy of dict, list and sets containing the configuration informations
         @return MvConfig resultConfig: An MvConfig object, corresponding to the data.
         """
-        
-        resultConfig = MvConfig()
 
-        resultConfig.raw = RecursiveReadOnlyDotdict(rawConfigData)
-
-        # image
-        resultConfig.image = cls.__expandImage(rawConfigData["image"])
-
-        # video
-        resultConfig.video = cls.__expandVideo(rawConfigData["video"])
+        resultConfig = MvConfig(
+            raw = RecursiveReadOnlyDotdict(rawConfigData),
+            image = cls.__expandImage(rawConfigData["image"]),
+            video = cls.__expandVideo(rawConfigData["video"]),
+            backgroundVideo = cls.__expandVideo(rawConfigData["backgroundVideo"])
+        )
 
         return resultConfig
 

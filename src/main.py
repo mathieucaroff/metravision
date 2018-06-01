@@ -3,7 +3,7 @@ The file main is the entry point of Metravision. It reads the configuration and 
 """
 
 # Python utils
-from distutils.version import StrictVersion
+#from distutils.version import StrictVersion
 
 # Python io modules
 import random
@@ -23,7 +23,7 @@ import devint.window as window
 
 import parseConfig
 import lecture
-import perspective
+#import perspective
 import fileresults
 
 
@@ -47,36 +47,15 @@ def main():
     else:
         p.open().close() # raise FileNotFoundError
 
-    if config.raw.configurationVersion != "1.0.3":
+    if config.raw.configurationVersion != "1.0.4":
         raise ValueError("Apparently, the version of your configuration file isn't the last available.")
 
     windowName = config.raw.windowName
     windowHeight = config.raw.window.height #raw["window"]["height"]
     windowWidth =  config.raw.window.width  #raw["window"]["width"]
     windowShape = (windowHeight, windowWidth)
-
-    if config.raw.usePerspectiveCorrection:
-        pInfo = config.raw.videoPerspectiveInformation
-        filesWithPerspectiveInformation = [path for path in config.video.files if any(pattern in path for pattern in pInfo.keys())]
-        videoPath = Path(random.choice(filesWithPerspectiveInformation))
-
-        firstOf = next
-        vpInfo = firstOf(info for (patternKey, info) in pInfo.items() if patternKey in str(videoPath))
-        
-        perspectiveCorrector = perspective.PerspectiveCorrector(
-            xLeftEdge = vpInfo["xLeftEdge"],
-            xRightEdge = vpInfo["xRightEdge"],
-            vanishingPoint = vpInfo["vanishingPoint"])
-    else:
-        videoPath = Path(random.choice(config.video.files))
-        perspectiveCorrector = perspective.DummyPerspectiveCorrector()
     
-    try:
-        backgroundMode = config.raw.backgroundMode
-    except AttributeError:
-        if StrictVersion(config.raw.configurationVersion) > StrictVersion("1.0.2"):
-            raise
-        backgroundMode = False
+    backgroundMode = config.raw.backgroundMode
     
     templates = config.raw.resultDestinationTemplates
     if config.raw.developerMode == True:
@@ -85,10 +64,16 @@ def main():
 
     redCrossEnabled = config.raw.redCrossEnabled
 
-    processVideo(redCrossEnabled, resultPathTemplate, perspectiveCorrector, backgroundMode, windowName, windowShape, videoPath)
+    if backgroundMode:
+        for videoPath in config.video.files:
+            processVideo(redCrossEnabled, resultPathTemplate, backgroundMode, windowName, windowShape, videoPath)
+    else:
+        videoPath = Path(random.choice(config.video.files))
+        processVideo(redCrossEnabled, resultPathTemplate, backgroundMode, windowName, windowShape, videoPath)
 
 
-def processVideo(redCrossEnabled, resultPathTemplate, perspectiveCorrector, backgroundMode, windowName, windowShape, videoPath):
+def processVideo(redCrossEnabled, resultPathTemplate, backgroundMode, windowName, windowShape, videoPath):
+
     videoName = videoPath.name
 
     if not videoPath.is_file():
@@ -99,8 +84,7 @@ def processVideo(redCrossEnabled, resultPathTemplate, perspectiveCorrector, back
     try:
         lecteur = lecture.Lecteur(
             cap = cap,
-            redCrossEnabled = redCrossEnabled,
-            perspectiveCorrector = perspectiveCorrector)
+            redCrossEnabled = redCrossEnabled)
 
         if backgroundMode:
             lecteur.jumpTo(0)
@@ -126,8 +110,9 @@ def processVideo(redCrossEnabled, resultPathTemplate, perspectiveCorrector, back
 
         ### Getting data and writing results
         results = lecteur.getData()
+        segmentIndexList = [ v[0] for v in results ]
 
-        resultFilePath = fileresults.fillPathTemplate(videoPath = videoPath, ext = "xlsx", pathTemplate = resultPathTemplate)
+        resultFilePath = fileresults.fillPathTemplate(videoPath = videoPath, ext = "xlsx", pathTemplate = resultPathTemplate, segmentIndexList = segmentIndexList)
         Path(resultFilePath).absolute().parent.mkdir(parents = True, exist_ok = True)
 
         xlsdoc = fileresults.createXLS(results, sheetHeader = ["Index", "Time", "Automobiles", "Motos"])

@@ -43,7 +43,7 @@ class TimeController:
 
 
 class Lecteur:
-    __slots__ = "redCrossEnabled processingTool playbackStatus timeController cap frameCount height width fps timePerFrame vidDimension perspectiveCorrector jumpEventSubscriber".split()
+    __slots__ = "redCrossEnabled processingTool playbackStatus timeController cap frameCount height width fps timePerFrame vidDimension jumpEventSubscriber".split()
     frameIndex = property()
 
     def getData(self):
@@ -51,10 +51,9 @@ class Lecteur:
         data = self.processingTool.getData()
         return data
 
-    def __init__(self, cap, redCrossEnabled, perspectiveCorrector):
+    def __init__(self, cap, redCrossEnabled):
         self.initVideoInfo(cap)
         self.redCrossEnabled = redCrossEnabled
-        self.perspectiveCorrector = perspectiveCorrector
         self.jumpEventSubscriber = []
 
         # Background subtractor initialisation
@@ -80,8 +79,8 @@ class Lecteur:
                 if self.playbackStatus.quitting:
                     break
                 
-                imageSet["video"] = frame
-                imageSet["frame"] = util.timed(self.perspectiveCorrector.correct)(frame)
+                imageSet["frame"] = frame
+                imageSet["video"] = frame[:]
 
                 self.processingTool.run(imageSet, self.frameIndex)
 

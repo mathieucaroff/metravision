@@ -98,6 +98,8 @@ class RealSegmenter(Segmenter):
             if self._mode == "Counting":
                 self._segments[i] = self._currentSegment
                 printMV(f"Saved segment {i}.")
+            else:
+                printMV(f"Partially counted segment {i} not saved.")
             self._currentSegment = self._newSegment()
             printMV(f"Starting to count for segment {i + 1}.")
             self._mode = "Counting"
@@ -117,7 +119,6 @@ class RealSegmenter(Segmenter):
     
     def jumpToFrame(self, frameIndex):
         self._mode = "Awaiting"
-        printMV("Awaiting")
         self._currentSegment = None
         self._frameIndex = frameIndex - 1
         self.incrementFrameIndex()

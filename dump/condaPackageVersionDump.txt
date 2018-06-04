@@ -1,0 +1,48 @@
+# $ conda list | tee >(head -n 3) >(grep conda-forge) &>/dev/null | cat > condaPackageVersionDump.txt
+# packages in environment at /opt/conda:
+#
+# Name                    Version                   Build  Channel
+blas                      1.1                    openblas    conda-forge
+bzip2                     1.0.6                         1    conda-forge
+ca-certificates           2018.4.16                     0    conda-forge
+certifi                   2018.4.16                py36_0    conda-forge
+conda                     4.5.4                    py36_0    conda-forge
+cycler                    0.10.0                   py36_0    conda-forge
+dbus                      1.11.0                        0    conda-forge
+expat                     2.2.5                         0    conda-forge
+ffmpeg                    3.2.4                         3    conda-forge
+fontconfig                2.13.0                        0    conda-forge
+freetype                  2.8.1                         0    conda-forge
+giflib                    5.1.4                         0    conda-forge
+graphite2                 1.3.11                        0    conda-forge
+hdf5                      1.10.1                        2    conda-forge
+icu                       58.2                          0    conda-forge
+jasper                    1.900.1                       4    conda-forge
+jpeg                      9b                            2    conda-forge
+kiwisolver                1.0.1                    py36_1    conda-forge
+libiconv                  1.15                          0    conda-forge
+libpng                    1.6.34                        0    conda-forge
+libtiff                   4.0.9                         0    conda-forge
+libuuid                   1.0.3                         1    conda-forge
+libwebp                   0.5.2                         7    conda-forge
+libxcb                    1.13                          0    conda-forge
+libxml2                   2.9.8                         0    conda-forge
+matplotlib                2.2.2                    py36_1    conda-forge
+numpy                     1.14.3          py36_blas_openblas_200  [blas_openblas]  conda-forge
+openblas                  0.2.20                        7    conda-forge
+opencv                    3.4.1           py36_blas_openblas_200  [blas_openblas]  conda-forge
+openssl                   1.0.2o                        0    conda-forge
+pcre                      8.41                          1    conda-forge
+pixman                    0.34.0                        2    conda-forge
+pylint                    1.9.0                    py36_0    conda-forge
+pyparsing                 2.2.0                    py36_0    conda-forge
+pyqt                      5.6.0                    py36_5    conda-forge
+python-dateutil           2.7.2                      py_0    conda-forge
+pytz                      2018.4                     py_0    conda-forge
+pyyaml                    3.12                     py36_1    conda-forge
+rope                      0.10.7                   py36_0    conda-forge
+sip                       4.18                     py36_1    conda-forge
+tornado                   5.0.2                    py36_0    conda-forge
+x264                      20131218                      0    conda-forge
+xorg-libxau               1.0.8                         3    conda-forge
+xorg-libxdmcp             1.1.2                         3    conda-forge

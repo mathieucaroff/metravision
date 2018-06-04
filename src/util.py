@@ -373,6 +373,10 @@ class MvBbox:
 
         It has properties:
         bbox:: This property is simpler than the MvBbox object: it's a tuple carrying no methode.
+        area:: 
+        center::
+        bottom::
+        right::
         """
         assert type(x) == int
         assert type(y) == int

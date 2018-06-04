@@ -90,6 +90,19 @@ video:
             ? 10.avi
             ? 11.avi
             ? demo-40min.avi
+backgroundVideo:
+    directoryLocation: /path/to/videos
+    short: null
+    medium:
+        directoryName: "Sequences6min"
+        files:
+            - 1ereSequence.avi
+            - DerniereSequence.avi
+            #- HeureDePointe.avi
+            - SequenceDebut.avi #? 08a.avi
+            - SequenceFin.avi   #? 08b.avi
+            #- SequenceHeureDePointe.avi
+    long: null
 stat:
     -
         statFile: /path/to/stat1.yml

@@ -105,13 +105,17 @@ class MvConfig(Dotdict):
         self.backgroundVideo = backgroundVideo
 
     @staticmethod
-    def fromConfigFile(configFile):
+    def fromConfigFile(configFile, version=None):
         """
         Charge et renvoie la configuration de Metravision à partir d'un objet fichier.
         @param configFile: An opened metravision yaml configuration file.
         @return MvConfig mvConfigObject: An MvConfig object, corresponding to the data.
         """
         rawConfigData = yaml.load(configFile)
+        if version is not None:
+            yourVersion = rawConfigData["configurationVersion"]
+            if yourVersion != version:
+                raise ValueError(f"Apparently, the version of your configuration file ({yourVersion}) isn't the last available {version}.")
         return MvConfig.fromRawConfigData(rawConfigData)
     
     @classmethod

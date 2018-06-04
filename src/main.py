@@ -34,7 +34,15 @@ printMV(f"[OpenCV]      {cv2.__version__}")
 __version__ = Path("VERSION.txt").read_text()
 printMV(f"[Metravision] {__version__}")
 
-sys.path = [str(Path("./src").absolute), *sys.path]
+# Developper versions:
+"""Conda on Linux
+[MV] Versions:
+[MV] [Python]      3.6.4 |Anaconda, Inc.| (default, Jan 16 2018, 18:10:19)
+[GCC 7.2.0]
+[MV] [Numpy]       1.14.3
+[MV] [OpenCV]      3.4.1
+[MV] [Metravision] 1.0.1
+"""
 
 
 def main():
@@ -42,13 +50,10 @@ def main():
         p = Path("../" * x + "metravision.config.yml")
         if p.is_file():
             with p.open() as configFile:
-                config = parseConfig.MvConfig.fromConfigFile(configFile)
+                config = parseConfig.MvConfig.fromConfigFile(configFile, version="1.0.4")
             break
     else:
         p.open().close() # raise FileNotFoundError
-
-    if config.raw.configurationVersion != "1.0.4":
-        raise ValueError("Apparently, the version of your configuration file isn't the last available.")
 
     windowName = config.raw.windowName
     windowHeight = config.raw.window.height #raw["window"]["height"]

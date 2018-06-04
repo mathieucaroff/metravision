@@ -5,7 +5,7 @@ from openpyxl import Workbook
 from datetime import datetime
 
 
-def fillPathTemplate(videoPath: Path, ext: str, pathTemplate: str):
+def fillPathTemplate(videoPath: Path, ext: str, pathTemplate: str, segmentIndexList):
     """
     Get all informations usable in the path template and interpolate them.
     """
@@ -20,6 +20,20 @@ def fillPathTemplate(videoPath: Path, ext: str, pathTemplate: str):
     with Path("VERSION.txt").open() as f:
         mv_version = "-".join(f.readline().split("."))
 
+    # Compute segmentIndex
+    if len(segmentIndexList) != 0:
+        a = min(segmentIndexList)
+        b = max(segmentIndexList)
+        if len(segmentIndexList) >= b - a:
+            _complete = True
+            joiner = "-"
+        else:
+            _complete = False
+            joiner = "--"
+        segmentIndex = joiner.join([str(a), str(b)])
+    else:
+        segmentIndex = "__"
+
     timedPathTemplate = now.strftime(pathTemplate)
     path = timedPathTemplate.format(
         video_directory = video_directory,
@@ -29,7 +43,8 @@ def fillPathTemplate(videoPath: Path, ext: str, pathTemplate: str):
         mv_datetime = mv_datetime,
         mv_utcdatetime = mv_utcdatetime,
         mv_version = mv_version,
-        ext = ext
+        ext = ext,
+        segmentIndex = segmentIndex
     )
 
     return path

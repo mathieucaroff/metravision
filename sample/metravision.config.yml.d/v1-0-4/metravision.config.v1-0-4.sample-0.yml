@@ -1,6 +1,7 @@
 %YAML 1.2
 ---
-configurationVersion: 1.0.3
+configurationVersion: 1.0.4
+useDistanceCorrection: true
 backgroundMode: false
 developerMode: true
 resultDestinationTemplates:
@@ -34,7 +35,6 @@ network:
 window:
     height: 800
     width: 960
-usePerspectiveCorrection: true
 videoPerspectiveInformation:
     09.avi:
         xLeftEdge: 136
@@ -42,7 +42,7 @@ videoPerspectiveInformation:
         vanishingPoint: [548, 130]
 image:
     directoryLocation: /path/to/image-dataset
-    nameFormat: "%06d.png"
+    nameTemplate: "%06d.png"
     categories:
         bike:
             dirname: bike
@@ -90,6 +90,19 @@ video:
             ? 10.avi
             ? 11.avi
             ? demo-40min.avi
+backgroundVideo:
+    directoryLocation: /path/to/videos
+    short: null
+    medium:
+        directoryName: "Sequences6min"
+        files:
+            - 1ereSequence.avi
+            - DerniereSequence.avi
+            #- HeureDePointe.avi
+            - SequenceDebut.avi #? 08a.avi
+            - SequenceFin.avi   #? 08b.avi
+            #- SequenceHeureDePointe.avi
+    long: null
 stat:
     -
         statFile: /path/to/stat1.yml

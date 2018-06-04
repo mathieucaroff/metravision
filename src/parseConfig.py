@@ -39,7 +39,7 @@ activeWindows:
     detection: true # Vidéo avec trackers + compteur + temps
 image:
     directoryLocation: /path/to/image-dataset
-    nameFormat: "%06d.png"
+    nameTemplate: "%06d.png"
     categories:
         bike:
             dirname: bike
@@ -96,20 +96,26 @@ class MvConfig(Dotdict):
     """
     Charge et rend facile l'accès à la configuration de Metravision depuis le reste du programme.
     """
-    def __init__(self):
+    __slot__ = "raw image video backgroundVideo".split()
+    def __init__(self, raw, image, video, backgroundVideo):
         Dotdict.__init__(self)
-        self.raw = None
-        self.image = None
-        self.video = None
+        self.raw = raw
+        self.image = image
+        self.video = video
+        self.backgroundVideo = backgroundVideo
 
     @staticmethod
-    def fromConfigFile(configFile):
+    def fromConfigFile(configFile, version=None):
         """
         Charge et renvoie la configuration de Metravision à partir d'un objet fichier.
         @param configFile: An opened metravision yaml configuration file.
         @return MvConfig mvConfigObject: An MvConfig object, corresponding to the data.
         """
         rawConfigData = yaml.load(configFile)
+        if version is not None:
+            yourVersion = rawConfigData["configurationVersion"]
+            if yourVersion != version:
+                raise ValueError(f"Apparently, the version of your configuration file ({yourVersion}) isn't the last available {version}.")
         return MvConfig.fromRawConfigData(rawConfigData)
     
     @classmethod
@@ -119,16 +125,13 @@ class MvConfig(Dotdict):
         @param rawConfigData: A hierarchy of dict, list and sets containing the configuration informations
         @return MvConfig resultConfig: An MvConfig object, corresponding to the data.
         """
-        
-        resultConfig = MvConfig()
 
-        resultConfig.raw = RecursiveReadOnlyDotdict(rawConfigData)
-
-        # image
-        resultConfig.image = cls.__expandImage(rawConfigData["image"])
-
-        # video
-        resultConfig.video = cls.__expandVideo(rawConfigData["video"])
+        resultConfig = MvConfig(
+            raw = RecursiveReadOnlyDotdict(rawConfigData),
+            image = cls.__expandImage(rawConfigData["image"]),
+            video = cls.__expandVideo(rawConfigData["video"]),
+            backgroundVideo = cls.__expandVideo(rawConfigData["backgroundVideo"])
+        )
 
         return resultConfig
 
@@ -141,7 +144,7 @@ class MvConfig(Dotdict):
         """
         directoryLocation = imageDatasetDescription["directoryLocation"]
         categories = dict()
-        nameFormat = imageDatasetDescription["nameFormat"]
+        nameTemplate = imageDatasetDescription["nameTemplate"]
         for subdirname, dirDescription in imageDatasetDescription["categories"].items():
             dirname = dirDescription["dirname"]
             firstImgIndex = dirDescription["first"]
@@ -152,11 +155,11 @@ class MvConfig(Dotdict):
             imgTestCount = imgCount - imgLearnCount
 
             subdirs = {}
-            filePathFormat = os.path.join(directoryLocation, dirname, nameFormat)
+            filePathTemplate = os.path.join(directoryLocation, dirname, nameTemplate)
             first = firstImgIndex
-            subdirs["learn"] = MvDirectory(filePathFormat = filePathFormat, fileValues = range(first, first + imgLearnCount))
+            subdirs["learn"] = MvDirectory(filePathTemplate = filePathTemplate, fileValues = range(first, first + imgLearnCount))
             first = firstImgIndex + imgLearnCount
-            subdirs["test"] = MvDirectory(filePathFormat = filePathFormat, fileValues = range(first, first + imgTestCount))
+            subdirs["test"] = MvDirectory(filePathTemplate = filePathTemplate, fileValues = range(first, first + imgTestCount))
 
             categories[subdirname] = MvDirectory(subdirs = subdirs)
 
@@ -177,21 +180,21 @@ class MvConfig(Dotdict):
             categoryDescription = videoDatasetDescription[videoKind]
             if categoryDescription is not None:
                 directoryName = categoryDescription["directoryName"]
-                filePathFormat = os.path.join(directoryLocation, directoryName, "%s")
-                categories[videoKind] = MvDirectory(filePathFormat = filePathFormat, fileValues = categoryDescription["files"])
+                filePathTemplate = os.path.join(directoryLocation, directoryName, "%s")
+                categories[videoKind] = MvDirectory(filePathTemplate = filePathTemplate, fileValues = categoryDescription["files"])
 
         videoDirectory = MvDirectory(subdirs = categories)
         return videoDirectory
 
 
 class MvDirectory(ReadOnlyDotdict):
-    def __init__(self, filePathFormat = None, fileValues = None, subdirs = None):
+    def __init__(self, filePathTemplate = None, fileValues = None, subdirs = None):
         # Verifications
-        if subdirs is not None and (filePathFormat is not None or fileValues is not None):
-            raise ValueError("Argument subdir can't be used with filePathFormat and fileValues.")
+        if subdirs is not None and (filePathTemplate is not None or fileValues is not None):
+            raise ValueError("Argument subdir can't be used with filePathTemplate and fileValues.")
 
-        if (filePathFormat is None) != (fileValues is None):
-            raise ValueError("Arguments filePathFormat and fileValues must always be used together.")
+        if (filePathTemplate is None) != (fileValues is None):
+            raise ValueError("Arguments filePathTemplate and fileValues must always be used together.")
 
         if subdirs is not None:
             assert type(subdirs) == dict
@@ -205,8 +208,8 @@ class MvDirectory(ReadOnlyDotdict):
             self[dirname] = dirvalue
         
         self.__subdirs = subdirs
-        if filePathFormat is not None:            
-            self.__files = [ filePathFormat % val for val in fileValues ]
+        if filePathTemplate is not None:            
+            self.__files = [ filePathTemplate % val for val in fileValues ]
         
     
     @property

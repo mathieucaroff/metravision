@@ -22,7 +22,7 @@ class MvWindow:
     def __init__(self, windowName, windowShape, videoName, backgroundMode, playbackStatus, jumpToFrameFunction):
         if backgroundMode:
             windowName = "Bg" + windowName
-            self.windowName = windowName
+        self.windowName = windowName
         cv2.namedWindow(windowName)
         self.windowShape = windowShape
         self.videoName = videoName

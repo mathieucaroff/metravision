@@ -70,7 +70,8 @@ def main():
     redCrossEnabled = config.raw.redCrossEnabled
 
     if backgroundMode:
-        for videoPath in config.video.files:
+        for videoLocation in config.backgroundVideo.files:
+            videoPath = Path(videoLocation)
             processVideo(redCrossEnabled, resultPathTemplate, backgroundMode, windowName, windowShape, videoPath)
     else:
         videoPath = Path(random.choice(config.video.files))

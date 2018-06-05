@@ -1,7 +1,6 @@
 from enum import Enum
 
 import util
-from util import printMV
 
 class AnalyseData:
     def __init__(self, timePerFrame, jumpEventSubscriber, segmenter):
@@ -55,7 +54,8 @@ class Segmenter:
 
 
 class DummySegmenter(Segmenter):
-    def __init__(self, numberOfFramePerSegment, timePerFrame):
+    def __init__(self, logger, numberOfFramePerSegment, timePerFrame):
+        self.logger = logger
         self._numberOfFramePerSegment = numberOfFramePerSegment
         self._timePerFrame = timePerFrame
         self._frameIndex = 0
@@ -74,10 +74,11 @@ class DummySegmenter(Segmenter):
 
 
 class RealSegmenter(Segmenter):
-    __slots__ = "_segments _segementDuration _currentSegment _mode".split()
+    __slots__ = "logger _segments _segementDuration _currentSegment _mode".split()
     acceptedVehicleNames = "Automobile Moto".split()
 
-    def __init__(self, numberOfFramePerSegment, timePerFrame):
+    def __init__(self, logger, numberOfFramePerSegment, timePerFrame):
+        self.logger = logger
         self._numberOfFramePerSegment = numberOfFramePerSegment
         self._timePerFrame = timePerFrame
         self._segementDuration = timePerFrame * numberOfFramePerSegment
@@ -97,11 +98,11 @@ class RealSegmenter(Segmenter):
             i = int(self._frameIndex / self._numberOfFramePerSegment) - 1
             if self._mode == "Counting":
                 self._segments[i] = self._currentSegment
-                printMV(f"Saved segment {i}.")
+                self.logger.debug(f"Finished segment {i}.")
             else:
-                printMV(f"Partially counted segment {i} not saved.")
+                self.logger.debug(f"Partially counted segment {i} -- not saved.")
             self._currentSegment = self._newSegment()
-            printMV(f"Starting to count for segment {i + 1}.")
+            self.logger.debug(f"Starting to count for segment {i + 1}.")
             self._mode = "Counting"
 
         """ 
@@ -134,8 +135,10 @@ class RealSegmenter(Segmenter):
 
 
 def test_RealSegmenter():
+    import logging
+    logger = logging.getLogger("[MV-test]")
     fps = 25
-    rs = RealSegmenter(numberOfFramePerSegment = 4 * fps, timePerFrame = (1/fps))
+    rs = RealSegmenter(logger, numberOfFramePerSegment = 4 * fps, timePerFrame = (1/fps))
     for _i in range(4):
         rs.addVehicle("Moto")
     for _j in range(7):

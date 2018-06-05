@@ -3,23 +3,14 @@ import numpy as np
 
 import util
 from util import Namespace
-from util import printMV
 
 import devint.multiView
 import devint.progressBar
 
 
-def windowClosed(windowName):
-    """Checking for a property of the window to tell whether it is (still) open."""
-    v = {"visible": cv2.getWindowProperty(windowName, cv2.WND_PROP_VISIBLE), "windowName": windowName}
-    v["different"] = v["visible"] != 1.0
-    if v["different"]:
-        printMV(f"Window {windowName} closed")
-    return v["different"]
-
-
 class MvWindow:
-    def __init__(self, windowName, windowShape, videoName, backgroundMode, playbackStatus, jumpToFrameFunction):
+    def __init__(self, logger, windowName, windowShape, videoName, backgroundMode, playbackStatus, jumpToFrameFunction):
+        self.logger = logger
         if backgroundMode:
             windowName = "Bg" + windowName
         self.windowName = windowName
@@ -51,8 +42,16 @@ class MvWindow:
 
 
         displayShape = (windowShape[0] - bp.shape[0], windowShape[1])
-        self.updateSubWindows = devint.multiView.setupVideoSelectionHook(mouseCallbackList, displayShape, playbackStatus, windowClosed)
+        self.updateSubWindows = devint.multiView.setupVideoSelectionHook(mouseCallbackList, displayShape, playbackStatus, self.windowClosed)
         devint.progressBar.setupClickHook(mouseCallbackList, windowShape, 30, jumpToFrameFunction)
+
+    def windowClosed(self, windowName):
+        """Checking for a property of the window to tell whether it is (still) open."""
+        v = {"visible": cv2.getWindowProperty(windowName, cv2.WND_PROP_VISIBLE), "windowName": windowName}
+        v["different"] = v["visible"] != 1.0
+        if v["different"]:
+            self.logger.info(f"Window {windowName} closed")
+        return v["different"]
 
 
     def update(self, imageSet, advancementPercentage):
@@ -78,10 +77,12 @@ class MvWindow:
             playbackStatus.play = not playbackStatus.play
         if key == ord('q'):
             playbackStatus.quitting = True
+        if key == ord('s'):
+            playbackStatus.endReached = True
         if key == ord('f'):
             playbackStatus.refreshNeeded = True
         if key == ord('d'):
             raise util.DeveloperInterruption
         if redCrossEnabled:
-            if windowClosed(self.windowName):
+            if self.windowClosed(self.windowName):
                 playbackStatus.quitting = True

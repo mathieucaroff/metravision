@@ -459,20 +459,23 @@ def pdbPostMortemUpon(exception):
 
 
 # https://stackoverflow.com/q/242485/starting-python-debugger-automatically-on-error
+def interactPostMortem():
+    import code, traceback
+    _type, _value, tb_ = sys.exc_info()
+    traceback.print_exc()
+    last_frame = lambda tb=tb_: last_frame(tb.tb_next) if tb.tb_next else tb
+    frame = last_frame().tb_frame
+    ns = dict(frame.f_globals)
+    ns.update(frame.f_locals)
+    code.interact(local=ns)
+
+
 @contextlib.contextmanager
 def interactPostMortemUpon(exception = Exception):
     try:
         yield
     except exception: # pylint: disable=broad-except
-        import code, traceback
-        _type, _value, tb_ = sys.exc_info()
-        traceback.print_exc()
-        last_frame = lambda tb=tb_: last_frame(tb.tb_next) if tb.tb_next else tb
-        frame = last_frame().tb_frame
-        ns = dict(frame.f_globals)
-        ns.update(frame.f_locals)
-        code.interact(local=ns)
-
+        interactPostMortem()
 
 @contextlib.contextmanager
 def neutralContextManager():

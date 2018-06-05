@@ -10,7 +10,7 @@ resultDestinationTemplates:
     example:
         counts: "{video_directory}/mv-results/mv--{mv_version}--year%Y-month%m-day%d-hour%H-minutes%m-seconds%s----{mv_date}--{video_filename}.{ext}"
     developer:
-        counts: "C:/pi/mv-results/mv--{mv_version}--{mv_date}--{video_filename}--{segementIndex}.{ext}"
+        counts: "C:/pi/mv-results/mv--{mv_version}--{mv_date}--{video_filename}--{segmentIndex}.{ext}"
     usableProperties:
         video_directory: The directory of the analysed video.
         video_filename: The name of the video file, without extension.

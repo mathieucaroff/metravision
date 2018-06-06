@@ -24,7 +24,6 @@ import devint.window as window
 
 import parseConfig
 import lecture
-#import perspective
 import fileresults
 
 logging.basicConfig(level=0)
@@ -56,7 +55,6 @@ def main():
             break
     else:
         p.open().close() # raise FileNotFoundError
-    
 
     logger = logging.getLogger("[MV]")
 

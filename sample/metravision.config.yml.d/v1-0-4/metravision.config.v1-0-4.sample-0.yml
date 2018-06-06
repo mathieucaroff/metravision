@@ -68,8 +68,6 @@ video:
         directoryName: "Sequences6min"
         files: !!set
             ? 1ereSequence.avi
-            ? 08a.avi
-            ? 08b.avi
             ? DerniereSequence.avi
             ? HeureDePointe.avi
             ? SequenceDebut.avi #? 08a.avi

@@ -2,6 +2,7 @@ import operator
 import contextlib
 from functools import wraps
 import math
+import np
 import cv2
 
 import sys
@@ -378,14 +379,10 @@ class MvBbox:
         bottom::
         right::
         """
-        assert type(x) == int
-        assert type(y) == int
-        assert type(width) == int
-        assert type(height) == int
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
+        self.x = int(x)
+        self.y = int(y)
+        self.width = int(width)
+        self.height = int(height)
 
     @staticmethod
     def fromCircle(circle, width_on_height_ratio):
@@ -409,6 +406,55 @@ class MvBbox:
         right = self.x + self.width >= otherBbox.x + otherBbox.width
         bottom = self.y + self.height >= otherBbox.y + otherBbox.height
         return all([left, top, right, bottom])
+
+    def extractFrom(self, frame, fillerColor=None):
+        """
+        Accept a frame and extract the region correspondig to mvbbox from it.
+
+        If the region falls outside the frame, use the fillerColor
+
+        :param frame: The frame from which to extract the region.
+        :param fillerColor:
+            The color to use to fill the extracted image if the region is
+            partially or totally out of the frame. Black by default.
+        """
+        if len(frame.shape) < 2 or frame.shape[0] <= 0 or frame.shape[1] <= 0:
+            raise ValueError(f"Given frame's dimension are nul. shape: {frame.shape}")
+        if fillerColor is not None:
+            fillerValue = fillerColor
+        else:
+            fillerValue = frame[0, 0]
+            fillerValue.fill(0)
+
+        fh, fw = frame.shape[:2]
+
+        destShape = [self.height, self.width, *frame.shape[2:]]
+        destination = np.empty(shape = destShape, dtype = frame.dtype)
+        destination.fill(fillerValue)
+
+        # x and y (included) and xx and yy (excluded) are the bounaries of the
+        # destination area where the part of the frame will be copied.
+        x, y = 0, 0
+        xx, yy = self.width, self.height
+        # sx and sy (included) and right and bottom (excluded) are the bounaries
+        # of the part of the frame which will be copied.
+        sx, sy = self.x, self.y
+        right, bottom = self.right, self.bottom
+        if self.x < 0:
+            x -= self.x
+            sx -= self.x # sx == 0
+        if self.y < 0:
+            y -= self.y
+            sy -= self.y # sy == 0
+        if self.right > fw:
+            xx -= self.right
+            right -= self.right
+        if self.bottom > fw:
+            yy -= self.bottom
+            bottom -= self.bottom
+
+        destination[x : xx, y : yy] = frame[sx : right, sy : bottom]
+        return destination
     
     def draw(self, frame, color, *args, **kwargs):
         if len(args) == 0 and "thickness" not in kwargs:

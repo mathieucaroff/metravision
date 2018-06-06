@@ -2,6 +2,8 @@ import util
 
 import cv2
 
+import logging
+
 
 class MvTracker(util.MvBbox):
     __slots__ = "tracker ret errCount history".split()
@@ -15,15 +17,56 @@ class MvTracker(util.MvBbox):
         self.errCount = 0
         self.ret = True
         self.history = {frameIndex: bbox}
+    
+    def extract(self, frame, objLocation, horizon):
+        """
+        Extract the object from the frame and scale it for it to always have the same size.
+
+        Extract an area of relevant size from `frame` at `objLocation` according
+        to the distance to `horizon`. Scale it so that it makes a constant size,
+        no matter the distance between the camera and the object.
+        
+        :param frame: Image (pixel matrix) from which to extract.
+        :param objLocation: [x, y] - location of the object.
+        :param horizon: x - position of the horizon.
+        :return: A pixel matrix extracted and scaled from the image.
+        """
+        objX, objY = objLocation
+        frameH, _frameW = frame.shape[:2]
+        obj2h = objX - horizon
+        bot2h = frameH - horizon
+        targetWidth = 400
+        targetHeight = 500
+        if obj2h < 100:
+            w = 24
+        else:
+            w = targetWidth * obj2h / bot2h
+        h = int(targetHeight * w / targetWidth)
+        w = int(w)
+
+        x = objX - w // 2
+        xx = x + w
+        y = objY - h // 2
+        yy = y + h
+        if x < 0:
+
+        # logging.getLogger("[MV]").debug(f"x: {x}, y: {y}, w: {w}, h: {h} -- objX: {objX}, objY: {objY}, fshape[:2]: {frame.shape[:2]}")
+        exctracted = frame[x:x + w, y:y + h]
+        scaled = cv2.resize(exctracted, (targetWidth, targetHeight), interpolation = cv2.INTER_CUBIC)
+        cv2.imshow('Scaled', scaled)
+        return scaled
 
     def updateTracker(self, frameIndex, frame):
-        self.ret, bbox = self.tracker.update(frame) # Error ?
+        self.ret, bbox = self.tracker.update(frame)
+        mvbbox = util.MvBbox(*bbox)
+        if m
+        self.extract(frame, , 0)
         if self.ret:
             self.errCount = 0
             self.updateBbox(frameIndex, bbox)
         else:
             self.errCount += 1
-    
+
     def updateBbox(self, frameIndex, newBbox):
         self.history[frameIndex] = newBbox
         self.bbox = newBbox
@@ -173,9 +216,13 @@ class MvMultiTracker():
 
     def getTrackerDuplicates(self):
         """
-        For each pair of tracker, if one is contained in the other, remove it.
+        For each pair of tracker, determines if one is contained in the other, add them as a .
+
         The exception is when both trackers contain each other, then the one with the smaller area is removed.
         In case they are the same area, the one appearing earlier in the list is removed.
+
+        :rtype dict:
+        :return: indexDict, mapping the index of each tracker which needs be removed, to the (larger) tracker whicr replaces it
         """
         indexDict = dict()
         iterCount = 0
@@ -197,6 +244,10 @@ class MvMultiTracker():
                 elif baInclusion:
                     x = b
                 else:
+                    # Given the current __contains__ definition in MvBbox (strict inclusion) 
+                    # (as of 2018-06-06)
+                    # This case should occure only when the two trackers perfecly overlap.
+                    # This means that the below test is currently futile.
                     if trackerA.area <= trackerB.area:
                         x = a
                     else:
@@ -211,7 +262,7 @@ class MvMultiTracker():
 def getBlobMvBbox(mask, xx, yy):
     """Explore the mask, left, right, up and down to determine the width and height of the blob at given point.
     
-    Returns an MvBbox.
+    :rtype MvBbox:
     """
     xx, yy = int(xx), int(yy)
     height, width = mask.shape

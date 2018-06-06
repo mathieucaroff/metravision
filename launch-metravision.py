@@ -6,7 +6,6 @@ from pathlib import Path
 fdir = Path(__file__).absolute().parent
 
 pythonExecutableName = "python.exe"
-pythonPath = Path()
 
 rootLocationList = []
 for di in [fdir, fdir.parent, fdir.parent.parent, Path("C:/Metravision")]:
@@ -18,17 +17,17 @@ for rootLocation in rootLocationList:
 
     mainPath = pathlib.WindowsPath(metravisionRoot / "src/main.py")
     if mainPath.is_file():
-        print(f"[MV] Found {str(mainPath)}")
+        print(f"[MV] Found '{str(mainPath)}'.'")
         pythonPath = metravisionRoot / "lib/miniconda" / pythonExecutableName
-        break
+        if Path(pythonPath).is_file():
+            break
+        else:
+            print(f"[MV] Missing '{str(pythonPath)}', continuing search.")
 else:
     # If break didn't occure
-    print(f"[MV] Couldn't find 'src/main.py' within directories:", '\n'.join(map(str,[""] + rootLocationList)))
-    input()
-    exit()
-
-if not pythonPath.is_file():
-    print(f"[MV] Missing 'lib/miniconda/python.exe")
+    print(f"[MV] Couldn't find 'src/main.py' within any of the directories:")
+    for rootLocation in rootLocationList:
+        print(rootLocation)
     input()
     exit()
 

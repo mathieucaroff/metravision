@@ -1,21 +1,29 @@
+# Local configuration
 /metravision.config.yml
 
-/Traqumoto/Applications
-
-/Traqumoto/Traqumoto
-
-/Traqumoto/mv.config.lua
-
-__pycache__
-*.pyc
-
-*.xlsx
-
+# Visual Studio Code working directory configuration
 .vscode
 
+
+# Result files
+*.xlsx
+# Linux mis-interpreting C:/ paths.
 /C:
 
+# Ctags (refactoring?)
 ctags.exe
+
+# Anaconda
 /lib/conda
 /lib/miniconda
 /lib/miniconda3
+
+
+# Python cache files
+__pycache__
+*.pyc
+
+# Pyinstaller
+/build
+/dist
+*.spec

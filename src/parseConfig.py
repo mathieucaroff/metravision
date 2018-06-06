@@ -19,7 +19,12 @@ debug = Namespace()
 def test_MvConfig():
     """
     Test le bon fonctionnement de la classe MvConfig.
-    À mettre à jour à chaque changement ou ajout de fonctionnalité à MvConfig.
+
+    config définie une propriété `.files` sur .image et .video (et .backgroundVideo).
+    Ce test s'assure que le nombre de fichiers obtenu via la prorpriété `.files` est correcte.
+
+    Ce test s'assure aussi pour quelque uns des fichiers attendu dans l'itérateur renvoyé par .files
+    qu'ils sont bien présents.
     """
     configData = yaml.load("""
 networkDestination: /your/path
@@ -108,8 +113,10 @@ class MvConfig(Dotdict):
     def fromConfigFile(configFile, version=None):
         """
         Charge et renvoie la configuration de Metravision à partir d'un objet fichier.
-        @param configFile: An opened metravision yaml configuration file.
-        @return MvConfig mvConfigObject: An MvConfig object, corresponding to the data.
+
+        :param configFile: An opened metravision yaml configuration file.
+        :rtype MvConfig:
+        :return: The data from the file as an MvConfig object.
         """
         rawConfigData = yaml.load(configFile)
         if version is not None:
@@ -122,8 +129,14 @@ class MvConfig(Dotdict):
     def fromRawConfigData(cls, rawConfigData):
         """
         Charge et renvoie la configuration de Metravision à partir des données produite par yaml.load à la lecture d'un fichier.
-        @param rawConfigData: A hierarchy of dict, list and sets containing the configuration informations
-        @return MvConfig resultConfig: An MvConfig object, corresponding to the data.
+
+        :param rawConfigData: A hierarchy of dict, list and sets containing the configuration informations
+        :rtype MvConfig:
+        :return: The data from the file as an MvConfig object.
+
+        :param rawConfigData: A hierarchy of dict, list and sets containing the configuration informations
+        :rtype MvConfig:
+        :return: The data from the file as an MvConfig object.
         """
 
         resultConfig = MvConfig(
@@ -138,9 +151,11 @@ class MvConfig(Dotdict):
     @classmethod
     def __expandImage(cls, imageDatasetDescription):
         """
-        Étends la description du jeu d'image en des
-        @param imageDatasetDescription: A yaml-produced hierchy of dict, list and sets describing the image locations.
-        @return MvDirectory imageDirectory: Lists of the available image files.
+        Étends la description du jeu d'image en une hierarchy facilement navigable. La hierarchy dispose de la propiété `.file` de la classe MvDirectory.
+        
+        :param imageDatasetDescription: A yaml-produced hierchy of dict, list and sets describing the image locations.
+        :rtype MvDirectory:
+        :return: imageDirectory Lists of the available image files.
         """
         directoryLocation = imageDatasetDescription["directoryLocation"]
         categories = dict()

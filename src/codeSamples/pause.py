@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
 
-def pausevid ():
-    cap = cv2.VideoCapture(r"C:\Users\eleve\Desktop\Cerema\soleil.avi")
+def pausevid (chemin):
+    cap = cv2.VideoCapture(chemin)
     play = True
     while True:
 
@@ -20,4 +20,4 @@ def pausevid ():
             break
     cap.release()
     cv2.destroyAllWindows()
-pausevid()
+pausevid(r"C:\Users\eleve\Desktop\Cerema\short\soleil.avi")

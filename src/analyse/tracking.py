@@ -1,5 +1,4 @@
 import util
-from util import printMV
 
 import cv2
 
@@ -16,7 +15,7 @@ class MvTracker(util.MvBbox):
         self.errCount = 0
         self.ret = True
         self.history = {frameIndex: bbox}
-    
+
     def updateTracker(self, frameIndex, frame):
         self.ret, bbox = self.tracker.update(frame) # Error ?
         if self.ret:
@@ -24,7 +23,6 @@ class MvTracker(util.MvBbox):
             self.updateBbox(frameIndex, bbox)
         else:
             self.errCount += 1
-        # self.printTracker("Updated", i)
     
     def updateBbox(self, frameIndex, newBbox):
         self.history[frameIndex] = newBbox
@@ -39,22 +37,22 @@ class MvTracker(util.MvBbox):
         if self.area < self.smallestAllowedTrackerArea:
             finished = True
         return finished
-
-    def printTracker(self, msg, i):
-        printMV(f"{msg}:: Tracker {i}: ret {self.ret}, bbox {self.bbox} --")
     
-    def receive(self, sender):
+    def receive(self, logger, sender):
         """
         Replace the given tracker. Supposes that the "sender" tracker will be abandoned, and that we have to replace it.
         """
+        info = "[{} frame(s) into {}]".format(len(sender.history), len(self.history))
         if max(sender.history.keys()) + 1 < min(self.history.keys()) or min(sender.history.keys()) - 1 > max(self.history.keys()):
-            printMV("[Warning] trackers with non-matching history merged -- canceled.")
+            logger.debug(f"Not merging trackers with non-matching history. {info}")
         else:
+            logger.debug(f"Trackers history merged. {info}")
             self.history.update(sender.history)
 
 
 class MvMultiTracker():
-    def __init__(self, vidDimension, analyseData):
+    def __init__(self, logger, vidDimension, analyseData):
+        self.logger = logger
         self.vidDimension = vidDimension
         self.trackerList = []
         self.analyseData = analyseData
@@ -85,7 +83,7 @@ class MvMultiTracker():
         # A - Update trackers
         for mvTracker in self.trackerList:
             mvTracker.updateTracker(frameIndex, frame)
-        numberOfUpdates = len(self.trackerList)
+        _numberOfUpdates = len(self.trackerList)
 
         # B - Remove tracker duplicates
         duplicates = self.getTrackerDuplicates()
@@ -94,17 +92,16 @@ class MvMultiTracker():
         for i, mvTracker in enumerate(oldTrackerList):
             if i in duplicates:
                 mvTrackerReplacement = oldTrackerList[duplicates[i]]
-                mvTrackerReplacement.receive(mvTracker)
-                # mvTracker.printTracker("Removed dup", i)
+                mvTrackerReplacement.receive(self.logger, mvTracker)
             else:
                 self.trackerList.append(mvTracker)
-        numberOfDeletions = len(duplicates)
+        _numberOfDeletions = len(duplicates)
 
         # C - Remove finished trackers (out of screen / too small trackers)
-        numberOfFinishs = 0
+        _numberOfFinishs = 0
         oldTrackerList = self.trackerList
         self.trackerList = []
-        for mvTracker in oldTrackerList:
+        for _i, mvTracker in enumerate(oldTrackerList):
             center = mvTracker.center
             blobMvBbox = getBlobMvBbox(im["dilateC"], center.x, center.y)
             if blobMvBbox.width > 0:
@@ -120,9 +117,8 @@ class MvMultiTracker():
                 white = (255, 255, 255)
                 mvTracker.draw(im["frame"], white)
                 kind = self.analyseData.getData()[-1][1]
-                printMV(f":: Finished vehicle [{kind}]")
-                numberOfFinishs += 1
-                # mvTracker.printTracker("Removed fin", i)
+                self.logger.debug(f":: Finished vehicle [{kind}]")
+                _numberOfFinishs += 1
             else:
                 self.trackerList.append(mvTracker)
 
@@ -139,17 +135,16 @@ class MvMultiTracker():
         # E - Show existing trackers
         for mvTracker in self.trackerList:
             green = (0, 255, 0)
-            # mvTracker.printTracker("Updated", i)
             mvTracker.draw(im["frame"], green, thickness = 6)
 
         # F - Create trackers
         # bbox :: Bounding Box
         # Add new trakers for blobs whose keypoint location isn't inside a tracker bbox.
-        numberOfAdditions = 0
+        _numberOfAdditions = 0
         for keypoint in blobKeypoints:
             if any(util.pointInBbox(keypoint.pt, mvTracker.bbox) for mvTracker in self.trackerList):
                 # ptx, pty = map(int, blob.pt)
-                # printMV(f"Dismissed:: Blob at {ptx, pty}.")
+                # logger.debug(f"Dismissed:: Blob at {ptx, pty}.")
                 continue # Do not create a tracker = continue to next iteration
             # Get and draw bbox:
             x, y = keypoint.pt
@@ -169,12 +164,11 @@ class MvMultiTracker():
                 continue
             
             blue = (255, 0, 0)
-            # mvTracker.printTracker("Created", i = len(self.trackerList))
             mvTracker.draw(im["frame"], blue, thickness = 6)
             self.trackerList.append(mvTracker)
-            numberOfAdditions += 1
+            _numberOfAdditions += 1
 
-        # printMV(f"[Trackers] Updated {numberOfUpdates} then Rmvd dups {numberOfDeletions}, Rmvd fin {numberOfFinishs}, Created {numberOfAdditions}.")
+        # logger.debug(f"[Trackers] Updated {_numberOfUpdates} then Rmvd dups {_numberOfDeletions}, Rmvd fin {_numberOfFinishs}, Created {_numberOfAdditions}.")
 
 
     def getTrackerDuplicates(self):

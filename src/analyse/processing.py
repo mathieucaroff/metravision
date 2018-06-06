@@ -10,13 +10,14 @@ from analyse.tracking import MvMultiTracker
 
 class ProcessingTool():
     # Setup:
-    def __init__(self, vidDimension, timePerFrame, jumpEventSubscriber, segmentDuration = 60):
+    def __init__(self, logger, vidDimension, timePerFrame, jumpEventSubscriber, segmentDuration = 60):
         """
         Initialisation -- Crée le backgroundSubtractor, paramètre le blob detector, initialise MultiTracker et AnalyseData.
 
         :param: vidDimension est la paire (width, height) pour le flux video traié
         :param: segmentDuration est exprimé en secondes
         """
+        self.logger = logger
 
         self.vidDimension = vidDimension
 
@@ -39,11 +40,11 @@ class ProcessingTool():
         # Where to store results, together with the vehicle counter (segmenter)
         segmentDuration = 10 # seconds
         numberOfFramePerSegment = int(0.5 + segmentDuration / timePerFrame)
-        segmenter = RealSegmenter(numberOfFramePerSegment, timePerFrame)
+        segmenter = RealSegmenter(self.logger, numberOfFramePerSegment, timePerFrame)
         self.analyseData = AnalyseData(timePerFrame, jumpEventSubscriber, segmenter)
 
         # Multi Tracker initialisation
-        self.mvMultiTracker = MvMultiTracker(vidDimension, self.analyseData)
+        self.mvMultiTracker = MvMultiTracker(self.logger, vidDimension, self.analyseData)
         self.trackerList = []
     
     def getData(self):

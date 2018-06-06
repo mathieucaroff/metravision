@@ -6,22 +6,22 @@ import cv2
 
 # import matplotlib.pyplot as plt
 
-from util import printMV
 import util
 
 import analyse.processing as processing
 
 class PlaybackStatus:
-    __slots__ = ["play", "quitting", "refreshNeeded", "debugNeeded"]
-    def __init__(self, play = True, quitting = False, refreshNeeded = False):
+    __slots__ = "play endReached quitting refreshNeeded".split()
+    def __init__(self, play = True, endReached = False, quitting = False, refreshNeeded = False):
         self.play = play
+        self.endReached = endReached
         self.quitting = quitting
         self.refreshNeeded = refreshNeeded
 
 
 class TimeController:
     """
-    To ensure a regular time flow in the application.
+    Ensures a regular time flow in the application. Prevents the time to flow faster than the recorded video time.
     """
     def __init__(self, timePerFrame):
         self.timePerFrame = timePerFrame
@@ -43,7 +43,9 @@ class TimeController:
 
 
 class Lecteur:
-    __slots__ = "redCrossEnabled processingTool playbackStatus timeController cap frameCount height width fps timePerFrame vidDimension jumpEventSubscriber".split()
+    __slots__ = "cap frameCount height width fps timePerFrame vidDimension".split()
+    __slots__ += "redCrossEnabled jumpEventSubscriber".split()
+    __slots__ += "logger processingTool playbackStatus timeController".split()
     frameIndex = property()
 
     def getData(self):
@@ -51,23 +53,23 @@ class Lecteur:
         data = self.processingTool.getData()
         return data
 
-    def __init__(self, cap, redCrossEnabled):
+    def __init__(self, logger, cap, redCrossEnabled, playbackStatus):
         self.initVideoInfo(cap)
+        self.logger = logger
+
         self.redCrossEnabled = redCrossEnabled
         self.jumpEventSubscriber = []
 
         # Background subtractor initialisation
-        self.processingTool = processing.ProcessingTool(vidDimension = self.vidDimension, timePerFrame = self.timePerFrame, jumpEventSubscriber = self.jumpEventSubscriber)
+        self.processingTool = processing.ProcessingTool(self.logger, vidDimension = self.vidDimension, timePerFrame = self.timePerFrame, jumpEventSubscriber = self.jumpEventSubscriber)
 
-        self.playbackStatus = PlaybackStatus(play = True)
+        self.playbackStatus = playbackStatus
         self.timeController = TimeController(self.timePerFrame)
 
-
-    @util.logged
     def run(self, mvWindow):
-        """Plays the video, frame by frame, or wait for the video to be unpaused, until quitting."""
+        """Plays the video, frame by frame, or wait for the video to be unpaused, until end of video or quitting."""
         self.timeController.init()
-        while not self.playbackStatus.quitting:
+        while not (self.playbackStatus.endReached or self.playbackStatus.quitting):
             if self.playbackStatus.play or self.playbackStatus.refreshNeeded:
                 self.playbackStatus.refreshNeeded = False
                 controlledTime = self.timeController.getControlledTime()
@@ -75,8 +77,8 @@ class Lecteur:
 
                 imageSet = collections.OrderedDict()
 
-                self.playbackStatus.quitting, frame = self.getFrame()
-                if self.playbackStatus.quitting:
+                self.playbackStatus.endReached, frame = self.getFrame()
+                if self.playbackStatus.endReached:
                     break
                 
                 imageSet["frame"] = frame
@@ -125,21 +127,21 @@ class Lecteur:
         return self.frameIndex >= self.cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1
 
     def getFrame(self):
-        quitting = False
+        endReached = False
         notOkCount = 0
         ok = False
         while not ok:
             ok, frame = self.cap.read()
             if not ok:
                 if self.reachedEnd():
-                    quitting = True
+                    endReached = True
                     break
                 notOkCount += 1
                 if notOkCount >= 3:
-                    printMV("Not ok >= 3 -- quitting.")
-                    quitting = True
+                    self.logger.debug("Not ok >= 3 -- endReached.")
+                    endReached = True
                     break
             else:
                 notOkCount = 0
-        assert frame is not None or quitting
-        return quitting, frame
+        assert frame is not None or endReached
+        return endReached, frame

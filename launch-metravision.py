@@ -3,7 +3,7 @@ import os
 import pathlib
 from pathlib import Path
 
-fdir = Path(__file__).parent
+fdir = Path(__file__).absolute().parent
 
 pythonExecutableName = "python.exe"
 pythonPath = Path()

@@ -6,9 +6,10 @@ from pathlib import Path
 fdir = Path(__file__).parent
 
 pythonExecutableName = "python.exe"
+pythonPath = Path()
 
 rootLocationList = []
-for di in [fdir, fdir.parent, fdir.parent.parent, "C:/Metravision"]:
+for di in [fdir, fdir.parent, fdir.parent.parent, Path("C:/Metravision")]:
     rootLocationList.append(di)
     rootLocationList.append(di / "metravision")
 
@@ -22,7 +23,14 @@ for rootLocation in rootLocationList:
         break
 else:
     # If break didn't occure
-    print(f"""[MV] Couldn't find 'src/main.py' within directories:{'\n'.join(map(str,[""] + rootLocationList))}""")
+    print(f"[MV] Couldn't find 'src/main.py' within directories:", '\n'.join(map(str,[""] + rootLocationList)))
+    input()
+    exit()
+
+if not pythonPath.is_file():
+    print(f"[MV] Missing 'lib/miniconda/python.exe")
+    input()
+    exit()
 
 
 # Environement manipulation maybe unnecessary

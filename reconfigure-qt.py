@@ -1,10 +1,8 @@
 import os
-import sys
 from subprocess import call
 
 import pathlib
 from pathlib import Path
-
 
 
 def execMV(*args, replace=False):
@@ -35,8 +33,7 @@ def confirmExit():
 
 try:
     # Relative location, within the project root directory
-    pythonRelativeLocation = "lib/miniconda/python.exe"
-    mainRelativeLocation = "src/main.py"
+    condaRelativeLocation = "lib/miniconda/Scripts/conda.exe"
 
     # Establishing the list of directories to search for the executable
     filedir = Path(__file__).absolute().parent
@@ -50,31 +47,22 @@ try:
     for rootLocation in rootLocationList:
         metravisionRoot = Path(rootLocation).absolute()
 
-        mainPath = pathlib.WindowsPath(metravisionRoot / mainRelativeLocation)
-        if mainPath.is_file():
-            print(f"[MV] Found {str(mainPath)}")
-            pythonPath = metravisionRoot / pythonRelativeLocation
+        condaPath = pathlib.WindowsPath(metravisionRoot / condaRelativeLocation)
+        if condaPath.is_file():
+            print(f"[MV] Found {str(condaPath)}")
             break
     else:
         # If break didn't occure
         print(
-            f"[MV] Couldn't find '{mainRelativeLocation}' within directories:",
+            f"[MV] Couldn't find '{condaRelativeLocation}' within directories:",
             '\n'.join(map(str,[""] + rootLocationList))
         )
         confirmExit()
 
-    if not pythonPath.is_file():
-        print(f"[MV] Missing '{pythonRelativeLocation}'")
-        confirmExit()
+    os.chdir(str(condaPath.parent.parent))
 
-
-    # Environement manipulation maybe unnecessary
-    os.environ["PYTHONIOENCODING"] = "UTF-8"
-    os.environ["PYTHONUNBUFFERED"] = "1"
-
-    os.chdir(str(metravisionRoot))
-
-    execMV(str(pythonPath), str(mainPath), *sys.argv[1:], replace=True)
+    execMV(str(condaPath), *"remove -y qt".split(), replace=False)
+    execMV(str(condaPath), *"install -y -c conda-forge opencv".split(), replace=False)
     confirmExit()
 except Exception: # pylint: disable=broad-except
     import pdb, traceback

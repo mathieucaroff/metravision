@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import math
 
 import util
 
@@ -25,13 +26,12 @@ class ProcessingTool():
         self.bgSub = cv2.createBackgroundSubtractorKNN()
 
         # blobDetector initialisation
-        params = cv2.SimpleBlobDetector_Params()
-        params.minDistBetweenBlobs = 4
-        params.filterByArea = True
-        params.minArea = 2_000
-        params.maxArea = 20_000
-        params.filterByInertia = True
-        params.maxInertiaRatio = 3
+        sbParams = cv2.SimpleBlobDetector_Params()
+        props = "filterByArea filterByCircularity filterByColor filterByConvexity filterByInertia maxArea maxCircularity maxConvexity maxInertiaRatio maxThreshold minArea minCircularity minConvexity minDistBetweenBlobs minInertiaRatio minRepeatability minThreshold thresholdStep".split()
+        for paramName in x.keys():
+            assert paramName in props, f"Parameter {paramName} isn't valid."
+        for paramName, paramValue in x.items():
+            setattr(sbParams, paramName, paramValue)
         self.blobDetector = cv2.SimpleBlobDetector_create(params)
 
         self.last_fgMask = None
@@ -73,38 +73,14 @@ class ProcessingTool():
         im["bitwise_fgMask_and"] = cv2.bitwise_and(im["fgMask"], self.last_fgMask, self.oneBeforeLast_fgMask)
 
         # opticalFlow
-        if self.last_frame is None:
-            self.last_frame = im["frame"]
-        if self.oneBeforeLast_frame is None:
-            self.oneBeforeLast_frame = self.last_frame
-        
-        im["opticalFlow01A"] = np.array(self.last_frame)
-        im["opticalFlow01B"] = np.array(self.last_frame)
-        for i in range(3):
-            prev = self.last_frame[:, :, 1]
-            next_ =    im["frame"][:, :, 1]
-            
-            opticalFlow = cv2.calcOpticalFlowFarneback(
-                prev = prev,
-                next = next_,
-                flow = None,
-                pyr_scale = 0.5,
-                levels = 3,
-                winsize = 20,
-                iterations = 3,
-                poly_n = 5,
-                poly_sigma = 1.2,
-                flags = 0)
-            intOpticalFlow = cv2.convertScaleAbs(3 * opticalFlow)
-            im["opticalFlow01A"][:,:,i] = intOpticalFlow[:,:,0]
-            im["opticalFlow01B"][:,:,i] = intOpticalFlow[:,:,1]
+        im["opticalFlowH"], im["opticalFlowV"] = util.timed(self.opticalFlow)(im["frame"])
             
         # erodeAndDilate
         mask = util.timed(self.erodeAndDilate)(im)
         _ = mask
 
         # Contour
-        # self.contour(im, mask)
+        # util.timed(self.contour)(im, mask)
 
         # Blob Detector
         blobKeypoints = util.timed(self.blobDetection)(im, nameOfImageToUse = "dilateC")
@@ -117,6 +93,46 @@ class ProcessingTool():
 
         self.last_fgMask, self.oneBeforeLast_fgMask = im["fgMask"], self.last_fgMask
         self.last_frame, self.oneBeforeLast_frame = im["frame"], self.last_frame
+
+
+    def opticalFlow(self, frame):
+        """
+        Compute the horizontal and vertical optical flow between successive frames
+        
+        Calcul le flux optique horizontal et vertical entre des frames sucessives.
+        """
+        if self.last_frame is None:
+            self.last_frame = frame
+        if self.oneBeforeLast_frame is None:
+            self.oneBeforeLast_frame = self.last_frame
+        
+        opticalFlowH = np.array(self.last_frame)
+        opticalFlowV = np.array(self.last_frame)
+        for i in range(3):
+            prev = self.last_frame[:, :, i]
+            next_ = frame[:, :, i]
+            
+            OF = cv2.calcOpticalFlowFarneback(
+                prev = prev,
+                next = next_,
+                flow = None,
+                pyr_scale = 0.5,
+                levels = 3,
+                winsize = 20,
+                iterations = 3,
+                poly_n = 5,
+                poly_sigma = 1.2,
+                flags = 0)
+            
+            # boostedOF = np.vectorize(lambda x: math.sqrt(x) if x >= 0 else -math.sqrt(-x))(opticalFlow)
+            boostedOF = OF
+            absmax = np.max(np.abs(boostedOF))
+            normedAround128 = 128 + (128 / absmax) * boostedOF
+            intOpticalFlow = cv2.convertScaleAbs(normedAround128)
+
+            opticalFlowH[:,:,i] = intOpticalFlow[:,:,0]
+            opticalFlowV[:,:,i] = intOpticalFlow[:,:,1]
+        return opticalFlowH, opticalFlowV
 
     @classmethod
     def erodeAndDilate(cls, im):

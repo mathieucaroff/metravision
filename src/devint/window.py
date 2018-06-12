@@ -9,7 +9,7 @@ import devint.progressBar
 
 
 class MvWindow:
-    def __init__(self, logger, windowName, windowShape, videoName, backgroundMode, playbackStatus, jumpToFrameFunction):
+    def __init__(self, logger, windowName, windowShape, videoName, backgroundMode, redCrossEnabled, playbackStatus, jumpToFrameFunction):
         self.logger = logger
         if backgroundMode:
             windowName = "Bg" + windowName
@@ -18,6 +18,7 @@ class MvWindow:
         self.windowShape = windowShape
         self.videoName = videoName
         self.backgroundMode = backgroundMode
+        self.redCrossEnabled = redCrossEnabled
         if backgroundMode:
             self.backgroundModeTextFrame = np.full(shape = [50, 400], fill_value = [255], dtype=np.uint8)
             cv2.putText(
@@ -70,7 +71,7 @@ class MvWindow:
         self.updateSubWindows(imageSet = imageSet)
 
 
-    def waitkey(self, controlledTime, playbackStatus, redCrossEnabled):
+    def waitkey(self, controlledTime, playbackStatus):
         key = 0xFF & cv2.waitKey(max(0, int(1000 * controlledTime)) + 1)
         spacebar = 0x20
         if key == spacebar:
@@ -83,6 +84,6 @@ class MvWindow:
             playbackStatus.refreshNeeded = True
         if key == ord('d'):
             raise util.DeveloperInterruption
-        if redCrossEnabled:
+        if self.redCrossEnabled:
             if self.windowClosed(self.windowName):
                 playbackStatus.quitting = True

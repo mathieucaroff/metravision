@@ -111,11 +111,11 @@ class MvMultiTracker():
                 magenta = (255, 0, 255)
                 cyan = (255, 255, 0)
                 color = [magenta, cyan][isMoto]
-                blobMvBbox.draw(im["frame"], color)
+                blobMvBbox.draw(im["video"], color)
             if mvTracker.isFinishedTracker(self.vidDimension):
                 self.analyseData.addVehicle(mvTracker.history)
                 white = (255, 255, 255)
-                mvTracker.draw(im["frame"], white)
+                mvTracker.draw(im["video"], white)
                 kind = self.analyseData.getData()[-1][1]
                 self.logger.debug(f":: Finished vehicle [{kind}]")
                 _numberOfFinishs += 1
@@ -135,7 +135,7 @@ class MvMultiTracker():
         # E - Show existing trackers
         for mvTracker in self.trackerList:
             green = (0, 255, 0)
-            mvTracker.draw(im["frame"], green, thickness = 6)
+            mvTracker.draw(im["video"], green, thickness = 6)
 
         # F - Create trackers
         # bbox :: Bounding Box
@@ -164,7 +164,7 @@ class MvMultiTracker():
                 continue
             
             blue = (255, 0, 0)
-            mvTracker.draw(im["frame"], blue, thickness = 6)
+            mvTracker.draw(im["video"], blue, thickness = 6)
             self.trackerList.append(mvTracker)
             _numberOfAdditions += 1
 

@@ -200,6 +200,14 @@ def _parameterable_decorator_sample(param):
     return decorator
 
 
+# Goes together with the decorator util.timed
+def printTimes():
+    printMV("[:Recorded times totals:]")
+    for fname in timed.functionIndex:
+        time = getattr(timed, fname)
+        printMV("Function {fname} ::: {time:.04} seconds".format(fname = fname, time = time))
+
+
 # CLASSES
 # Exceptions
 class DeveloperInterruption(Exception):

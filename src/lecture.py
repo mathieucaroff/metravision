@@ -3,6 +3,7 @@ import collections
 import time
 
 import cv2
+import numpy as np
 
 # import matplotlib.pyplot as plt
 
@@ -11,6 +12,19 @@ import util
 import analyse.processing as processing
 
 class PlaybackStatus:
+    """
+    Contient les informations liées à l'état de lecture d'une vidéo.
+    
+    Ceci permet aux différentes parties du logicielle de communiquer entre elles.
+    :param play: Est vrai lorsque la video est en cours de lecture.
+    :param endReached: Indique qu' il faut passer à la vidéo suivante car la fin
+        de la vidéo à été atteinte ou car l'utilisateur l'a demandé.
+    :param quitting: Indique qu'il faut quitter l'application, généralement car
+        l'utilisateur l'a demandé.
+    :param refreshNeeded: Indique qu'il faut lire une frame car l'affichage n'est
+        plus à jour ou car l'utilisateur l'a demandé. Est utile lorsque la vidéo
+        est en pause et que l'utilisateur à demander un saut.
+    """
     __slots__ = "play endReached quitting refreshNeeded".split()
     def __init__(self, play = True, endReached = False, quitting = False, refreshNeeded = False):
         self.play = play
@@ -22,12 +36,20 @@ class PlaybackStatus:
 class TimeController:
     """
     Ensures a regular time flow in the application. Prevents the time to flow faster than the recorded video time.
+
+    ---
+
+    Assure un écoulement régulier du temps entre chaque frame.
+
+    Ne s'applique que lorsque le traitement de la vidéo est plus rapide que sa
+    vitesse de lecture prévue. Ainsi, la vidéo n'est ralentie que lorsqu'elle
+    aurait été lue trop vite.
     """
     def __init__(self, timePerFrame):
         self.timePerFrame = timePerFrame
-        self.init()
+        self.reset()
 
-    def init(self):
+    def reset(self):
         self.referenceTime = time.clock()
         self.timeIndex = 0
 
@@ -36,44 +58,62 @@ class TimeController:
         controlledTime = (self.referenceTime + self.timePerFrame * self.timeIndex) - time.clock()
         if controlledTime < -0.5:
             # Reset the time reference -- the program is too late, catching up will have perceptible effect on the playback.
-            self.init()
+            self.reset()
         if controlledTime <= 0:
             controlledTime = 0
         return controlledTime
 
 
 class Lecteur:
+    """
+    Gère la lecture d'une vidéo, délègue sont traitement ainsi que son affichage.
+    
+    Gère la lecture d'une vidéo OpenCV. Instancie un ProcessingTool et lui envoie
+    la vidéo frame par frame. Accepte un 
+    Permet la mise en pause.
+    """
     __slots__ = "cap frameCount height width fps timePerFrame vidDimension".split()
     __slots__ += "redCrossEnabled jumpEventSubscriber".split()
     __slots__ += "logger processingTool playbackStatus timeController".split()
     frameIndex = property()
 
     def getData(self):
-        # data = [(0.6, "Moto"), (4.5, "Automobile")]
         data = self.processingTool.getData()
         return data
 
-    def __init__(self, logger, cap, redCrossEnabled, playbackStatus):
+    def __init__(self, logger, cap, speedLimitEnabled, playbackStatus):
+        """
+        Crée un objet Lecteur à partir d'une video openCV.
+
+        :param logger: Instance utilisée pour afficher les messages metravision.
+        :param cap: La vidéo à lire.
+        :param speedLimitEnabled: Si oui ou non il faut limité la vitesse de lecture
+            pour ne pas dépasser celle de la vidéo
+        :param redCrossEnabled: S
+        """
         self.initVideoInfo(cap)
         self.logger = logger
 
-        self.redCrossEnabled = redCrossEnabled
         self.jumpEventSubscriber = []
 
         # Background subtractor initialisation
         self.processingTool = processing.ProcessingTool(self.logger, vidDimension = self.vidDimension, timePerFrame = self.timePerFrame, jumpEventSubscriber = self.jumpEventSubscriber)
 
         self.playbackStatus = playbackStatus
-        self.timeController = TimeController(self.timePerFrame)
+        self.timeController = TimeController(self.timePerFrame if speedLimitEnabled else 0)
 
     def run(self, mvWindow):
-        """Plays the video, frame by frame, or wait for the video to be unpaused, until end of video or quitting."""
-        self.timeController.init()
+        """
+        Plays the video, frame by frame, or wait for the video to be unpaused, until end of video or quitting.
+
+        Lit la vidéo image par image ou attends une instruction de l'utilisateur.
+        """
+        self.timeController.reset()
         while not (self.playbackStatus.endReached or self.playbackStatus.quitting):
             if self.playbackStatus.play or self.playbackStatus.refreshNeeded:
                 self.playbackStatus.refreshNeeded = False
                 controlledTime = self.timeController.getControlledTime()
-                util.timed(mvWindow.waitkey)(controlledTime, self.playbackStatus, self.redCrossEnabled)
+                util.timed(mvWindow.waitkey)(controlledTime, self.playbackStatus)
 
                 imageSet = collections.OrderedDict()
 
@@ -82,7 +122,7 @@ class Lecteur:
                     break
                 
                 imageSet["frame"] = frame
-                imageSet["video"] = frame[:]
+                imageSet["video"] = np.array(frame)
 
                 self.processingTool.run(imageSet, self.frameIndex)
 
@@ -90,13 +130,14 @@ class Lecteur:
                 mvWindow.update(imageSet, advancementPercentage)
 
                 controlledTime = self.timeController.getControlledTime()
-                mvWindow.waitkey(controlledTime, self.playbackStatus, self.redCrossEnabled)
+                mvWindow.waitkey(controlledTime, self.playbackStatus)
             else:
                 duration = 0.05
-                mvWindow.waitkey(duration, self.playbackStatus, self.redCrossEnabled)
+                mvWindow.waitkey(duration, self.playbackStatus)
 
 
     def initVideoInfo(self, cap):
+        """Charge dans self les informations liées à la vidéo `cap`."""
         self.cap = cap
         self.frameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         self.height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -107,6 +148,7 @@ class Lecteur:
 
 
     def jumpTo(self, fraction):
+        """Saute à un point de la vidéo, donné comme un nombre entre 0 et 1."""
         frameCount = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
         frameIndex = int(fraction * frameCount)
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, frameIndex)
@@ -127,6 +169,7 @@ class Lecteur:
         return self.frameIndex >= self.cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1
 
     def getFrame(self):
+        """Renvoie la frame suivante."""
         endReached = False
         notOkCount = 0
         ok = False

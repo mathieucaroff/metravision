@@ -113,10 +113,7 @@ def main():
 
     pt = "printTimes"
     if pt in config.raw and config.raw[pt] == True:
-        printMV("[:Recorded times totals:]")
-        for fname in util.timed.functionIndex:
-            time = getattr(util.timed, fname)
-            printMV("Function {fname} ::: {time:.04} seconds".format(fname = fname, time = time))
+        util.printTimes()
 
 
 def processVideo(logger, redCrossEnabled, resultPathTemplate, backgroundMode, windowName, windowShape, videoPath, playbackStatus):
@@ -125,7 +122,7 @@ def processVideo(logger, redCrossEnabled, resultPathTemplate, backgroundMode, wi
     logger.info(f"Starting to process video `{videoName}`")
 
     if not videoPath.is_file():
-        raise FileNotFoundError(f"The specified video `{videoPath}` coudln't be open. (Missing file?)")
+        raise FileNotFoundError(f"The specified video `{videoPath}` couldn't be open. (Missing file?)")
 
     cap = cv2.VideoCapture(str(videoPath))
 
@@ -133,7 +130,7 @@ def processVideo(logger, redCrossEnabled, resultPathTemplate, backgroundMode, wi
         lecteur = lecture.Lecteur(
             logger = logger,
             cap = cap,
-            redCrossEnabled = redCrossEnabled,
+            speedLimitEnabled = not backgroundMode,
             playbackStatus = playbackStatus)
 
         if backgroundMode:
@@ -147,6 +144,7 @@ def processVideo(logger, redCrossEnabled, resultPathTemplate, backgroundMode, wi
             windowShape = windowShape,
             videoName = videoName,
             backgroundMode = backgroundMode,
+            redCrossEnabled = redCrossEnabled,
             playbackStatus = lecteur.playbackStatus,
             jumpToFrameFunction = lecteur.jumpTo)
 

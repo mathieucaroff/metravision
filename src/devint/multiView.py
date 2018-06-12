@@ -68,6 +68,8 @@ def renderNimages(videoName, imageSet, output = None, h = None, w = None):
             image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
         elif len(image.shape) == 3 and image.dtype == np.uint8:
             pass
+        elif len(image.shape) == 3 and image.dtype == np.float32:
+            pass
         else:
             raise TypeError("Unhandeled image color type.")
         

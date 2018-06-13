@@ -38,7 +38,7 @@ class ProcessingTool():
         self.oneBeforeLast_fgMask = None
 
         # Where to store results, together with the vehicle counter (segmenter)
-        segmentDuration = 10 # seconds
+        segmentDuration = 6 # seconds
         numberOfFramePerSegment = int(0.5 + segmentDuration / timePerFrame)
         segmenter = RealSegmenter(self.logger, numberOfFramePerSegment, timePerFrame)
         self.analyseData = AnalyseData(timePerFrame, jumpEventSubscriber, segmenter)

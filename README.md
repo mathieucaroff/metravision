@@ -11,8 +11,7 @@ The project depends on anaconda packages. To retrieve them, you should install
 miniconda or anaconda, then install them, using:
 
 ```sh
-conda install -c conda-forge opencv pyyaml ipython
-conda install -c anaconda python-daemon
+conda install -c conda-forge opencv pyyaml ipython openpyxl
 ```
 
 If you are on Windows, these commands should be copied to the "Anaconda Prompt"

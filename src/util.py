@@ -19,9 +19,9 @@ def median(iterable):
     values = sorted(iterable)
     le = len(values)
     if le % 2 == 1:
-        return values[le // 2 + 1]
+        return values[le // 2]
     else:
-        return (values[le // 2] + values[le // 2 + 1]) / 2
+        return (values[le // 2 - 1] + values[le // 2]) / 2
 
 
 def printMV(*args, **kwargs):

@@ -89,7 +89,15 @@ def main():
     redCrossEnabled = config.raw.redCrossEnabled
 
     try:
-        if backgroundMode:
+        if len(sys.argv) > 1:
+            printMV("argv", sys.argv)
+            for videoLocation in sys.argv[1:]:
+                videoPath = Path(videoLocation)
+                playbackStatus = lecture.PlaybackStatus(play = True)
+                processVideo(logger, redCrossEnabled, resultPathTemplate, backgroundMode, windowName, windowShape, videoPath, playbackStatus)
+                if playbackStatus.quitting:
+                    break
+        elif backgroundMode:
             for videoLocation in config.backgroundVideo.files:
                 videoPath = Path(videoLocation)
                 playbackStatus = lecture.PlaybackStatus(play = True)
@@ -131,7 +139,7 @@ def processVideo(logger, redCrossEnabled, resultPathTemplate, backgroundMode, wi
         if backgroundMode:
             lecteur.jumpTo(0)
         else:
-            lecteur.jumpTo(2 / 3) # (random.random() * 3 / 4)
+            lecteur.jumpTo(0) # (random.random() * 3 / 4)
 
         mvWindow = window.MvWindow(
             logger = logger,

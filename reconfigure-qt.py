@@ -1,7 +1,7 @@
 import os
 from subprocess import call
 
-import pathlib
+import pdb, traceback
 from pathlib import Path
 
 
@@ -25,9 +25,8 @@ def confirmExit():
     inp = input()
     if inp and inp[0] in "dp":
         try:
-            raise RunTimeError
-        except RunTimeError:
-            import pdb
+            raise RuntimeError
+        except RuntimeError:
             pdb.post_mortem()
 
 
@@ -47,7 +46,7 @@ try:
     for rootLocation in rootLocationList:
         metravisionRoot = Path(rootLocation).absolute()
 
-        condaPath = pathlib.WindowsPath(metravisionRoot / condaRelativeLocation)
+        condaPath = Path(metravisionRoot / condaRelativeLocation)
         if condaPath.is_file():
             print(f"[MV] Found {str(condaPath)}")
             break
@@ -65,6 +64,5 @@ try:
     execMV(str(condaPath), *"install -y -c conda-forge opencv".split(), replace=False)
     confirmExit()
 except Exception: # pylint: disable=broad-except
-    import pdb, traceback
     traceback.print_exc()
     pdb.post_mortem()

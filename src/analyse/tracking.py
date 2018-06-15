@@ -51,18 +51,17 @@ class MvTracker(util.MvBbox):
 
 
 class MvMultiTracker():
-    def __init__(self, logger, vidDimension, analyseData):
+    def __init__(self, logger, trackingConfig, vidDimension, analyseData):
         self.logger = logger
+        self.trackingConfig = trackingConfig
         self.vidDimension = vidDimension
         self.trackerList = []
         self.analyseData = analyseData
 
-    @staticmethod
-    def mvTrackerCreator():
+    def mvTrackerCreator(self):
         """
         Crée et renvoie un tracker du type spécifié par la variable tracker_type.
         """
-        tracker_type = 'KCF'
 
         tracker_create = {
             "BOOSTING": cv2.TrackerBoosting_create,
@@ -73,7 +72,7 @@ class MvMultiTracker():
             "GOTURN": cv2.TrackerGOTURN_create,
             # "CSRT": cv2.TrackerCSRT_create,
             # "MOSSE": cv2.TrackerMOSSE_create,
-        }[tracker_type]
+        }[self.trackingConfig["type"]]
 
         tracker = tracker_create()
 

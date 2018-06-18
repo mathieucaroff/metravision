@@ -2,7 +2,8 @@ import os
 import sys
 from subprocess import call
 
-import pathlib
+import pdb, traceback
+
 from pathlib import Path
 
 
@@ -27,9 +28,8 @@ def confirmExit():
     inp = input()
     if inp and inp[0] in "dp":
         try:
-            raise RunTimeError
-        except RunTimeError:
-            import pdb
+            raise RuntimeError
+        except RuntimeError:
             pdb.post_mortem()
 
 
@@ -50,10 +50,10 @@ try:
     for rootLocation in rootLocationList:
         metravisionRoot = Path(rootLocation).absolute()
 
-        mainPath = pathlib.WindowsPath(metravisionRoot / mainRelativeLocation)
+        mainPath = Path(metravisionRoot / mainRelativeLocation)
         if mainPath.is_file():
             print(f"[MV] Found {str(mainPath)}")
-            pythonPath = metravisionRoot / pythonRelativeLocation
+            pythonPath = Path(metravisionRoot / pythonRelativeLocation)
             break
     else:
         # If break didn't occure
@@ -77,6 +77,5 @@ try:
     execMV(str(pythonPath), str(mainPath), *sys.argv[1:], replace=True)
     confirmExit()
 except Exception: # pylint: disable=broad-except
-    import pdb, traceback
     traceback.print_exc()
     pdb.post_mortem()

@@ -23,7 +23,7 @@ class ProcessingTool():
         self.vidDimension = vidDimension
 
         # Background subtractor initialisation
-        self.bgSub = cv2.createBackgroundSubtractorKNN()
+        self.bgSub = cv2.createBackgroundSubtractorMOG2()
 
         # blobDetector initialisation
         sbParams = cv2.SimpleBlobDetector_Params()
@@ -32,7 +32,7 @@ class ProcessingTool():
             assert paramName in props, f"Parameter {paramName} isn't valid."
         for paramName, paramValue in x.items():
             setattr(sbParams, paramName, paramValue)
-        self.blobDetector = cv2.SimpleBlobDetector_create(params)
+        self.blobDetector = cv2.SimpleBlobDetector_create(sbParams)
 
         self.last_fgMask = None
         self.oneBeforeLast_fgMask = None
@@ -47,7 +47,7 @@ class ProcessingTool():
         self.analyseData = AnalyseData(timePerFrame, jumpEventSubscriber, segmenter)
 
         # Multi Tracker initialisation
-        self.mvMultiTracker = MvMultiTracker(self.logger, vidDimension, self.analyseData)
+        self.mvMultiTracker = MvMultiTracker(self.logger, trackingConfig, vidDimension, self.analyseData)
         self.trackerList = []
     
     def getData(self):

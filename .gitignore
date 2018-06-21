@@ -19,3 +19,9 @@ ctags.exe
 /lib/conda
 /lib/miniconda
 /lib/miniconda3
+
+# Sphinx
+*.rst
+_build
+Makefile
+conf.py

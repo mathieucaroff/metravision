@@ -1,6 +1,6 @@
 %YAML 1.2
 ---
-configurationVersion: 1.0.5
+configurationVersion: 1.1.0
 printTimes: true
 useDistanceCorrection: true
 backgroundMode: false
@@ -15,6 +15,7 @@ lecteur:
 processingTools:
     backgroundSubstractor:
         - type: MOG2
+          shadowsAre: background # vehicles
         - type: KNN
         - type: MOG
     blobDetector:
@@ -118,32 +119,3 @@ backgroundVideo:
             - SequenceFin.avi   #? 08b.avi
             #- SequenceHeureDePointe.avi
     long: null
-training:
-    iterationCount: 1
-    threashold: 0.60
-network:
-    imgWidth: 60
-    imgHeight: 120 # Dimensions normalisées en entrée du réseau de neuronne
-stat:
-    -
-        statFile: /path/to/stat1.yml
-        timeOffset: 5m10 # To be adjusted
-        segmentDuration: 6m00
-        videoDirectoryLocation: /path/to/videos
-        videos: 
-            - 04.avi
-            - 05.avi    
-            - 06.avi
-            - 07.avi
-    -
-        statFile: /path/to/stat2.yml
-        timeOffset: 35m20 # ~To be adjusted
-        segmentDuration: 6m00
-        videoDirectoryLocation: /path/to/videos
-        videos: 
-            - 08.avi
-            - 09.avi
-            - 10.avi
-            - 11.avi
-networkDestination: /your/path
-networkLocation: /your/path.t7

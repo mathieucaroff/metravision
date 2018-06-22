@@ -72,33 +72,34 @@ class ProcessingTool():
         
         im["bitwise_fgMask_and"] = cv2.bitwise_and(im["fgMask"], self.last_fgMask, self.oneBeforeLast_fgMask)
 
-        # opticalFlow
-        if self.last_frame is None:
-            self.last_frame = im["frame"]
-        if self.oneBeforeLast_frame is None:
-            self.oneBeforeLast_frame = self.last_frame
+        if False:
+            # opticalFlow
+            if self.last_frame is None:
+                self.last_frame = im["frame"]
+            if self.oneBeforeLast_frame is None:
+                self.oneBeforeLast_frame = self.last_frame
+            
+            im["opticalFlow01A"] = np.array(self.last_frame)
+            im["opticalFlow01B"] = np.array(self.last_frame)
+            for i in range(3):
+                prev = self.last_frame[:, :, 1]
+                next_ =    im["frame"][:, :, 1]
+                
+                opticalFlow = cv2.calcOpticalFlowFarneback(
+                    prev = prev,
+                    next = next_,
+                    flow = None,
+                    pyr_scale = 0.5,
+                    levels = 3,
+                    winsize = 20,
+                    iterations = 3,
+                    poly_n = 5,
+                    poly_sigma = 1.2,
+                    flags = 0)
+                intOpticalFlow = cv2.convertScaleAbs(3 * opticalFlow)
+                im["opticalFlow01A"][:,:,i] = intOpticalFlow[:,:,0]
+                im["opticalFlow01B"][:,:,i] = intOpticalFlow[:,:,1]
         
-        im["opticalFlow01A"] = np.array(self.last_frame)
-        im["opticalFlow01B"] = np.array(self.last_frame)
-        for i in range(3):
-            prev = self.last_frame[:, :, 1]
-            next_ =    im["frame"][:, :, 1]
-            
-            opticalFlow = cv2.calcOpticalFlowFarneback(
-                prev = prev,
-                next = next_,
-                flow = None,
-                pyr_scale = 0.5,
-                levels = 3,
-                winsize = 20,
-                iterations = 3,
-                poly_n = 5,
-                poly_sigma = 1.2,
-                flags = 0)
-            intOpticalFlow = cv2.convertScaleAbs(3 * opticalFlow)
-            im["opticalFlow01A"][:,:,i] = intOpticalFlow[:,:,0]
-            im["opticalFlow01B"][:,:,i] = intOpticalFlow[:,:,1]
-            
         # erodeAndDilate
         mask = util.timed(self.erodeAndDilate)(im)
         _ = mask

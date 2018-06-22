@@ -110,7 +110,7 @@ class MvConfig(Dotdict):
         self.backgroundVideo = backgroundVideo
 
     @staticmethod
-    def fromConfigFile(configFile, version=None):
+    def fromConfigFile(configFile, version = None):
         """
         Charge et renvoie la configuration de Metravision à partir d'un objet fichier.
 
@@ -119,14 +119,10 @@ class MvConfig(Dotdict):
         :return: The data from the file as an MvConfig object.
         """
         rawConfigData = yaml.load(configFile)
-        if version is not None:
-            yourVersion = rawConfigData["configurationVersion"]
-            if yourVersion != version:
-                raise ValueError(f"Apparently, the version of your configuration file ({yourVersion}) isn't the last available {version}.")
-        return MvConfig.fromRawConfigData(rawConfigData)
+        return MvConfig.fromRawConfigData(rawConfigData, version = version)
     
     @classmethod
-    def fromRawConfigData(cls, rawConfigData):
+    def fromRawConfigData(cls, rawConfigData, version = None):
         """
         Charge et renvoie la configuration de Metravision à partir des données produite par yaml.load à la lecture d'un fichier.
 
@@ -138,6 +134,11 @@ class MvConfig(Dotdict):
         :rtype MvConfig:
         :return: The data from the file as an MvConfig object.
         """
+
+        if version is not None:
+            yourVersion = rawConfigData["configurationVersion"]
+            if yourVersion != version:
+                raise ValueError(f"Apparently, the version of your configuration file ({yourVersion}) isn't the last available {version}.")
 
         resultConfig = MvConfig(
             raw = RecursiveReadOnlyDotdict(rawConfigData),

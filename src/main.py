@@ -28,36 +28,37 @@ import lecture
 import fileresults
 
 logging.basicConfig(level=0)
+if __name__ == "__main__":
+    printMV("Versions:")
+    printMV(f"[Python]      {sys.version}")
+    printMV(f"[Numpy]       {np.__version__}")
+    printMV(f"[OpenCV]      {cv2.__version__}")
+    __version__ = Path("VERSION.txt").read_text()
+    printMV(f"[Metravision] {__version__}")
 
-printMV("Versions:")
-printMV(f"[Python]      {sys.version}")
-printMV(f"[Numpy]       {np.__version__}")
-printMV(f"[OpenCV]      {cv2.__version__}")
-__version__ = Path("VERSION.txt").read_text()
-printMV(f"[Metravision] {__version__}")
-
-# Developper versions:
-"""Conda on Linux
-[MV] Versions:
-[MV] [Python]      3.6.4 |Anaconda, Inc.| (default, Jan 16 2018, 18:10:19)
-[GCC 7.2.0]
-[MV] [Numpy]       1.14.3
-[MV] [OpenCV]      3.4.1
-[MV] [Metravision] 1.0.1
-"""
-
+    # Developper versions:
+    """(Conda, on Linux) 
+    [MV] Versions:
+    [MV] [Python]      3.6.4 |Anaconda, Inc.| (default, Jan 16 2018, 18:10:19)
+    [GCC 7.2.0]
+    [MV] [Numpy]       1.14.3
+    [MV] [OpenCV]      3.4.1
+    [MV] [Metravision] 1.0.1
+    """
 
 def main():
     for x in list(range(3)) + [0]:
         p = Path("../" * x + "metravision.config.yml")
         if p.is_file():
             with p.open() as configFile:
-                config = parseConfig.MvConfig.fromConfigFile(configFile, version="1.0.4")
+                configObj = parseConfig.MvConfig.fromConfigFile(
+                    configFile,
+                    version = "1.1.0",
+                )
             break
     else:
         p.open().close() # raise FileNotFoundError
     
-
     logger = logging.getLogger("[MV]")
 
     # https://docs.python.org/3/howto/logging.html#configuring-logging
@@ -68,25 +69,17 @@ def main():
     logger.addHandler(ch)
     logger.propagate = False
 
-    if config.raw.developerMode and not config.raw.backgroundMode:
+    if configObj.raw.developerMode and not configObj.raw.backgroundMode:
         logger.setLevel("DEBUG")
     else:
         logger.setLevel("INFO")
-
-
-    windowName = config.raw.windowName
-    windowHeight = config.raw.window.height #raw["window"]["height"]
-    windowWidth =  config.raw.window.width  #raw["window"]["width"]
-    windowShape = (windowHeight, windowWidth)
     
-    backgroundMode = config.raw.backgroundMode
+    backgroundMode = configObj.raw.backgroundMode
     
-    templates = config.raw.resultDestinationTemplates
-    if config.raw.developerMode == True:
+    templates = configObj.raw.resultDestinationTemplates
+    if configObj.raw.developerMode == True:
         templates = templates.developer
     resultPathTemplate = templates.counts
-
-    redCrossEnabled = config.raw.redCrossEnabled
 
     try:
         if len(sys.argv) > 1:
@@ -94,38 +87,35 @@ def main():
             for videoLocation in sys.argv[1:]:
                 videoPath = Path(videoLocation)
                 playbackStatus = lecture.PlaybackStatus(play = True)
-                processVideo(logger, redCrossEnabled, resultPathTemplate, backgroundMode, windowName, windowShape, videoPath, playbackStatus)
+                processVideo(logger, configObj.raw, resultPathTemplate, backgroundMode, videoPath, playbackStatus)
                 if playbackStatus.quitting:
                     break
         elif backgroundMode:
-            for videoLocation in config.backgroundVideo.files:
+            for videoLocation in configObj.backgroundVideo.files:
                 videoPath = Path(videoLocation)
                 playbackStatus = lecture.PlaybackStatus(play = True)
-                processVideo(logger, redCrossEnabled, resultPathTemplate, backgroundMode, windowName, windowShape, videoPath, playbackStatus)
+                processVideo(logger, configObj.raw, resultPathTemplate, backgroundMode, videoPath, playbackStatus)
                 if playbackStatus.quitting:
                     break
         else:
-            videoPath = Path(random.choice(config.video.files))
+            videoPath = Path(random.choice(configObj.video.files))
             playbackStatus = lecture.PlaybackStatus(play = True)
-            processVideo(logger, redCrossEnabled, resultPathTemplate, backgroundMode, windowName, windowShape, videoPath, playbackStatus)
+            processVideo(logger, configObj.raw, resultPathTemplate, backgroundMode, videoPath, playbackStatus)
     finally:
         cv2.destroyAllWindows()
 
     pt = "printTimes"
-    if pt in config.raw and config.raw[pt] == True:
-        printMV("[:Recorded times totals:]")
-        for fname in util.timed.functionIndex:
-            time = getattr(util.timed, fname)
-            printMV("Function {fname} ::: {time:.04} seconds".format(fname = fname, time = time))
+    if pt in configObj.raw and configObj.raw[pt] == True:
+        util.printTimes()
 
 
-def processVideo(logger, redCrossEnabled, resultPathTemplate, backgroundMode, windowName, windowShape, videoPath, playbackStatus):
+def processVideo(logger, config, resultPathTemplate, backgroundMode, videoPath, playbackStatus):
 
     videoName = videoPath.name
     logger.info(f"Starting to process video `{videoName}`")
 
     if not videoPath.is_file():
-        raise FileNotFoundError(f"The specified video `{videoPath}` coudln't be open. (Missing file?)")
+        raise FileNotFoundError(f"The specified video `{videoPath}` couldn't be open. (Missing file?)")
 
     cap = cv2.VideoCapture(str(videoPath))
 
@@ -133,19 +123,19 @@ def processVideo(logger, redCrossEnabled, resultPathTemplate, backgroundMode, wi
         lecteur = lecture.Lecteur(
             logger = logger,
             cap = cap,
-            redCrossEnabled = redCrossEnabled,
+            config = config,
+            speedLimitEnabled = not backgroundMode,
             playbackStatus = playbackStatus)
 
         if backgroundMode:
             lecteur.jumpTo(0)
         else:
-            lecteur.jumpTo(0) # (random.random() * 3 / 4)
+            lecteur.jumpTo(random.random() * config.lecteur.randomJump)
 
         mvWindow = window.MvWindow(
             logger = logger,
-            windowName = windowName,
-            windowShape = windowShape,
-            videoName = videoName,
+            windowConfig = config.window,
+            videoName = videoPath.name,
             backgroundMode = backgroundMode,
             playbackStatus = lecteur.playbackStatus,
             jumpToFrameFunction = lecteur.jumpTo)

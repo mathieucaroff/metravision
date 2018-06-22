@@ -1,8 +1,9 @@
 import cv2
 import numpy as np
+import math
 
 import util
-
+from util import first
 
 from analyse.segmenting import AnalyseData, RealSegmenter
 
@@ -10,7 +11,15 @@ from analyse.tracking import MvMultiTracker
 
 class ProcessingTool():
     # Setup:
-    def __init__(self, logger, vidDimension, timePerFrame, jumpEventSubscriber, segmentDuration = 60):
+    def __init__(
+            self,
+            logger,
+            processingToolsConfig,
+            vidDimension,
+            timePerFrame,
+            jumpEventSubscriber,
+            segmentDuration = 60,
+        ):
         """
         Initialisation -- Crée le backgroundSubtractor, paramètre le blob detector, initialise MultiTracker et AnalyseData.
 
@@ -18,21 +27,30 @@ class ProcessingTool():
         :param: segmentDuration est exprimé en secondes
         """
         self.logger = logger
-
+        self.processingToolsConfig = processingToolsConfig
         self.vidDimension = vidDimension
 
         # Background subtractor initialisation
-        self.bgSub = cv2.createBackgroundSubtractorKNN()
+        backgroundSubstractorConfig = self.processingToolsConfig.backgroundSubstractor
+        # for conf in backgroundSubstractor[1:]:
+        # backgroundSubstractor
+        type_ = backgroundSubstractorConfig[0]["type"]
+        self.bgSub = {
+            "KNN": cv2.createBackgroundSubtractorKNN,
+            "MOG": None,
+            "MOG2": cv2.createBackgroundSubtractorMOG2,
+        }[type_]()
 
         # blobDetector initialisation
-        params = cv2.SimpleBlobDetector_Params()
-        params.minDistBetweenBlobs = 4
-        params.filterByArea = True
-        params.minArea = 2_000
-        params.maxArea = 20_000
-        params.filterByInertia = True
-        params.maxInertiaRatio = 3
-        self.blobDetector = cv2.SimpleBlobDetector_create(params)
+        blobDetectorConfig = processingToolsConfig.blobDetector
+        bdp = blobDetectorConfig[0]["parameters"]
+        sbParams = cv2.SimpleBlobDetector_Params()
+        props = "filterByArea filterByCircularity filterByColor filterByConvexity filterByInertia maxArea maxCircularity maxConvexity maxInertiaRatio maxThreshold minArea minCircularity minConvexity minDistBetweenBlobs minInertiaRatio minRepeatability minThreshold thresholdStep".split()
+        for paramName in bdp.keys():
+            assert paramName in props, f"Parameter {paramName} isn't valid."
+        for paramName, paramValue in bdp.items():
+            setattr(sbParams, paramName, paramValue)
+        self.blobDetector = cv2.SimpleBlobDetector_create(sbParams)
 
         self.last_fgMask = None
         self.oneBeforeLast_fgMask = None
@@ -47,13 +65,17 @@ class ProcessingTool():
         self.analyseData = AnalyseData(timePerFrame, jumpEventSubscriber, segmenter)
 
         # Multi Tracker initialisation
-        self.mvMultiTracker = MvMultiTracker(self.logger, vidDimension, self.analyseData)
+        self.mvMultiTracker = MvMultiTracker(
+            self.logger,
+            processingToolsConfig.tracking,
+            vidDimension,
+            self.analyseData,
+        )
         self.trackerList = []
-    
+
     def getData(self):
         # return self.analyseData.getData()
         return self.analyseData.segmenter.getData()
-
 
     # Run:
     def run(self, im, frameIndex):
@@ -72,40 +94,21 @@ class ProcessingTool():
         
         im["bitwise_fgMask_and"] = cv2.bitwise_and(im["fgMask"], self.last_fgMask, self.oneBeforeLast_fgMask)
 
-        if False:
-            # opticalFlow
-            if self.last_frame is None:
-                self.last_frame = im["frame"]
-            if self.oneBeforeLast_frame is None:
-                self.oneBeforeLast_frame = self.last_frame
-            
-            im["opticalFlow01A"] = np.array(self.last_frame)
-            im["opticalFlow01B"] = np.array(self.last_frame)
-            for i in range(3):
-                prev = self.last_frame[:, :, 1]
-                next_ =    im["frame"][:, :, 1]
-                
-                opticalFlow = cv2.calcOpticalFlowFarneback(
-                    prev = prev,
-                    next = next_,
-                    flow = None,
-                    pyr_scale = 0.5,
-                    levels = 3,
-                    winsize = 20,
-                    iterations = 3,
-                    poly_n = 5,
-                    poly_sigma = 1.2,
-                    flags = 0)
-                intOpticalFlow = cv2.convertScaleAbs(3 * opticalFlow)
-                im["opticalFlow01A"][:,:,i] = intOpticalFlow[:,:,0]
-                im["opticalFlow01B"][:,:,i] = intOpticalFlow[:,:,1]
+        # opticalFlow
+        if self.processingToolsConfig.opticalFlow:
+            im["opticalFlowH"], im["opticalFlowV"] = util.timed(self.opticalFlow)(im["frame"])
         
         # erodeAndDilate
-        mask = util.timed(self.erodeAndDilate)(im)
+        ptc = self.processingToolsConfig
+        mask = util.timed(self.erodeAndDilate)(im,
+            eadPre  = ptc.erodeAndDilatePreBitwiseAnd,
+            eadPost = ptc.erodeAndDilatePostBitwiseAnd,
+        )
         _ = mask
 
         # Contour
-        # self.contour(im, mask)
+        if self.processingToolsConfig.contour:
+            util.timed(self.contour)(im, mask)
 
         # Blob Detector
         blobKeypoints = util.timed(self.blobDetection)(im, nameOfImageToUse = "dilateC")
@@ -119,37 +122,72 @@ class ProcessingTool():
         self.last_fgMask, self.oneBeforeLast_fgMask = im["fgMask"], self.last_fgMask
         self.last_frame, self.oneBeforeLast_frame = im["frame"], self.last_frame
 
-    @classmethod
-    def erodeAndDilate(cls, im):
+
+    def opticalFlow(self, frame):
         """
+        Compute the horizontal and vertical optical flow between successive frames
+        
+        Calcul le flux optique horizontal et vertical entre des frames sucessives.
+        """
+        if self.last_frame is None:
+            self.last_frame = frame
+        if self.oneBeforeLast_frame is None:
+            self.oneBeforeLast_frame = self.last_frame
+        
+        opticalFlowH = np.array(self.last_frame)
+        opticalFlowV = np.array(self.last_frame)
+        for i in range(3):
+            prev = self.last_frame[:, :, i]
+            next_ = frame[:, :, i]
+            
+            OF = cv2.calcOpticalFlowFarneback(
+                prev = prev,
+                next = next_,
+                flow = None,
+                pyr_scale = 0.5,
+                levels = 3,
+                winsize = 20,
+                iterations = 3,
+                poly_n = 5,
+                poly_sigma = 1.2,
+                flags = 0)
+            
+            # boostedOF = np.vectorize(lambda x: math.sqrt(x) if x >= 0 else -math.sqrt(-x))(opticalFlow)
+            boostedOF = OF
+            absmax = np.max(np.abs(boostedOF))
+            normedAround128 = 128 + (128 / absmax) * boostedOF
+            intOpticalFlow = cv2.convertScaleAbs(normedAround128)
+
+            opticalFlowH[:,:,i] = intOpticalFlow[:,:,0]
+            opticalFlowV[:,:,i] = intOpticalFlow[:,:,1]
+        return opticalFlowH, opticalFlowV
+
+    @classmethod
+    def erodeAndDilate(cls, im, eadPre, eadPost):
+        """
+        `ead` = erodeAndDilate
         Erode et Dilate l'image plusieurs fois.
         """
         mask = im["bitwise_fgMask_and"]
 
-        erodeA = 4
-        dilateA = 20
-        erodeB = 26
-        dilateB = 15 # previously erodeA + erodeB - dilateA
-        dilateC = 15
-
-        mask = cv2.erode(mask, cls.easyKernel(erodeA))
-        im["erodeMaskA"] = mask
-
-        mask = cv2.dilate(mask, cls.easyKernel(dilateA))
-        im["dilateMaskA"] = mask
-
-        mask = cv2.erode(mask, cls.easyKernel(erodeB))
-        im["erodeMaskB"] = mask
-
-        mask = cv2.dilate(mask, cls.easyKernel(dilateB))
-        im["dilateMaskB"] = mask
-
-        # edMask = mask
-
+        for i, op in enumerate(eadPre):
+            key, val = first(op.items())
+            assert key in "erode dilate".split()
+            erodeOrDilate = getattr(cv2, key)
+            mask = erodeOrDilate(mask, cls.easyKernel(val))
+            im[f"{key}Mask{'ABCDEFGHI'[i]}"] = mask
+        
         mask = cv2.bitwise_and(mask, im["fgMask"])
         im["bitwise_fgMask_dilateB_and"] = mask
 
-        mask = cv2.dilate(mask, cls.easyKernel(dilateC))
+        # COPYPASTA COPYPASTA COPYPASTA
+        for i, op in enumerate(eadPost):
+            key, val = first(op.items())
+            assert key in "erode dilate".split()
+            erodeOrDilate = getattr(cv2, key)
+            mask = erodeOrDilate(mask, cls.easyKernel(val))
+            im[f"{key}{'CDEFGHI'[i]}"] = mask
+
         im["dilateC"] = mask
 
         # cv2.cvtColor(im["dilateMaskB"], cv2.COLOR_GRAY2BGR)
@@ -165,7 +203,7 @@ class ProcessingTool():
         return cv2.getStructuringElement( cv2.MORPH_ELLIPSE, (sizeY, sizeX) )
 
     @staticmethod
-    def contour(im, mask):
+    def contour(im, mask, ):
         """
         Detecte les contours dans l'image et les dessine.
         """
@@ -173,11 +211,11 @@ class ProcessingTool():
 
         _img, contourPointList, _hierachy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-        im["dilateMaskA"] = cv2.cvtColor(im["dilateMaskA"], cv2.COLOR_GRAY2BGR)
+        im["dilateMaskB"] = cv2.cvtColor(im["dilateMaskB"], cv2.COLOR_GRAY2BGR)
 
         allContours = -1
         cv2.drawContours(
-            image = im["dilateMaskA"],
+            image = im["dilateMaskB"],
             contours = contourPointList,
             contourIdx = allContours,
             color = red
@@ -186,7 +224,7 @@ class ProcessingTool():
 
     def blobDetection(self, im, nameOfImageToUse):
         """
-        Detecte les blobs sur les images dont le nom contient "dilate".
+        Détecte les blobs sur les images dont le nom contient "dilate".
         """
         red = (0, 0, 255)
         ret = None

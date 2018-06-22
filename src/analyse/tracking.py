@@ -9,6 +9,7 @@ class MvTracker(util.MvBbox):
     smallestAllowedTrackerArea = 1_000
 
     def __init__(self, frameIndex, bbox, tracker, frame):
+        assert bbox[2] > 0 and bbox[3] > 0
         super(MvTracker, self).__init__(*bbox)
         self.tracker = tracker
         self.tracker.init(frame, bbox)
@@ -69,8 +70,8 @@ class MvMultiTracker():
             "TLD": cv2.TrackerTLD_create,
             "MEDIANFLOW": cv2.TrackerMedianFlow_create,
             "GOTURN": cv2.TrackerGOTURN_create,
-            # "CSRT": cv2.TrackerCSRT_create,
-            # "MOSSE": cv2.TrackerMOSSE_create,
+            "CSRT": cv2.TrackerCSRT_create,
+            "MOSSE": cv2.TrackerMOSSE_create,
         }[self.trackingConfig[0]["type"]]
 
         tracker = tracker_create()
@@ -152,12 +153,13 @@ class MvMultiTracker():
             # bbox = util.bboxFromCircle(keypoint, width_on_height_ratio = width_on_height_ratio)
 
             # Create and register tracker:
-            mvTracker = MvTracker(
-                frameIndex = frameIndex,
-                bbox = blobMvbbox.bbox,
-                tracker = self.mvTrackerCreator(),
-                frame = frame
-            )
+            if blobMvbbox.area > 0:
+                mvTracker = MvTracker(
+                    frameIndex = frameIndex,
+                    bbox = blobMvbbox.bbox,
+                    tracker = self.mvTrackerCreator(),
+                    frame = frame
+                )
             if mvTracker.isFinishedTracker(self.vidDimension):
                 continue
             

@@ -62,7 +62,6 @@ class MvMultiTracker():
         """
         Crée et renvoie un tracker du type spécifié par la variable tracker_type.
         """
-
         tracker_create = {
             "BOOSTING": cv2.TrackerBoosting_create,
             "MIL": cv2.TrackerMIL_create,
@@ -72,7 +71,7 @@ class MvMultiTracker():
             "GOTURN": cv2.TrackerGOTURN_create,
             # "CSRT": cv2.TrackerCSRT_create,
             # "MOSSE": cv2.TrackerMOSSE_create,
-        }[self.trackingConfig["type"]]
+        }[self.trackingConfig[0]["type"]]
 
         tracker = tracker_create()
 

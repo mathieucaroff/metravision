@@ -9,16 +9,18 @@ import devint.progressBar
 
 
 class MvWindow:
-    def __init__(self, logger, windowName, windowShape, videoName, backgroundMode, redCrossEnabled, playbackStatus, jumpToFrameFunction):
+    def __init__(self, logger, windowConfig, videoName, backgroundMode, playbackStatus, jumpToFrameFunction):
         self.logger = logger
+        windowName = windowConfig.name
         if backgroundMode:
             windowName = "Bg" + windowName
         self.windowName = windowName
         cv2.namedWindow(windowName)
-        self.windowShape = windowShape
+        self.windowConfig = windowConfig
+        self.windowShape = windowShape = [windowConfig.size.height, windowConfig.size.width]
         self.videoName = videoName
         self.backgroundMode = backgroundMode
-        self.redCrossEnabled = redCrossEnabled
+        self.redCrossEnabled = windowConfig.redCrossEnabled
         if backgroundMode:
             self.backgroundModeTextFrame = np.full(shape = [50, 400], fill_value = [255], dtype=np.uint8)
             cv2.putText(
@@ -34,16 +36,15 @@ class MvWindow:
 
         cv2.setMouseCallback(windowName, mouseCallbackDispatcher)
 
-
-        bp = Namespace()
-        bp.bgCol = [255, 255, 255]
-        bp.fgCol = [255, 191, 127]
-        bp.shape = (30, windowShape[1])
-        self.barProperties = bp
-
-
-        displayShape = (windowShape[0] - bp.shape[0], windowShape[1])
-        self.updateSubWindows = devint.multiView.setupVideoSelectionHook(mouseCallbackList, displayShape, playbackStatus, self.windowClosed)
+        height = self.windowConfig.progressBar.height
+        displayShape = (windowShape[0] - height, windowShape[1])
+        self.updateSubWindows = devint.multiView.setupVideoSelectionHook(
+            self.windowConfig.multiView,
+            mouseCallbackList,
+            displayShape,
+            playbackStatus,
+            self.windowClosed
+        )
         devint.progressBar.setupClickHook(mouseCallbackList, windowShape, 30, jumpToFrameFunction)
 
     def windowClosed(self, windowName):
@@ -59,10 +60,14 @@ class MvWindow:
         # Display the resulting frame
         shape = (*self.windowShape, 3)
         output = np.zeros(shape = shape, dtype = np.uint8)
-        barHeight = self.barProperties.shape[0]
+        barHeight = self.windowConfig.progressBar.height
 
-        devint.multiView.renderNimages(self.videoName, imageSet, output = output[:-barHeight])
-        devint.progressBar.drawBar(self.barProperties, buffer = output, advancementPercentage = advancementPercentage)
+        devint.multiView.renderNimages(
+            videoName = self.videoName, 
+            imageSet = imageSet,
+            output = output[:-barHeight]
+        )
+        devint.progressBar.drawBar(self.windowConfig.progressBar, width = self.windowShape[0], buffer = output, advancementPercentage = advancementPercentage)
         if self.backgroundMode:
             cv2.imshow(self.windowName, self.backgroundModeTextFrame)
         else:

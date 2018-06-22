@@ -2,22 +2,37 @@
 ---
 configurationVersion: 1.1.0
 printTimes: true
-useDistanceCorrection: true
 backgroundMode: false
 developerMode: true
-redCrossEnabled: true
-windowName: Metravision
-window:
-    height: 800
-    width: 960
 lecteur:
     randomJump: 0
+window:
+    name: Metravision
+    redCrossEnabled: true
+    size:
+        width: 960
+        height: 800
+    multiView:
+        openEvent:
+            click: false
+            doubleClick: true
+    progressBar:
+        height: 30
+        fgColor: [128, 255, 255]
+        bgColor: [255, 255, 255]
 processingTools:
     backgroundSubstractor:
         - type: MOG2
           shadowsAre: background # vehicles
         - type: KNN
         - type: MOG
+    erodeAndDilatePreBitwiseAnd:
+        - erode: 4
+        - dilate: 20
+        - erode: 26
+        - dilate: 15
+    erodeAndDilatePostBitwiseAnd:
+        - dilate: 15
     blobDetector:
         - parameters:
             minDistBetweenBlobs: 4
@@ -28,6 +43,7 @@ processingTools:
             maxInertiaRatio: 3
     tracking:
         - type: KCF
+          useDistanceCorrection: true
         - type: TLD
         - type: MEDIANFLOW
         - type: GOTURN

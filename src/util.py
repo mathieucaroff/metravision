@@ -233,12 +233,12 @@ class ReadOnlyDotdict(dict):
 class RecursiveReadOnlyDotdict(dict):
     """dot.notation readonly access to dictionary attributes, propagated to children dictionaries upon acess."""
     __slots__ = []
-    def __getattr__(self, key):
+    def __getitem__(self, key):
         val = dict.__getitem__(self, key)
         if type(val) == dict:
             val = RecursiveReadOnlyDotdict(val)
         return val
-    __getitem__ = __getattr__
+    __getattr__ = __getitem__
 
 def test_RecursiveReadOnlyDotdict():
     d = {"a": {"b": {"c": "value"}}, "z": {"y": "nothing"}}
@@ -497,6 +497,9 @@ def neutralContextManager():
 
 
 # Non Decorators
+def first(iterable):
+    return next(iter(iterable))
+
 def typeVal(val):
     """
     Renvoie la représentation sous forme de chaîne de caractère du type de

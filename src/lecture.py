@@ -73,7 +73,7 @@ class Lecteur:
     Permet la mise en pause.
     """
     __slots__ = "cap frameCount height width fps timePerFrame vidDimension".split()
-    __slots__ += "redCrossEnabled jumpEventSubscriber".split()
+    __slots__ += " jumpEventSubscriber config".split()
     __slots__ += "logger processingTool playbackStatus timeController".split()
     frameIndex = property()
 
@@ -81,23 +81,29 @@ class Lecteur:
         data = self.processingTool.getData()
         return data
 
-    def __init__(self, logger, cap, speedLimitEnabled, playbackStatus):
+    def __init__(self, logger, config, cap, speedLimitEnabled, playbackStatus):
         """
         Crée un objet Lecteur à partir d'une video openCV.
 
         :param logger: Instance utilisée pour afficher les messages metravision.
+        :param config: L'objet configuration.
         :param cap: La vidéo à lire.
         :param speedLimitEnabled: Si oui ou non il faut limité la vitesse de lecture
             pour ne pas dépasser celle de la vidéo
-        :param redCrossEnabled: S
         """
         self.initVideoInfo(cap)
         self.logger = logger
-
+        self.config = config
         self.jumpEventSubscriber = []
 
         # Background subtractor initialisation
-        self.processingTool = processing.ProcessingTool(self.logger, vidDimension = self.vidDimension, timePerFrame = self.timePerFrame, jumpEventSubscriber = self.jumpEventSubscriber)
+        self.processingTool = processing.ProcessingTool(
+            self.logger,
+            processingToolsConfig = config.processingTools,
+            vidDimension = self.vidDimension,
+            timePerFrame = self.timePerFrame,
+            jumpEventSubscriber = self.jumpEventSubscriber
+        )
 
         self.playbackStatus = playbackStatus
         self.timeController = TimeController(self.timePerFrame if speedLimitEnabled else 0)

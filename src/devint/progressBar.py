@@ -28,6 +28,6 @@ def drawBar(progressBarConfig, buffer, advancementPercentage):
     height = progressBarConfig.height
     width = buffer.shape[1]
     advancementPx = int(advancementPercentage * width)
-    buffer[-height:, :advancementPx, :] = progressBarConfig.fgColor
-    buffer[-height:, advancementPx:, :] = progressBarConfig.bgColor
+    buffer[-height:, :advancementPx, :] = progressBarConfig.fgColor[::-1]
+    buffer[-height:, advancementPx:, :] = progressBarConfig.bgColor[::-1]
 

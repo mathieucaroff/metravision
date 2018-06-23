@@ -23,7 +23,7 @@ class ProcessingTool():
         """
         Initialisation -- Crée le backgroundSubtractor, paramètre le blob detector, initialise MultiTracker et AnalyseData.
 
-        :param: vidDimension est la paire (width, height) pour le flux video traié
+        :param: vidDimension est la paire (width, height) pour le flux video traité
         :param: segmentDuration est exprimé en secondes
         """
         self.logger = logger

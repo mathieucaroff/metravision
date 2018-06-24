@@ -66,6 +66,9 @@ class PerspectiveCorrector:
         dstW = self.xRightEdge - self.xLeftEdge
         dsize = dstW, 4 * h
         homographyMatrix, _status = cv2.findHomography(pts_src, pts_dst)
+        #affine = cv2.getAffineTransform(pts_src, pts_dst) #error: (-215) src.checkVector(2, 5) == 3 && dst.checkVector(2, 5) == 3 in function cv::getAffineTransform
+        #getPers = cv2.getPerspectiveTransform(pts_src, pts_dst) #same results of homofraphy
+
         warped = cv2.warpPerspective(frame, homographyMatrix, dsize)
         return warped
 

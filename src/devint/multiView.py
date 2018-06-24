@@ -68,6 +68,8 @@ def renderNimages(videoName, imageSet, output = None, h = None, w = None):
             image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
         elif len(image.shape) == 3 and image.dtype == np.uint8:
             pass
+        elif len(image.shape) == 3 and image.dtype == np.float32:
+            pass
         else:
             raise TypeError("Unhandeled image color type.")
         
@@ -93,7 +95,7 @@ def renderNimages(videoName, imageSet, output = None, h = None, w = None):
     return output
 
 
-def setupVideoSelectionHook(mouseCallbackList, displayShape, playbackStatus, windowClosed):
+def setupVideoSelectionHook(multiViewConfig, mouseCallbackList, displayShape, playbackStatus, windowClosed):
     """
     Select and expand the video selected by double click
     """
@@ -103,20 +105,24 @@ def setupVideoSelectionHook(mouseCallbackList, displayShape, playbackStatus, win
     share.pVy = 0
     share.pVx = 0
 
+    openEvent = multiViewConfig.openEvent
+
     # mouse callback function
     def getPosition(event, x, y, flags, param):
         _ = flags, param
         """
-        Identify double click
-        """ 
-        if event == cv2.EVENT_LBUTTONDBLCLK:
+        Catch the click if this click is enabled.
+        """
+        click = False
+        click |= openEvent.click and event == cv2.EVENT_LBUTTONUP
+        click |= openEvent.doubleClick and event == cv2.EVENT_LBUTTONDBLCLK
+        if click:
             share.press = True
             share.pVy = y
             share.pVx = x
             playbackStatus.refreshNeeded = True
     
     mouseCallbackList.append(getPosition)
-
 
     displayedImageNameList = []
     displayedImageNameListAdd = []

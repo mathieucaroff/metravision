@@ -27,3 +27,9 @@ __pycache__
 /build
 /dist
 *.spec
+
+# Sphinx
+*.rst
+_build
+Makefile
+conf.py

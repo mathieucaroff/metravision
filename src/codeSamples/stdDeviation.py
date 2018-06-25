@@ -1,10 +1,16 @@
 from util import average
-"""
-Calculate the standard deviation (quantify the amount of dispersion) of an ensemble of data.
-"""
+
 
 def calculSD(li, liref):
+    """
+    Calcul de l'écart-type (quantifier le montant de la dispersion) de deux ensembles de données.
 
+    :param list li: une liste de valeurs qu'a été identifie par le logiciel
+    :param list liref: liste de valeurs de référence pour les valeurs étudiées
+    :return: l'écart-type des valeurs étudiées et des valeurs de référence respectivement
+    :rtype: (float, float)
+    
+    """
     n = len(li)
     m = len(liref)
 
@@ -25,6 +31,10 @@ def calculSD(li, liref):
     return s, sref
 
 def creeList():
+    """
+    Créer deux listes pour tester la fonction calculSD. Imprimer les résultats du deux écart-types
+    
+    """
 
     lt = [1, 1, 1, 1]
     lref = [2, 2, -1, -3]
@@ -33,6 +43,14 @@ def creeList():
 
 
 def calculStandardDeviation(data):
+    """
+    Calculer l'écart-type d'un ensemble de données.
+
+    :param list data: liste de valeurs
+    :return: l'écart-type de l'ensemble de valeurs
+    :rtype: float
+    
+    """
     av = average(data)
     n = len(data)
     s = ( sum((val - av) ** 2 for val in data) / (n - 1) ) ** 0.5
@@ -40,6 +58,16 @@ def calculStandardDeviation(data):
 
 
 def calculRelativeDifference(data, referenceData):
+    """
+    Calculer la différence relative entre les valeurs pour être analysées et une référence, saut les valeurs de référence égales à zero et mettre tous les individuels différences dans une liste.
+
+
+    :param list data: liste des valeurs pour être analysée.
+    :param list referenceData: liste des valeurs de référence
+    :return: différence relative entre les valeurs
+    :rtype: list
+    
+    """
     relativeDifference = []
     unaccounted = 0
     for (val, refv) in zip(data, referenceData):
@@ -56,6 +84,15 @@ def calculRelativeDifference(data, referenceData):
 
 
 def _calculRelativeDifferenceStandardDeviation(data, referenceData):
+    """
+    Calcul de l'écart-type (quantifier le montant de la dispersion) de la différence relative entre deux ensembles de données.
+
+    :param list data: liste des valeurs pour être analysée 
+    :param list referenceData: lists des valeurs de référence
+    :return: l'écart-type de la différence relative
+    :rtype: float
+    
+    """
     return calculStandardDeviation(calculRelativeDifference(data, referenceData))
 
 

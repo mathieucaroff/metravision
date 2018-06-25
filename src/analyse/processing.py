@@ -23,9 +23,14 @@ class ProcessingTool():
         """
         Initialisation -- Crée le backgroundSubtractor, paramètre le blob detector, initialise MultiTracker et AnalyseData.
 
-        :param: vidDimension est la paire (width, height) pour le flux video traité
-        :param: segmentDuration est exprimé en secondes
+        :param: logger:
+        :param: vidDimension est la paire (width, height) pour le flux video traié
+        :param: float timePerFrame: le temps de chaque trame (l'inverse de la quantité de trames par seconde)
+        :param: jumpEventSubscriber:
+        :param: int segmentDuration: la duration de chaque segment de vidéo est exprimé en secondes
+
         """
+        
         self.logger = logger
         self.processingToolsConfig = processingToolsConfig
         self.vidDimension = vidDimension
@@ -80,7 +85,11 @@ class ProcessingTool():
     # Run:
     def run(self, im, frameIndex):
         """
-        Run the analysis of a frame.
+        Éxecuter l'analyse d'une trame.
+
+        :param: np.array im: ensemble de trames
+        :param: int frameIndex: index de chaque trame
+        
         """
         sub = util.timed(self.bgSub.apply)(image = im["frame"], learningRate = 0.009)
         im["fgMask"] = sub
@@ -125,9 +134,11 @@ class ProcessingTool():
 
     def opticalFlow(self, frame):
         """
-        Compute the horizontal and vertical optical flow between successive frames
-        
+        Compute the horizontal and vertical optical flow between successive frames.
         Calcul le flux optique horizontal et vertical entre des frames sucessives.
+
+        :param: np.array frame:  trame actuel
+
         """
         if self.last_frame is None:
             self.last_frame = frame
@@ -167,6 +178,12 @@ class ProcessingTool():
         """
         `ead` = erodeAndDilate
         Erode et Dilate l'image plusieurs fois.
+
+        :param: np.array im: ensemble de trames
+        :param: eadPre: paramètres de configuration de l'érosion et dilatation avant l'application du ET logique
+        :param: eadPost: paramètres de configuration de l'érosion et dilatation après l'application du ET logique
+        :return: le résultat de la trame après passer par les plusieurs processus d'érosion et dilatation, un ET logique et un processus de dilatation
+        
         """
         mask = im["bitwise_fgMask_and"]
 
@@ -206,6 +223,10 @@ class ProcessingTool():
     def contour(im, mask, ):
         """
         Detecte les contours dans l'image et les dessine.
+
+        :param: np.array im: ensemble de trames
+        :param: mask: résultat de la trame après le processus d'érosion et dilatation, et ET logique
+
         """
         red = (0, 0, 255)
 
@@ -225,6 +246,11 @@ class ProcessingTool():
     def blobDetection(self, im, nameOfImageToUse):
         """
         Détecte les blobs sur les images dont le nom contient "dilate".
+
+        :param: np.array im: ensemble de trames
+        :param: np.array nameOfImageToUse: il ontient lesquelles images ont été dilatées
+        :return: les points clés des blobs
+        
         """
         red = (0, 0, 255)
         ret = None

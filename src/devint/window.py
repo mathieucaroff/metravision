@@ -67,7 +67,7 @@ class MvWindow:
             imageSet = imageSet,
             output = output[:-barHeight]
         )
-        devint.progressBar.drawBar(self.windowConfig.progressBar, width = self.windowShape[0], buffer = output, advancementPercentage = advancementPercentage)
+        devint.progressBar.drawBar(self.windowConfig.progressBar, buffer = output, advancementPercentage = advancementPercentage)
         if self.backgroundMode:
             cv2.imshow(self.windowName, self.backgroundModeTextFrame)
         else:

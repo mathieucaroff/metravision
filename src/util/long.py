@@ -119,5 +119,8 @@ def glob(key, value):
             [("green", "foo"), ("orange", "bar")]
     """
     glob.__setattr__(key, value)
+    if key not in glob.valIndex:
+        glob.valIndex.append(key)
     return value
 glob = singleKeyValueFunction(glob)
+glob.valIndex = []

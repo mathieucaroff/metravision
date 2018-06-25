@@ -128,7 +128,7 @@ class Lecteur:
                     break
                 
                 imageSet["frame"] = frame
-                imageSet["video"] = np.array(frame)
+                imageSet["trackers"] = np.array(frame)
 
                 self.processingTool.run(imageSet, self.frameIndex)
 

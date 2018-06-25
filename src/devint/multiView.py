@@ -34,7 +34,7 @@ def renderNimages(videoName, imageSet, output = None, h = None, w = None):
 
     n = len(imageList)
 
-    #Definiton of h, w depends of the choice of the user 
+    # Definition of h, w depends of the choice of the user 
     if h is None:
         if w is None:
             h, w = viewDimensionsFromN(n)
@@ -45,7 +45,7 @@ def renderNimages(videoName, imageSet, output = None, h = None, w = None):
             w = math.ceil(n / h)
         else:
             if not h * w >= n:
-                raise ValueError("h*w est trop petit")
+                raise ValueError("h * w est trop petit")
 
     if output is None:
         img = imageList[0]
@@ -53,7 +53,7 @@ def renderNimages(videoName, imageSet, output = None, h = None, w = None):
         shape[2:] = [3]
         output = np.zeros(shape = shape, dtype = np.uint8)
     
-    ohpx, owpx = output.shape[0:2] #pixel's number of output (same of imagList if it is not declare) It's necessary modifie to parameters defined by user
+    ohpx, owpx = output.shape[0:2] #pixel's number of output (same as imageList if it is not declare) It's necessary modifie to parameters defined by user
 
     imghpx = ohpx // h
     imgwpx = owpx // w

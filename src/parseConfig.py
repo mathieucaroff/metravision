@@ -21,7 +21,7 @@ def test_MvConfig():
     Test le bon fonctionnement de la classe MvConfig.
 
     config définie une propriété `.files` sur .image et .video (et .backgroundVideo).
-    Ce test s'assure que le nombre de fichiers obtenu via la prorpriété `.files` est correcte.
+    Ce test s'assure que le nombre de fichiers obtenu via la propriété `.files` est correcte.
 
     Ce test s'assure aussi pour quelque uns des fichiers attendu dans l'itérateur renvoyé par .files
     qu'ils sont bien présents.
@@ -35,7 +35,7 @@ training:
     threashold: 0.60
 network:
     imgWidth: 60
-    imgHeight: 120 # Dimensions normalisées en entrée du réseau de neuronne.
+    imgHeight: 120 # Dimensions normalisées en entrée du réseau de neuron.
 activeWindows:
     nb: true # Vidéo en niveaux de gris avec prédictions effectuées (rectangles blancs)
     bcgSub: false # Masque Background Subtractor, fond en noir et pixels en mouvement en blanc

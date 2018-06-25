@@ -52,7 +52,7 @@ def main():
             with p.open() as configFile:
                 configObj = parseConfig.MvConfig.fromConfigFile(
                     configFile,
-                    version = "1.1.0",
+                    version = "1.1.1",
                 )
             break
     else:

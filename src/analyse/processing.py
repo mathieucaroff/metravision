@@ -114,7 +114,7 @@ class ProcessingTool():
         blobKeypoints = util.timed(self.blobDetection)(im, nameOfImageToUse = "dilateC")
 
         # Tracking
-        frame = im["blob_dilateC"]
+        frame = im["frame"]
         util.timed(self.mvMultiTracker.mvTracking)(im, frameIndex, frame, blobKeypoints)
 
         self.analyseData.tick()

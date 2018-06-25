@@ -117,7 +117,6 @@ class Circle(Point):
 
 
 class MvBbox:
-    area, bbox, center, right, bottom = [ property() ] * 5
     __slots__ = "x y width height".split()
 
     def __init__(self, x, y, width, height):
@@ -165,12 +164,18 @@ class MvBbox:
         """
         Accept a frame and extract the region correspondig to mvbbox from it.
 
-        If the region falls outside the frame, use the fillerColor
+        If the region falls outside the frame, the result will be as if the
+        frame were surrounded by `fillerColor`.
 
         :param frame: The frame from which to extract the region.
         :param fillerColor:
             The color to use to fill the extracted image if the region is
             partially or totally out of the frame. Black by default.
+        
+        Accepte une frame et en extrait la region correspondant à la mvbbox.
+
+        Si la region est partiellement ou totalement hors de la frame, le
+        résultat sera comme si la frame était entourée de `fillerColor`.
         """
         if len(frame.shape) < 2 or frame.shape[0] <= 0 or frame.shape[1] <= 0:
             raise ValueError(f"Given frame's dimension are nul. shape: {frame.shape}")
@@ -180,34 +185,32 @@ class MvBbox:
             fillerValue = frame[0, 0]
             fillerValue.fill(0)
 
-        _fh, fw = frame.shape[:2]
+        fh, fw = frame.shape[:2]
 
         destShape = [self.height, self.width, *frame.shape[2:]]
         destination = np.empty(shape = destShape, dtype = frame.dtype)
-        destination.fill(fillerValue)
+        destination[:, :] = fillerValue
 
-        # x and y (included) and xx and yy (excluded) are the bounaries of the
-        # destination area where the part of the frame will be copied.
-        x, y = 0, 0
-        xx, yy = self.width, self.height
-        # sx and sy (included) and right and bottom (excluded) are the bounaries
-        # of the part of the frame which will be copied.
-        sx, sy = self.x, self.y
-        right, bottom = self.right, self.bottom
+        # d: destination area where the part of the frame will be copied.
+        dLeft, dTop = 0, 0
+        dRight, dBottom = self.width, self.height
+        # o: origin area of the frame which will be copied
+        oLeft, oTop = self.x, self.y
+        oRight, oBottom = self.right, self.bottom
         if self.x < 0:
-            x -= self.x
-            sx -= self.x # sx == 0
+            dLeft -= self.x
+            oLeft -= self.x # thus oLeft == 0
         if self.y < 0:
-            y -= self.y
-            sy -= self.y # sy == 0
-        if self.right > fw:
-            xx -= self.right
-            right -= self.right
-        if self.bottom > fw:
-            yy -= self.bottom
-            bottom -= self.bottom
+            dTop -= self.y
+            oTop -= self.y # thus oTop == 0
+        if fw - self.right < 0:
+            dRight += fw - self.right
+            oRight += fw - self.right
+        if oBottom > fh:
+            dBottom += fh - self.bottom
+            oBottom += fh - self.bottom
 
-        destination[x : xx, y : yy] = frame[sx : right, sy : bottom]
+        destination[dTop:dBottom, dLeft:dRight] = frame[oTop:oBottom, oLeft:oRight]
         return destination
     
     def draw(self, frame, color, *args, **kwargs):
@@ -215,8 +218,7 @@ class MvBbox:
             kwargs["thickness"] = 6
         cv2.rectangle(frame, (self.x, self.y), (self.right, self.bottom), color, *args, **kwargs)
 
-
-    @bbox.getter
+    @property
     def bbox(self):
         return (self.x, self.y, self.width, self.height)
 
@@ -224,20 +226,25 @@ class MvBbox:
     def bbox(self, val):
         self.x, self.y, self.width, self.height = map(int, val)
 
-
-    @area.getter
+    @property
     def area(self):
         return self.width * self.height
 
-    @center.getter
+    @property
     def center(self):
         return Point(self.x + self.width // 2, self.y + self.height // 2)
 
-    @right.getter
+    @center.setter
+    def center(self, newCenter):
+        cx, cy = newCenter
+        self.x = int(cx - self.width // 2)
+        self.y = int(cy - self.height // 2)
+
+    @property
     def right(self):
         return self.x + self.width
 
-    @bottom.getter
+    @property
     def bottom(self):
         assert type(self.y) == int, typeVal(self.y)
         assert type(self.height) == int

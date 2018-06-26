@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import util
 
 class PerspectiveCorrector:
     def __init__(self, xLeftEdge, xRightEdge, vanishingPoint):
@@ -10,7 +9,7 @@ class PerspectiveCorrector:
     
     # https://www.learnopencv.com/homography-examples-using-opencv-python-c/
     def correct(self, frame):
-        h, w, _colorNumber = frame.shape
+        h, _w, _colorNumber = frame.shape
         vanishingPoint = np.array(self.vanishingPoint)
 
         #roadWidth = self.xRightEdge - self.xLeftEdge
@@ -54,10 +53,10 @@ class PerspectiveCorrector:
         #trp = (610,int(0.55*h))
         #blp = (150, 500)
         #brp = (710, 500)
-        #cv2.circle(img = frame, center = blp, radius = 15, color = (255,0,0), thickness = -1)
-        #cv2.circle(img = frame, center = brp, radius = 15, color = (255,0,0), thickness = -1)
-        #cv2.circle(img = frame, center = tlp, radius = 5, color = (255,0,0), thickness = -1)
-        #cv2.circle(img = frame, center = trp, radius = 5, color = (255,0,0), thickness = -1)
+        #cv2.circle(img = frame, center = blp, radius = 15, color = (255,0,0), thickness=-1)
+        #cv2.circle(img = frame, center = brp, radius = 15, color = (255,0,0), thickness=-1)
+        #cv2.circle(img = frame, center = tlp, radius = 5, color = (255,0,0), thickness=-1)
+        #cv2.circle(img = frame, center = trp, radius = 5, color = (255,0,0), thickness=-1)
 
         pts_src = np.array([topLeftCorner, topRightCorner, bottomLeftCorner, bottomRightCorner, *sides ]) # leftSide, rightSide]) #this didn't work very well
         pts_dst = np.array([dstTopLeftCorner, dstTopRightCorner, dstBottomLeftCorner, dstBottomRightCorner, *dstSides]) # dstLeftSide, dstRightSide])

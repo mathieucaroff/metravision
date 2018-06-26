@@ -52,11 +52,13 @@ def main():
             with p.open() as configFile:
                 configObj = parseConfig.MvConfig.fromConfigFile(
                     configFile,
-                    version = "1.1.1",
+                    version = "1.1.2",
                 )
             break
     else:
         p.open().close() # raise FileNotFoundError
+
+    config = configObj.raw
 
     logger = logging.getLogger("[MV]")
 
@@ -68,15 +70,17 @@ def main():
     logger.addHandler(ch)
     logger.propagate = False
 
-    if configObj.raw.developerMode and not configObj.raw.backgroundMode:
+    util.developerMode = config.developerMode
+
+    if util.developerMode and not config.backgroundMode:
         logger.setLevel("DEBUG")
     else:
         logger.setLevel("INFO")
     
-    backgroundMode = configObj.raw.backgroundMode
+    backgroundMode = config.backgroundMode
     
-    templates = configObj.raw.resultDestinationTemplates
-    if configObj.raw.developerMode == True:
+    templates = config.resultDestinationTemplates
+    if config.developerMode == True:
         templates = templates.developer
     resultPathTemplate = templates.counts
 
@@ -85,26 +89,26 @@ def main():
             printMV("argv", sys.argv)
             for videoLocation in sys.argv[1:]:
                 videoPath = Path(videoLocation)
-                playbackStatus = lecture.PlaybackStatus(play = True)
-                processVideo(logger, configObj.raw, resultPathTemplate, backgroundMode, videoPath, playbackStatus)
+                playbackStatus = lecture.PlaybackStatus(play=True)
+                processVideo(logger, config, resultPathTemplate, backgroundMode, videoPath, playbackStatus)
                 if playbackStatus.quitting:
                     break
         elif backgroundMode:
             for videoLocation in configObj.backgroundVideo.files:
                 videoPath = Path(videoLocation)
-                playbackStatus = lecture.PlaybackStatus(play = True)
-                processVideo(logger, configObj.raw, resultPathTemplate, backgroundMode, videoPath, playbackStatus)
+                playbackStatus = lecture.PlaybackStatus(play=True)
+                processVideo(logger, config, resultPathTemplate, backgroundMode, videoPath, playbackStatus)
                 if playbackStatus.quitting:
                     break
         else:
             videoPath = Path(random.choice(configObj.video.files))
-            playbackStatus = lecture.PlaybackStatus(play = True)
-            processVideo(logger, configObj.raw, resultPathTemplate, backgroundMode, videoPath, playbackStatus)
+            playbackStatus = lecture.PlaybackStatus(play=True)
+            processVideo(logger, config, resultPathTemplate, backgroundMode, videoPath, playbackStatus)
     finally:
         cv2.destroyAllWindows()
 
     pt = "printTimes"
-    if pt in configObj.raw and configObj.raw[pt] == True:
+    if pt in config and config[pt] == True:
         util.printTimes()
 
 
@@ -152,8 +156,8 @@ def processVideo(logger, config, resultPathTemplate, backgroundMode, videoPath, 
         def saveResultAsXlsx(results):
             segmentIndexList = [ v[0] for v in results ]
 
-            resultFilePath = fileresults.fillPathTemplate(videoPath = videoPath, ext = "xlsx", pathTemplate = resultPathTemplate, segmentIndexList = segmentIndexList)
-            Path(resultFilePath).absolute().parent.mkdir(parents = True, exist_ok = True)
+            resultFilePath = fileresults.fillPathTemplate(videoPath=videoPath, ext="xlsx", pathTemplate=resultPathTemplate, segmentIndexList=segmentIndexList)
+            Path(resultFilePath).absolute().parent.mkdir(parents=True, exist_ok=True)
 
             xlsdoc = fileresults.createXLS(results, sheetHeader = ["Index", "Time", "Automobiles", "Motos"])
             xlsdoc.save(resultFilePath)

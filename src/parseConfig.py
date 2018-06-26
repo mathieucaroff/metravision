@@ -6,7 +6,7 @@ import yaml
 import itertools
 # import pprint as Pprint
 
-# pprint = Pprint.PrettyPrinter(indent = 2).pprint
+# pprint = Pprint.PrettyPrinter(indent=2).pprint
 
 # Internal
 from util import Namespace
@@ -110,7 +110,7 @@ class MvConfig(Dotdict):
         self.backgroundVideo = backgroundVideo
 
     @staticmethod
-    def fromConfigFile(configFile, version = None):
+    def fromConfigFile(configFile, version=None):
         """
         Charge et renvoie la configuration de Metravision à partir d'un objet fichier.
 
@@ -119,10 +119,10 @@ class MvConfig(Dotdict):
         :return: The data from the file as an MvConfig object.
         """
         rawConfigData = yaml.load(configFile)
-        return MvConfig.fromRawConfigData(rawConfigData, version = version)
+        return MvConfig.fromRawConfigData(rawConfigData, version=version)
     
     @classmethod
-    def fromRawConfigData(cls, rawConfigData, version = None):
+    def fromRawConfigData(cls, rawConfigData, version=None):
         """
         Charge et renvoie la configuration de Metravision à partir des données produite par yaml.load à la lecture d'un fichier.
 
@@ -177,9 +177,9 @@ class MvConfig(Dotdict):
             first = firstImgIndex + imgLearnCount
             subdirs["test"] = MvDirectory(filePathTemplate = filePathTemplate, fileValues = range(first, first + imgTestCount))
 
-            categories[subdirname] = MvDirectory(subdirs = subdirs)
+            categories[subdirname] = MvDirectory(subdirs=subdirs)
 
-        imageDirectory = MvDirectory(subdirs = categories)
+        imageDirectory = MvDirectory(subdirs=categories)
         return imageDirectory
 
 
@@ -199,12 +199,12 @@ class MvConfig(Dotdict):
                 filePathTemplate = os.path.join(directoryLocation, directoryName, "%s")
                 categories[videoKind] = MvDirectory(filePathTemplate = filePathTemplate, fileValues = categoryDescription["files"])
 
-        videoDirectory = MvDirectory(subdirs = categories)
+        videoDirectory = MvDirectory(subdirs=categories)
         return videoDirectory
 
 
 class MvDirectory(ReadOnlyDotdict):
-    def __init__(self, filePathTemplate = None, fileValues = None, subdirs = None):
+    def __init__(self, filePathTemplate=None, fileValues=None, subdirs=None):
         # Verifications
         if subdirs is not None and (filePathTemplate is not None or fileValues is not None):
             raise ValueError("Argument subdir can't be used with filePathTemplate and fileValues.")

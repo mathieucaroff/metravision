@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 
 import util
-from util import Namespace
 
 import devint.multiView
 import devint.progressBar
@@ -59,7 +58,7 @@ class MvWindow:
     def update(self, imageSet, advancementPercentage):
         # Display the resulting frame
         shape = (*self.windowShape, 3)
-        output = np.zeros(shape = shape, dtype = np.uint8)
+        output = np.zeros(shape=shape, dtype=np.uint8)
         barHeight = self.windowConfig.progressBar.height
 
         devint.multiView.renderNimages(
@@ -67,13 +66,13 @@ class MvWindow:
             imageSet = imageSet,
             output = output[:-barHeight]
         )
-        devint.progressBar.drawBar(self.windowConfig.progressBar, buffer = output, advancementPercentage = advancementPercentage)
+        devint.progressBar.drawBar(self.windowConfig.progressBar, buffer=output, advancementPercentage=advancementPercentage)
         if self.backgroundMode:
             cv2.imshow(self.windowName, self.backgroundModeTextFrame)
         else:
             cv2.imshow(self.windowName, output)
 
-        self.updateSubWindows(imageSet = imageSet)
+        self.updateSubWindows(imageSet=imageSet)
 
 
     def waitkey(self, controlledTime, playbackStatus):
@@ -88,7 +87,9 @@ class MvWindow:
         if key == ord('f'):
             playbackStatus.refreshNeeded = True
         if key == ord('d'):
-            raise util.DeveloperInterruption
+            if util.developerMode:
+                import pdb; pdb.set_trace()
+                # raise util.DeveloperInterruption
         if self.redCrossEnabled:
             if self.windowClosed(self.windowName):
                 playbackStatus.quitting = True

@@ -1,16 +1,13 @@
 import util
 
 import cv2
-import numpy as np
-
-import logging
 
 
 class DummyExtractor:
-    def __init__(self, _0, _1, frame, *args, **kwargs):
+    def __init__(self, _0, _1, frame, *_args, **_kwargs):
         self.frame = frame
 
-    def extract(self, *args, **kwargs):
+    def extract(self, *_args, **_kwargs):
         return self.frame
     
     def translateMvBboxInward(self, mvbbox):
@@ -25,7 +22,7 @@ class ActiveExtractor:
     forth between the extracted region and the image.
     """
 
-    def __init__(self, objBottomY, centerLocation, frame, horizon = 0, regionWidth = 400, regionHeight = 500):
+    def __init__(self, objBottomY, centerLocation, frame, horizon=0, regionWidth=400, regionHeight=500):
         """
         Extract the object from the frame and scale it for it to always have the same size.
 
@@ -56,13 +53,13 @@ class ActiveExtractor:
         self.mvbbox = util.MvBbox(0, 0, self.originWidth, self.originHeight)
         self.mvbbox.center = self.centerLocation
     
-    def extract(self, fillerColor = None):
+    def extract(self, interpolation=cv2.INTER_CUBIC):
         """
         Compute the region to extract, extract it to a buffer
         """
         extracted = self.mvbbox.extractFrom(self.frame)
         targetDim = (self.targetWidth, self.targetHeight)
-        target = cv2.resize(extracted, targetDim, interpolation = cv2.INTER_CUBIC)
+        target = cv2.resize(extracted, targetDim, interpolation=interpolation)
         assert len(target.shape) >= 2
         return target
     
@@ -99,39 +96,42 @@ class ActiveExtractor:
         return util.MvBbox(outwX, outwY, outwW, outwH)
 
 class MvTracker():
-    __slots__ = "logger tracker ok errCount history mvbbox im".split()
-
     smallestAllowedTrackerArea = 1_000
 
-    def __init__(self, logger, frameIndex, frame, Extractor, extractorConfig, bbox, tracker, im):
+    def __init__(self, logger, frameIndex, frame, Extractor, trackingConfig, bbox, tracker, im):
         self.logger = logger
         self.errCount = 0
         self.ok = True
         self.history = {frameIndex: bbox}
         self.mvbbox = util.MvBbox(*bbox)
         self.im = im
-        extractor = Extractor(
+        self.Extractor = Extractor
+        self.trackingConfig = trackingConfig
+        extractor = self.Extractor(
             self.mvbbox.bottom,
             self.mvbbox.center,
-            frame, horizon = 0,
-            regionWidth = extractorConfig["regionWidth"],
-            regionHeight = extractorConfig["regionHeight"],
+            frame,
+            horizon = trackingConfig.distanceCorrection.horizon,
+            regionWidth = trackingConfig.distanceCorrection.regionWidth,
+            regionHeight = trackingConfig.distanceCorrection.regionHeight,
         )
-        region = extractor.extract()
+        interpolationMethode = getattr(cv2, self.trackingConfig.distanceCorrection.interpolation)
+        region = extractor.extract(interpolation=interpolationMethode)
         assert len(region.shape) >= 2
         regMvbbox = extractor.translateMvBboxInward(self.mvbbox)
         self.tracker = tracker
         self.tracker.init(region, regMvbbox.bbox)
+        self.deathFrame = frameIndex + trackingConfig.frameCountTillDeath
 
-    def updateTracker(self, frameIndex, frame, Extractor, extractorConfig, im = None):
+    def updateTracker(self, frameIndex, frame, im=None):
         try:
-            extractor = Extractor(
+            extractor = self.Extractor(
                 self.mvbbox.bottom,
                 self.mvbbox.center,
                 frame,
-                horizon = 0,
-                regionWidth = extractorConfig["regionWidth"],
-                regionHeight = extractorConfig["regionHeight"]
+                horizon = self.trackingConfig.distanceCorrection.horizon,
+                regionWidth = self.trackingConfig.distanceCorrection.regionWidth,
+                regionHeight = self.trackingConfig.distanceCorrection.regionHeight,
             )
             region = extractor.extract()
             if im is not None:
@@ -181,39 +181,65 @@ class MvMultiTracker():
         self.trackerList = []
         self.analyseData = analyseData
 
-        type_ = self.trackingConfig[0]["type"]
+        type_ = self.trackingConfig["type"]
         if type_ not in "Boosting MIL KCF TLD MedianFlow GOTURN CSRT MOSSE".split():
             raise ValueError(f"MvConfiguration: inexistant tracker type `{type_}`")
         self.mvTrackerCreator = getattr(cv2, f"Tracker{type_}_create")
 
-        self.distanceCorrectionConfig = {"regionWidth": 400, "regionHeight": 400}
-        dcc = self.trackingConfig[0].get("distanceCorrection", None) # dcc is dist.correc.config
+        dcc = {
+            "regionWidth": 400,
+            "regionHeight": 400,
+            "interpolation": "INTER_LINEAR",
+            "horizon": 0} # dcc is dist.correc.config
+        self.trackingConfig.setdefault("distanceCorrection", {})
         if dcc is not None:
             self.Extractor = ActiveExtractor
-            self.distanceCorrectionConfig.update(dcc)
         else:
             self.Extractor = DummyExtractor
-
+        self.trackingConfig.get("distanceCorrection").update(dcc)
 
     def mvTracking(self, im, frameIndex, frame, blobKeypoints):
         # A - Update trackers
-        for mvTracker in self.trackerList:
-            mvTracker.updateTracker(frameIndex, frame, self.Extractor, self.distanceCorrectionConfig, im)
-        _numberOfUpdates = len(self.trackerList)
+        _numberOfUpdates = self.updateTrackers(im, frameIndex, frame)
 
         # B - Remove tracker duplicates
+        _numberOfDeletions = self.removeTrackerDuplicates()
+
+        # C - Remove finished trackers (out of screen / too small trackers)
+        _numberOfFinishes = self.removeFinishedTrackers(im)
+
+        # D - Remove lost trackers
+        self.removeLostTrackers(frameIndex)
+
+        # Can help for debugging purpose
+        util.glob(trackerList=self.trackerList)
+
+        # E - Show existing trackers
+        self.showTrackers(im)
+
+        # F - Create trackers
+        _numberOfAdditions = self.createTrackers(im, frameIndex, frame, blobKeypoints)
+
+        # logger.debug(f"[Trackers] Updated {_numberOfUpdates} then Rmvd dups {_numberOfDeletions}, Rmvd fin {_numberOfFinishs}, Created {_numberOfAdditions}.")
+
+    def updateTrackers(self, im, frameIndex, frame):
+        for mvTracker in self.trackerList:
+            mvTracker.updateTracker(frameIndex, frame, im=im)
+        return len(self.trackerList)
+
+    def removeTrackerDuplicates(self):
         duplicates = self.getTrackerDuplicates()
         oldTrackerList = self.trackerList
         self.trackerList = []
-        for i, mvTracker in enumerate(oldTrackerList):
-            if i in duplicates:
-                mvTrackerReplacement = oldTrackerList[duplicates[i]]
-                mvTrackerReplacement.receive(self.logger, mvTracker)
-            else:
+        for x, mvTracker in enumerate(oldTrackerList):
+            if x not in duplicates:
                 self.trackerList.append(mvTracker)
-        _numberOfDeletions = len(duplicates)
+            else:
+                mvTrackerReplacement = oldTrackerList[duplicates[x]]
+                mvTrackerReplacement.receive(self.logger, mvTracker)
+        return len(duplicates)
 
-        # C - Remove finished trackers (out of screen / too small trackers)
+    def removeFinishedTrackers(self, im):
         _numberOfFinishs = 0
         oldTrackerList = self.trackerList
         self.trackerList = []
@@ -230,34 +256,34 @@ class MvMultiTracker():
                 blobMvBbox.draw(im["trackers"], color)
             if mvTracker.isFinishedTracker(self.vidDimension):
                 self.analyseData.addVehicle(mvTracker.history)
-                white = (255, 255, 255)
-                mvTracker.mvbbox.draw(im["trackers"], white)
                 kind = self.analyseData.getData()[-1][1]
                 self.logger.debug(f":: Finished vehicle [{kind}]")
+                lmagenta = (255, 195, 255)
+                lcyan = (255, 255, 170)
+                color = lcyan if kind == "Moto" else lmagenta
+                mvTracker.mvbbox.draw(im["trackers"], color)
                 _numberOfFinishs += 1
             else:
                 self.trackerList.append(mvTracker)
+        return _numberOfFinishs
 
-        # D - Remove lost trackers
+    def removeLostTrackers(self, frameIndex):
         oldTrackerList = self.trackerList
         self.trackerList = []
         for mvTracker in oldTrackerList:
-            if mvTracker.errCount < 10:
+            if mvTracker.errCount < 10 and mvTracker.deathFrame > frameIndex:
                 self.trackerList.append(mvTracker)
 
-        # Can help for debugging purpose
-        util.glob(trackerList = self.trackerList)
-
-        # E - Show existing trackers
+    def showTrackers(self, im):
         for mvTracker in self.trackerList:
             if mvTracker.ok:
                 green = (0, 255, 0)
-                mvTracker.mvbbox.draw(im["trackers"], green, thickness = 6)
+                mvTracker.mvbbox.draw(im["trackers"], green, thickness=6)
             else:
                 green = (0, 127, 0)
-                mvTracker.mvbbox.draw(im["trackers"], green, thickness = 6)
+                mvTracker.mvbbox.draw(im["trackers"], green, thickness=6)
 
-        # F - Create trackers
+    def createTrackers(self, im, frameIndex, frame, blobKeypoints):
         # bbox :: Bounding Box
         # Add new trackers for blobs whose keypoint location isn't inside a tracker bbox.
         _numberOfAdditions = 0
@@ -269,6 +295,9 @@ class MvMultiTracker():
             # Get and draw bbox:
             x, y = keypoint.pt
             blobMvbbox = getBlobMvBbox(im["dilateC"], x, y)
+            if blobMvbbox.center.y < self.vidDimension[1] * self.trackingConfig.trackingXminRatio:
+                continue
+            
             # width_on_height_ratio = blobMvbbox.width / blobMvbbox.height
             # width_on_height_ratio = 0.5
 
@@ -280,23 +309,23 @@ class MvMultiTracker():
                         frameIndex = frameIndex,
                         frame = frame,
                         Extractor = self.Extractor,
-                        extractorConfig = self.distanceCorrectionConfig,
+                        trackingConfig = self.trackingConfig,
                         bbox = blobMvbbox.bbox,
                         tracker = self.mvTrackerCreator(),
                         im = im,
                     )
+                    if mvTracker.isFinishedTracker(self.vidDimension):
+                        continue
                 except ValueError:
                     continue
-            if mvTracker.isFinishedTracker(self.vidDimension):
+            else:
                 continue
             
             blue = (255, 0, 0)
-            mvTracker.mvbbox.draw(im["trackers"], blue, thickness = 6)
+            mvTracker.mvbbox.draw(im["trackers"], blue, thickness=6)
             self.trackerList.append(mvTracker)
             _numberOfAdditions += 1
-
-        # logger.debug(f"[Trackers] Updated {_numberOfUpdates} then Rmvd dups {_numberOfDeletions}, Rmvd fin {_numberOfFinishs}, Created {_numberOfAdditions}.")
-
+        return _numberOfAdditions
 
     def getTrackerDuplicates(self):
         """
@@ -319,7 +348,9 @@ class MvMultiTracker():
                 iterCount += 1
                 abInclusion = trackerA.mvbbox.center in trackerB.mvbbox
                 baInclusion = trackerB.mvbbox.center in trackerA.mvbbox
-                # v # x is the index to remove, if any. #
+                # --------------------------------------- #
+                #   `x` is the index to remove, if any.
+                # --------------------------------------- #
                 if not abInclusion and not baInclusion:
                     # x = None
                     continue
@@ -328,16 +359,12 @@ class MvMultiTracker():
                 elif baInclusion:
                     x = b
                 else:
-                    # Given the current __contains__ definition in MvBbox (strict inclusion) 
-                    # (as of 2018-06-06)
-                    # This case should occure only when the two trackers perfecly overlap.
-                    # This means that the below test is currently futile.
                     if trackerA.mvbbox.area <= trackerB.mvbbox.area:
                         x = a
                     else:
                         x = b
                 y = a + b - x
-                indexDict[x] = y
+                indexDict[x] = y # "x should be replaced by y"
         assert iterCount == n * (n - 1) / 2
         return indexDict
 

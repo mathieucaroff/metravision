@@ -188,7 +188,7 @@ class MvBbox:
         fh, fw = frame.shape[:2]
 
         destShape = [self.height, self.width, *frame.shape[2:]]
-        destination = np.empty(shape = destShape, dtype = frame.dtype)
+        destination = np.empty(shape=destShape, dtype=frame.dtype)
         destination[:, :] = fillerValue
 
         # d: destination area where the part of the frame will be copied.

@@ -10,7 +10,7 @@ def identity(x):
     return x
 
 
-def logged(func, printer = printMV):
+def logged(func, printer=printMV):
     """
     Renvoie une version de la fonction donnée qui affiche les appelles, arguments et valeurs de retour.
     """
@@ -78,7 +78,7 @@ def assertReturns(rtype):
     return check_returns
 
 
-def globbed(gname = None):
+def globbed(gname=None):
     """
     Parameterable decorator to capture the returned value of a function using util.glob.
 
@@ -134,4 +134,4 @@ def printTimes():
     printMV("[:Recorded times totals:]")
     for fname in timed.functionIndex:
         time_ = getattr(timed, fname)
-        printMV("Function {fname} ::: {time:.04} seconds".format(fname = fname, time = time_))
+        printMV("Function {fname} ::: {time:.04} seconds".format(fname=fname, time=time_))

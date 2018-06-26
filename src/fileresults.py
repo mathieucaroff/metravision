@@ -67,7 +67,7 @@ def fillPathTemplate(videoPath: Path, ext: str, pathTemplate: str, segmentIndexL
     return path
 
 
-def createXLS(sheetContent, sheetHeader = None):
+def createXLS(sheetContent, sheetHeader=None):
     """
     Convert a list of list of data into a spreadsheet document using openpyxl.
 
@@ -84,15 +84,15 @@ def createXLS(sheetContent, sheetHeader = None):
     ws = wb.active
     if sheetHeader is not None:
         #for i, val in enumerate(sheetHeader):
-        #    ws.cell(row = 1, column = i).value = val
+        #    ws.cell(row=1, column=i).value = val
         _hasHeader = 1
         sheetContent[:0] = [sheetHeader]
     else:
         _hasHeader = 0
     
     for i, rowContent in enumerate(sheetContent):
-        #util.show(rowContent = rowContent)
+        #util.show(rowContent=rowContent)
         for j, val in enumerate(rowContent):
-            #util.show(val = val)
-            ws.cell(row = i + 1, column = j + 1).value = val
+            #util.show(val=val)
+            ws.cell(row=i + 1, column=j + 1).value = val
     return wb

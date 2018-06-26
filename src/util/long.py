@@ -7,7 +7,7 @@ from util.short import nope, printMV
 def singleKeyValueFunction(func):
     """
     Transforme une fonction qui prend deux arguments `key` et `value` en une fonction
-    qui s'appelle avec la syntax f(key = value), en acceptant un seul paramètre clé-valeur.
+    qui s'appelle avec la syntax f(key=value), en acceptant un seul paramètre clé-valeur.
 
     Usage:
         @singleKeyValueFunction
@@ -23,7 +23,7 @@ def singleKeyValueFunction(func):
         if len(kwargs) != 1:
             raise ValueError(f"Function {func.__name__} accepts a single key-value assignment.")
         key, value = next(iter(kwargs.items()))
-        return func(key = key, value = value)
+        return func(key=key, value=value)
     return wrapped_func
 
 
@@ -60,14 +60,14 @@ def typeVal(val):
     return f"{nl}<{strtype}> {strval}"
 
 
-def callbackProperty(localName, getCallback = nope, setCallback = nope):
+def callbackProperty(localName, getCallback=nope, setCallback=nope):
     def fget(self):
         getCallback(self)
         return getattr(self, localName)
     def fset(self, val):
         setattr(self, localName, val)
         setCallback(self, val)
-    return property(fget = fget, fset = fset)
+    return property(fget=fget, fset=fset)
 
 
 def pointInBbox(pt, bbox):

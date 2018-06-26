@@ -1,3 +1,7 @@
+"""
+Parse data obtained from analyzing the video into video count segments and write the results into an xlsx file.
+"""
+
 from enum import Enum
 
 import util
@@ -38,11 +42,6 @@ class AnalyseData:
     def tick(self):
         self.segmenter.incrementFrameIndex()
 
-
-
-"""
-Parse data obtained from analyzing the video into video count segments and write the results into an xlsx file.
-"""
 
 class SegmenterStatus(Enum):
     counting = 0
@@ -91,7 +90,7 @@ class RealSegmenter(Segmenter):
     @staticmethod
     def _newSegment():
         return {"Automobile": 0, "Moto": 0}
-    
+
     def incrementFrameIndex(self):
         self._frameIndex += 1
         if self._frameIndex % self._numberOfFramePerSegment == 0:

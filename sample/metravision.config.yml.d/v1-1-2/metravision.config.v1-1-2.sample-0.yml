@@ -1,6 +1,6 @@
 %YAML 1.2
 ---
-configurationVersion: 1.1.1
+configurationVersion: 1.1.2
 printTimes: true
 backgroundMode: false
 developerMode: true
@@ -10,20 +10,27 @@ window:
     name: Metravision
     redCrossEnabled: true
     size:
-        width: 960
-        height: 800
+        height: 960
+        width: 800
     multiView:
         openEvent:
             click: false
             doubleClick: true
     progressBar:
         height: 30
-        fgColor: [128, 255, 255]
+        fgColor: [127, 192, 255]
         bgColor: [255, 255, 255]
 processingTools:
     backgroundSubtractor:
         - type: MOG2
           shadowsAre: background # vehicles
+          initArgs:
+            history: 400
+            varThreshold: 50
+          runArgs:
+            learningRate: 0.003
+          set:
+            backgroundRatio: 0.6
         - type: KNN
         - type: MOG
     erodeAndDilatePreBitwiseAnd:
@@ -35,30 +42,49 @@ processingTools:
         - dilate: 15
     blobDetector:
         - parameters:
-            minDistBetweenBlobs: 4
+            minDistBetweenBlobs: 50
             filterByArea: True
-            minArea: 2_000
-            maxArea: 20_000
-            filterByInertia: True
-            maxInertiaRatio: 3
+            minArea: 100
+            maxArea: 80_000
+            filterByInertia: False # Inertia ~ Not elongated. [0, 1]
+            minInertiaRatio: 0.1
+            maxInertiaRatio: 1
+            filterByCircularity: False # Perimeter/Area. [0, 1]
+            filterByConvexity: False # Area/Area of convex hull. [0, 1]
     tracking:
         - type: KCF
+          frameCountTillDeath: 75 # It takes about 50 frames of traking usually
+          trackingXminRatio: 0.5
           distanceCorrection:
             regionWidth: 400
             regionHeight: 400
-          trackingXmin: 0.5
+            horizon: 0
+            interpolation: INTER_LINEAR # INTER_CUBIC, INTER_LINEAR, INTER_NEAREST, INTER_AREA,
+        - type: KCF
+          frameCountTillDeath: 75 # ~3 seconds
+          trackingXminRatio: 0.5
+          countingLine: 0.95
         - type: TLD
+          frameCountTillDeath: 300
+          trackingXminRatio: 0.5
         - type: MEDIANFLOW
+          frameCountTillDeath: 300
+          trackingXminRatio: 0.5
         - type: GOTURN
-    opticalFlow: False
-    contour: True
+          frameCountTillDeath: 300
+          trackingXminRatio: 0.5
+        - type: MOSSE
+          frameCountTillDeath: 300
+          trackingXminRatio: 0.5
+    opticalFlow: false
+    contour: true
 resultDestinationTemplates:
     counts: "{video_directory}/mv-results/mv--{video_filename}.{ext}"
 
     example:
         counts: "{video_directory}/mv-results/mv--{mv_version}--year%Y-month%m-day%d-hour%H-minutes%m-seconds%s----{mv_date}--{video_filename}.{ext}"
     developer:
-        counts: "C:/pi/mv-results/mv--{mv_version}--{mv_date}--{video_filename}--{segmentIndex}.{ext}"
+        counts: "/tmp/mv-results/mv--{mv_version}--{mv_date}--{video_filename}.{ext}"
     usableProperties:
         video_directory: The directory of the analysed video.
         video_filename: The name of the video file, without extension.
@@ -68,15 +94,6 @@ resultDestinationTemplates:
         mv_utcdatetime: Same as mv_datetime, but in utc time.
         mv_version: The version of Metravision used to get the result. Mostly usefull for developers
         ext: The extension of the result file. Just leave it at the end of the template.
-        segmentIndex: |
-            The index of the first and last segment that where treated.
-            They are joined by a single hypens if all segments between them were treated as well (example 0-35).
-            If they are joined by a double hypens (example 0--35), it means at least one segment is missing.
-videoPerspectiveInformation:
-    09.avi:
-        xLeftEdge: 136
-        xRightEdge: 743
-        vanishingPoint: [548, 130]
 image:
     directoryLocation: /path/to/image-dataset
     nameTemplate: "%06d.png"
@@ -92,41 +109,34 @@ image:
             count: 1800
             learningFraction: [2, 3]  # 2 / 3
 video:
-    directoryLocation: /path/to/videos
+    directoryLocation: /home/lox/Videos
     short:
         directoryName: "SequencesCourtes"
         files: !!set
-            ? 8s.mp4
-            ? bouchon-40s.mp4
-            ? embouteillage-21s.mp4
-            ? soleil-1m32.avi
-            ? test-9s.avi
-    medium:
+            #? 8s.mp4
+            #? bouchon-40s.mp4
+            #? embouteillage-21s.mp4
+            ? 6-motos--2016-10-26--11h35--brouillard.avi
+            #? soleil-1m32.avi
+            #? test-9s.avi
+    medium: null
+    mediu:
         directoryName: "Sequences6min"
         files: !!set
-            ? 1ereSequence.avi
+            #? 1ereSequence.avi
             ? DerniereSequence.avi
-            ? HeureDePointe.avi
-            ? SequenceDebut.avi #? 08a.avi
-            ? SequenceFin.avi   #? 08b.avi
-            ? SequenceHeureDePointe.avi
-    long:
+            #? HeureDePointe.avi
+            #? SequenceDebut.avi
+            #? SequenceFin.avi
+            #? SequenceHeureDePointe.avi
+    long: null
+    l:
         directoryName: "SequencesLongues"
-        files: !!set
-            ? 01.avi
-            ? 02.avi
-            ? 03.avi
-            ? 04.avi
-            ? 05.avi
-            ? 06.avi
-            ? 07.avi
-            ? 08.avi
-            ? 09.avi
-            ? 10.avi
-            ? 11.avi
-            ? demo-40min.avi
+        files:
+            #- 1h--2016-10-26--8h--nuit.avi
+            #- 30m--2016-10-26--11h11--brouillard.avi
 backgroundVideo:
-    directoryLocation: /path/to/videos
+    directoryLocation: /home/lox/Videos
     short: null
     medium:
         directoryName: "Sequences6min"
@@ -134,7 +144,7 @@ backgroundVideo:
             - 1ereSequence.avi
             - DerniereSequence.avi
             #- HeureDePointe.avi
-            - SequenceDebut.avi #? 08a.avi
-            - SequenceFin.avi   #? 08b.avi
+            - SequenceDebut.avi #- 08a.avi
+            - SequenceFin.avi   #- 08b.avi
             #- SequenceHeureDePointe.avi
     long: null

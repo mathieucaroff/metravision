@@ -8,3 +8,5 @@ from util.short import *
 
 class DeveloperInterruption(Exception):
     pass
+
+developerMode = "Set by main to the value given in the yaml configuration file."

@@ -1,14 +1,15 @@
+"""
+Affiches un nombre arbitraire d'images ou de vidéos dans une fenêtre.
+Show an arbitrary number of images or videos on window
+"""
+
 import numpy as np
 import cv2
 import math
 
 from util import Namespace
 
-"""
-Affiches un nombre arbitraire d'images ou de vidéos dans une fenêtre.
-Show an arbitrary number of images or videos on window
-"""
-def viewDimensionsFromN(n = 1):
+def viewDimensionsFromN(n=1):
     """
     Compute the number of horizontal and vertical views needed to reach at least n views.
     Returns a pair of numbers.
@@ -24,7 +25,7 @@ def viewDimensionsFromN(n = 1):
         w += 1
     return (h, w)
 
-def renderNimages(videoName, imageSet, output = None, h = None, w = None):
+def renderNimages(videoName, imageSet, output=None, h=None, w=None):
     """
     Gather the images from the given collection into one image. All images must have the same dimension.
     If no output image buffer is given, the output dimension is that of one input image.
@@ -51,7 +52,7 @@ def renderNimages(videoName, imageSet, output = None, h = None, w = None):
         img = imageList[0]
         shape = list(img.shape)
         shape[2:] = [3]
-        output = np.zeros(shape = shape, dtype = np.uint8)
+        output = np.zeros(shape=shape, dtype=np.uint8)
     
     ohpx, owpx = output.shape[0:2] #pixel's number of output (same as imageList if it is not declare) It's necessary modifie to parameters defined by user
 
@@ -109,10 +110,10 @@ def setupVideoSelectionHook(multiViewConfig, mouseCallbackList, displayShape, pl
 
     # mouse callback function
     def getPosition(event, x, y, flags, param):
+        """
+        Catch the click if it is enabled.
+        """
         _ = flags, param
-        """
-        Catch the click if this click is enabled.
-        """
         click = False
         click |= openEvent.click and event == cv2.EVENT_LBUTTONUP
         click |= openEvent.doubleClick and event == cv2.EVENT_LBUTTONDBLCLK
@@ -134,7 +135,8 @@ def setupVideoSelectionHook(multiViewConfig, mouseCallbackList, displayShape, pl
             if windowClosed(imageName):
                 displayedImageNameList.remove(imageName)
             else:
-                cv2.imshow(imageName, imageSet[imageName])
+                if imageName in imageSet:
+                    cv2.imshow(imageName, imageSet[imageName])
 
         if share.press == True:
             n = len(imageSet)

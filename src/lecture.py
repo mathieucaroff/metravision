@@ -26,7 +26,7 @@ class PlaybackStatus:
         est en pause et que l'utilisateur à demander un saut.
     """
     __slots__ = "play endReached quitting refreshNeeded".split()
-    def __init__(self, play = True, endReached = False, quitting = False, refreshNeeded = False):
+    def __init__(self, play=True, endReached=False, quitting=False, refreshNeeded=False):
         self.play = play
         self.endReached = endReached
         self.quitting = quitting
@@ -161,7 +161,7 @@ class Lecteur:
         self.playbackStatus.refreshNeeded = True
 
         for f in self.jumpEventSubscriber:
-            f(cap = self.cap, playbackStatus = self.playbackStatus, frameIndex = frameIndex)
+            f(cap=self.cap, playbackStatus=self.playbackStatus, frameIndex=frameIndex)
 
     @frameIndex.getter
     def frameIndex(self):

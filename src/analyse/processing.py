@@ -24,7 +24,7 @@ class ProcessingTool():
         Initialisation -- Crée le backgroundSubtractor, paramètre le blob detector, initialise MultiTracker et AnalyseData.
 
         :param: logger:
-        :param: vidDimension est la paire (width, height) pour le flux video traié
+        :param: vidDimension est la paire (width, height) pour le flux video traité
         :param: float timePerFrame: le temps de chaque trame (l'inverse de la quantité de trames par seconde)
         :param: jumpEventSubscriber:
         :param: int segmentDuration: la duration de chaque segment de vidéo est exprimé en secondes
@@ -36,15 +36,10 @@ class ProcessingTool():
         self.vidDimension = vidDimension
 
         # Background subtractor initialisation
-        backgroundSubstractorConfig = self.processingToolsConfig.backgroundSubstractor
-        # for conf in backgroundSubstractor[1:]:
-        # backgroundSubstractor
-        type_ = backgroundSubstractorConfig[0]["type"]
-        self.bgSub = {
-            "KNN": cv2.createBackgroundSubtractorKNN,
-            "MOG": None,
-            "MOG2": cv2.createBackgroundSubtractorMOG2,
-        }[type_]()
+        backgroundSubtractorConfig = self.processingToolsConfig.backgroundSubtractor
+        type_ = backgroundSubtractorConfig[0]["type"]
+        initArgs = backgroundSubtractorConfig[0]["initArgs"]
+        self.bgSub = getattr(cv2, f"createBackgroundSubtractor{type_}")(**initArgs)
 
         # blobDetector initialisation
         blobDetectorConfig = processingToolsConfig.blobDetector
@@ -72,7 +67,7 @@ class ProcessingTool():
         # Multi Tracker initialisation
         self.mvMultiTracker = MvMultiTracker(
             self.logger,
-            processingToolsConfig.tracking,
+            util.RecursiveReadOnlyDotdict(processingToolsConfig.tracking[0]),
             vidDimension,
             self.analyseData,
         )
@@ -85,13 +80,17 @@ class ProcessingTool():
     # Run:
     def run(self, im, frameIndex):
         """
-        Éxecuter l'analyse d'une trame.
+        Executer l'analyse d'une trame.
 
         :param: np.array im: ensemble de trames
         :param: int frameIndex: index de chaque trame
         
         """
-        sub = util.timed(self.bgSub.apply)(image = im["frame"], learningRate = 0.009)
+        runArgs = self.processingToolsConfig.backgroundSubtractor[0]["runArgs"]
+        sub = util.timed(self.bgSub.apply)(
+            image = im["frame"],
+            **runArgs
+        )
         im["fgMask"] = sub
         
         # Two-frame bitwise AND
@@ -117,10 +116,10 @@ class ProcessingTool():
 
         # Contour
         if self.processingToolsConfig.contour:
-            util.timed(self.contour)(im, mask)
+            util.timed(self.contour)(im, np.array(im["frame"][:, :, 1]))
 
         # Blob Detector
-        blobKeypoints = util.timed(self.blobDetection)(im, nameOfImageToUse = "dilateC")
+        blobKeypoints = util.timed(self.blobDetection)(im, nameOfImageToUse="dilateC")
 
         # Tracking
         frame = im["frame"]
@@ -187,31 +186,25 @@ class ProcessingTool():
         """
         mask = im["bitwise_fgMask_and"]
 
-        for i, op in enumerate(eadPre):
-            key, val = first(op.items())
-            assert key in "erode dilate".split()
-            erodeOrDilate = getattr(cv2, key)
-            mask = erodeOrDilate(mask, cls.easyKernel(val))
-            im[f"{key}Mask{'ABCDEFGHI'[i]}"] = mask
+        for m, ead in enumerate([eadPre, eadPost]):
+            for i, op in enumerate(ead):
+                key, val = first(op.items())
+                assert key in "erode dilate".split()
+                erodeOrDilate = getattr(cv2, key)
+                mask = erodeOrDilate(mask, cls.easyKernel(val))
+                im[f"{key}{'' if m else 'Mask'}{'ABCDEFGHI'[i + 2 * m]}"] = mask
+            if m:
+                break
+            mask = cv2.bitwise_and(mask, im["fgMask"])
+            im["bitwise_fgMask_dilateB_and"] = mask
         
-        mask = cv2.bitwise_and(mask, im["fgMask"])
-        im["bitwise_fgMask_dilateB_and"] = mask
-
-        # COPYPASTA COPYPASTA COPYPASTA
-        for i, op in enumerate(eadPost):
-            key, val = first(op.items())
-            assert key in "erode dilate".split()
-            erodeOrDilate = getattr(cv2, key)
-            mask = erodeOrDilate(mask, cls.easyKernel(val))
-            im[f"{key}{'CDEFGHI'[i]}"] = mask
-
         im["dilateC"] = mask
 
         # cv2.cvtColor(im["dilateMaskB"], cv2.COLOR_GRAY2BGR)
         return mask
 
     @staticmethod
-    def easyKernel(size, sizeX = None):
+    def easyKernel(size, sizeX=None):
         """Generate an OpenCV kernel objet of given size.
         Note: I haven't checked the sizeX parameter"""
         sizeY = size
@@ -220,9 +213,9 @@ class ProcessingTool():
         return cv2.getStructuringElement( cv2.MORPH_ELLIPSE, (sizeY, sizeX) )
 
     @staticmethod
-    def contour(im, mask, ):
+    def contour(im, mask):
         """
-        Detecte les contours dans l'image et les dessine.
+        Détecte les contours dans l'image et les dessine.
 
         :param: np.array im: ensemble de trames
         :param: mask: résultat de la trame après le processus d'érosion et dilatation, et ET logique
@@ -232,16 +225,15 @@ class ProcessingTool():
 
         _img, contourPointList, _hierachy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-        im["dilateMaskB"] = cv2.cvtColor(im["dilateMaskB"], cv2.COLOR_GRAY2BGR)
+        #im["dilateMaskB"] = cv2.cvtColor(im["dilateMaskB"], cv2.COLOR_GRAY2BGR)
 
         allContours = -1
         cv2.drawContours(
-            image = im["dilateMaskB"],
+            image = im["trackers"],
             contours = contourPointList,
             contourIdx = allContours,
             color = red
         )
-
 
     def blobDetection(self, im, nameOfImageToUse):
         """

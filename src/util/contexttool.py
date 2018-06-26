@@ -35,7 +35,7 @@ def interactPostMortem():
 
 
 @contextlib.contextmanager
-def interactPostMortemUpon(exception = Exception):
+def interactPostMortemUpon(exception=Exception):
     try:
         yield
     except exception: # pylint: disable=broad-except

@@ -31,7 +31,7 @@ try:
             call([executableLocation, *args[1:]])
 
 
-    def confirmExit():
+    def confirmExit(retcode=0):
         print("[MV] The script will exit when Enter is pressed.")
         inp = input()
         if inp and inp[0] in "dp":
@@ -39,6 +39,8 @@ try:
                 raise RuntimeError
             except RuntimeError:
                 pdb.post_mortem()
+        else:
+            exit(retcode)
 
 
     # Relative location, within the project root directory
@@ -65,7 +67,7 @@ try:
             f"[MV] Couldn't find '{mainRelativeLocation}' within directories:",
             '\n'.join(map(str,[""] + rootLocationList))
         )
-        confirmExit()
+        confirmExit(retcode=2)
     
     # Finding the python environnement
     # Relative location within the conda directory
@@ -77,10 +79,10 @@ try:
         condaParentLocationList.append(Path.home() / "opt")
     for di in condaParentLocationList:
         condaLocationList.append(di / "conda")
-        condaLocationList.append(di / "miniconda")
         condaLocationList.append(di / "Miniconda")
-        condaLocationList.append(di / "miniconda3")
+        condaLocationList.append(di / "miniconda")
         condaLocationList.append(di / "Miniconda3")
+        condaLocationList.append(di / "miniconda3")
 
     # COPYPASTA COPYPASTA COPYPASTA COPYPASTA COPYPASTA COPYPASTA COPYPASTA
     # Finding the python sources
@@ -88,7 +90,7 @@ try:
         condaRoot = Path(condaLocation).absolute()
         pythonPath = Path(condaRoot / pythonRelativeLocation)
         if pythonPath.is_file():
-            print(f"[MV] Found {str(mainPath)}")
+            print(f"[MV] Found {str(pythonPath)}")
             break
     else:
         # If break didn't occur
@@ -96,7 +98,7 @@ try:
             f"[MV] Couldn't find '{pythonPath}' within directories:",
             '\n'.join(map(str,[""] + condaLocationList))
         )
-        confirmExit()
+        confirmExit(retcode=4)
 
     # Environement manipulation maybe unnecessary
     os.environ["PYTHONIOENCODING"] = "UTF-8"
@@ -105,7 +107,7 @@ try:
     os.chdir(str(metravisionRoot))
 
     execMV(str(pythonPath), str(mainPath), *sys.argv[1:], replace=True)
-    confirmExit()
+    confirmExit(retcode=255)
 except Exception: # pylint: disable=broad-except
     traceback.print_exc()
     pdb.post_mortem()

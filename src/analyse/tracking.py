@@ -111,9 +111,9 @@ class MvTracker():
             self.mvbbox.bottom,
             self.mvbbox.center,
             frame,
-            horizon = trackingConfig.distanceCorrection.horizon,
-            regionWidth = trackingConfig.distanceCorrection.regionWidth,
-            regionHeight = trackingConfig.distanceCorrection.regionHeight,
+            horizon=trackingConfig.distanceCorrection.horizon,
+            regionWidth=trackingConfig.distanceCorrection.regionWidth,
+            regionHeight=trackingConfig.distanceCorrection.regionHeight,
         )
         interpolationMethode = getattr(cv2, self.trackingConfig.distanceCorrection.interpolation)
         region = extractor.extract(interpolation=interpolationMethode)
@@ -129,9 +129,9 @@ class MvTracker():
                 self.mvbbox.bottom,
                 self.mvbbox.center,
                 frame,
-                horizon = self.trackingConfig.distanceCorrection.horizon,
-                regionWidth = self.trackingConfig.distanceCorrection.regionWidth,
-                regionHeight = self.trackingConfig.distanceCorrection.regionHeight,
+                horizon=self.trackingConfig.distanceCorrection.horizon,
+                regionWidth=self.trackingConfig.distanceCorrection.regionWidth,
+                regionHeight=self.trackingConfig.distanceCorrection.regionHeight,
             )
             region = extractor.extract()
             if im is not None:
@@ -305,14 +305,14 @@ class MvMultiTracker():
             if blobMvbbox.area > 0:
                 try:
                     mvTracker = MvTracker(
-                        logger = self.logger,
-                        frameIndex = frameIndex,
-                        frame = frame,
-                        Extractor = self.Extractor,
-                        trackingConfig = self.trackingConfig,
-                        bbox = blobMvbbox.bbox,
-                        tracker = self.mvTrackerCreator(),
-                        im = im,
+                        logger=self.logger,
+                        frameIndex=frameIndex,
+                        frame=frame,
+                        Extractor=self.Extractor,
+                        trackingConfig=self.trackingConfig,
+                        bbox=blobMvbbox.bbox,
+                        tracker=self.mvTrackerCreator(),
+                        im=im,
                     )
                     if mvTracker.isFinishedTracker(self.vidDimension):
                         continue

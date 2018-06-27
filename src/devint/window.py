@@ -24,7 +24,7 @@ class MvWindow:
             self.backgroundModeTextFrame = np.full(shape = [50, 400], fill_value = [255], dtype=np.uint8)
             cv2.putText(
                 img = self.backgroundModeTextFrame, text = "[background mode]", org = (12, 30),
-                fontFace = cv2.FONT_HERSHEY_SIMPLEX, fontScale = 1,
+                fontFace = cv2.FONT_HERSHEY_SIMPLEX, fontScale=1,
                 color = [0], thickness = 2
             )
 
@@ -63,7 +63,7 @@ class MvWindow:
 
         devint.multiView.renderNimages(
             videoName = self.videoName, 
-            imageSet = imageSet,
+            imageSet=imageSet,
             output = output[:-barHeight]
         )
         devint.progressBar.drawBar(self.windowConfig.progressBar, buffer=output, advancementPercentage=advancementPercentage)

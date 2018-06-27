@@ -99,9 +99,9 @@ class Lecteur:
         # Background subtractor initialisation
         self.processingTool = processing.ProcessingTool(
             self.logger,
-            processingToolsConfig = config.processingTools,
-            vidDimension = self.vidDimension,
-            timePerFrame = self.timePerFrame,
+            processingToolsConfig=config.processingTools,
+            vidDimension=self.vidDimension,
+            timePerFrame=self.timePerFrame,
             jumpEventSubscriber = self.jumpEventSubscriber
         )
 

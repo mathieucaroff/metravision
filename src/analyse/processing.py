@@ -18,7 +18,7 @@ class ProcessingTool():
             vidDimension,
             timePerFrame,
             jumpEventSubscriber,
-            segmentDuration = 60,
+            segmentDuration=6 # seconds
         ):
         """
         Initialisation -- Crée le backgroundSubtractor, paramètre le blob detector, initialise MultiTracker et AnalyseData.
@@ -59,7 +59,6 @@ class ProcessingTool():
         # self.opticalFlow
 
         # Where to store results, together with the vehicle counter (segmenter)
-        segmentDuration = 6 # seconds
         numberOfFramePerSegment = int(0.5 + segmentDuration / timePerFrame)
         segmenter = RealSegmenter(self.logger, numberOfFramePerSegment, timePerFrame)
         self.analyseData = AnalyseData(timePerFrame, jumpEventSubscriber, segmenter)
@@ -88,7 +87,7 @@ class ProcessingTool():
         """
         runArgs = self.processingToolsConfig.backgroundSubtractor[0]["runArgs"]
         sub = util.timed(self.bgSub.apply)(
-            image = im["frame"],
+            image=im["frame"],
             **runArgs
         )
         im["fgMask"] = sub
@@ -108,9 +107,10 @@ class ProcessingTool():
         
         # erodeAndDilate
         ptc = self.processingToolsConfig
-        mask = util.timed(self.erodeAndDilate)(im,
-            eadPre  = ptc.erodeAndDilatePreBitwiseAnd,
-            eadPost = ptc.erodeAndDilatePostBitwiseAnd,
+        mask = util.timed(self.erodeAndDilate)(
+            im,
+            eadPre =ptc.erodeAndDilatePreBitwiseAnd,
+            eadPost=ptc.erodeAndDilatePostBitwiseAnd,
         )
         _ = mask
 
@@ -151,16 +151,17 @@ class ProcessingTool():
             next_ = frame[:, :, i]
             
             OF = cv2.calcOpticalFlowFarneback(
-                prev = prev,
-                next = next_,
-                flow = None,
-                pyr_scale = 0.5,
-                levels = 3,
-                winsize = 20,
-                iterations = 3,
-                poly_n = 5,
-                poly_sigma = 1.2,
-                flags = 0)
+                prev=prev,
+                next=next_,
+                flow=None,
+                pyr_scale=0.5,
+                levels=3,
+                winsize=20,
+                iterations=3,
+                poly_n=5,
+                poly_sigma=1.2,
+                flags=0,
+            )
             
             # boostedOF = np.vectorize(lambda x: math.sqrt(x) if x >= 0 else -math.sqrt(-x))(opticalFlow)
             boostedOF = OF
@@ -229,10 +230,10 @@ class ProcessingTool():
 
         allContours = -1
         cv2.drawContours(
-            image = im["trackers"],
-            contours = contourPointList,
-            contourIdx = allContours,
-            color = red
+            image=im["trackers"],
+            contours=contourPointList,
+            contourIdx=allContours,
+            color=red,
         )
 
     def blobDetection(self, im, nameOfImageToUse):
@@ -254,11 +255,11 @@ class ProcessingTool():
                 image = 255 - 255 * (1 & im[imageName])
                 blobKeypoints = self.blobDetector.detect(image)
                 im[f"blob_{imageName}"] = cv2.drawKeypoints(
-                    image = image,
-                    keypoints = blobKeypoints,
-                    outImage = np.array([]),
-                    color = red,
-                    flags = cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS
+                    image=image,
+                    keypoints=blobKeypoints,
+                    outImage=np.array([]),
+                    color=red,
+                    flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS,
                 )
                 ret = blobKeypoints
         assert ret is not None, "The parameter `nameOfImageToUse` must be the name of a processed image."

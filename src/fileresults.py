@@ -53,14 +53,14 @@ def fillPathTemplate(videoPath: Path, ext: str, pathTemplate: str, segmentIndexL
 
     timedPathTemplate = now.strftime(pathTemplate)
     path = timedPathTemplate.format(
-        video_directory = video_directory,
-        video_filename = video_filename,
-        video_extension = video_extension,
-        mv_date = mv_date,
-        mv_datetime = mv_datetime,
-        mv_utcdatetime = mv_utcdatetime,
-        mv_version = mv_version,
-        ext = ext,
+        video_directory=video_directory,
+        video_filename=video_filename,
+        video_extension=video_extension,
+        mv_date=mv_date,
+        mv_datetime=mv_datetime,
+        mv_utcdatetime=mv_utcdatetime,
+        mv_version=mv_version,
+        ext=ext,
         segmentIndex = segmentIndex
     )
 

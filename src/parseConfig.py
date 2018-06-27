@@ -141,10 +141,10 @@ class MvConfig(Dotdict):
                 raise ValueError(f"Apparently, the version of your configuration file ({yourVersion}) isn't the last available {version}.")
 
         resultConfig = MvConfig(
-            raw = RecursiveReadOnlyDotdict(rawConfigData),
-            image = cls.__expandImage(rawConfigData["image"]),
-            video = cls.__expandVideo(rawConfigData["video"]),
-            backgroundVideo = cls.__expandVideo(rawConfigData["backgroundVideo"])
+            raw=RecursiveReadOnlyDotdict(rawConfigData),
+            image=cls.__expandImage(rawConfigData["image"]),
+            video=cls.__expandVideo(rawConfigData["video"]),
+            backgroundVideo=cls.__expandVideo(rawConfigData["backgroundVideo"]),
         )
 
         return resultConfig

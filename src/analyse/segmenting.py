@@ -73,14 +73,14 @@ class DummySegmenter(Segmenter):
 
 
 class RealSegmenter(Segmenter):
-    __slots__ = "logger _segments _segementDuration _currentSegment _mode".split()
+    __slots__ = "logger _segments _segmentDuration _currentSegment _mode".split()
     acceptedVehicleNames = "Automobile Moto".split()
 
     def __init__(self, logger, numberOfFramePerSegment, timePerFrame):
         self.logger = logger
         self._numberOfFramePerSegment = numberOfFramePerSegment
         self._timePerFrame = timePerFrame
-        self._segementDuration = timePerFrame * numberOfFramePerSegment
+        self._segmentDuration = timePerFrame * numberOfFramePerSegment
         self._frameIndex = 0
 
         self._segments = {} # Indexed from 0
@@ -130,7 +130,7 @@ class RealSegmenter(Segmenter):
             pass
     
     def getData(self):
-        return [ (i, self._segementDuration * i, counts["Automobile"], counts["Moto"]) for (i, counts) in sorted(self._segments.items()) ]
+        return [ (i, int(self._segmentDuration * i * 8) / 8, counts["Automobile"], counts["Moto"]) for (i, counts) in sorted(self._segments.items()) ]
 
 
 def test_RealSegmenter():

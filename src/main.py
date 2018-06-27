@@ -11,7 +11,7 @@ def main():
             with p.open() as configFile:
                 configObj = parseConfig.MvConfig.fromConfigFile(
                     configFile,
-                    version = "1.1.2",
+                    version="1.1.2",
                 )
             break
     else:
@@ -72,7 +72,6 @@ def main():
 
 
 def processVideo(logger, config, resultPathTemplate, backgroundMode, videoPath, playbackStatus):
-
     videoName = videoPath.name
     logger.info(f"Starting to process video `{videoName}`")
 
@@ -83,11 +82,12 @@ def processVideo(logger, config, resultPathTemplate, backgroundMode, videoPath, 
 
     try:
         lecteur = lecture.Lecteur(
-            logger = logger,
-            cap = cap,
-            config = config,
-            speedLimitEnabled = not backgroundMode,
-            playbackStatus = playbackStatus)
+            logger=logger,
+            cap=cap,
+            config=config,
+            speedLimitEnabled=not backgroundMode,
+            playbackStatus=playbackStatus,
+        )
 
         if backgroundMode:
             lecteur.jumpTo(0)
@@ -95,12 +95,13 @@ def processVideo(logger, config, resultPathTemplate, backgroundMode, videoPath, 
             lecteur.jumpTo(random.random() * config.lecteur.randomJump)
 
         mvWindow = window.MvWindow(
-            logger = logger,
-            windowConfig = config.window,
-            videoName = videoPath.name,
-            backgroundMode = backgroundMode,
-            playbackStatus = lecteur.playbackStatus,
-            jumpToFrameFunction = lecteur.jumpTo)
+            logger=logger,
+            windowConfig=config.window,
+            videoName=videoPath.name,
+            backgroundMode=backgroundMode,
+            playbackStatus=lecteur.playbackStatus,
+            jumpToFrameFunction=lecteur.jumpTo,
+        )
 
         with util.pdbPostMortemUpon(util.DeveloperInterruption):
             lecteur.run(mvWindow)

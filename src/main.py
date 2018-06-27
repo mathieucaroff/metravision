@@ -96,13 +96,13 @@ def processVideo(logger, config, resultPathTemplate, backgroundMode, videoPath, 
         mvWindow = window.MvWindow(
             logger=logger,
             windowConfig=config.window,
-            videoName=videoPath.name,
+            videoName=videoName,
             backgroundMode=backgroundMode,
             playbackStatus=lecteur.playbackStatus,
             jumpToFrameFunction=lecteur.jumpTo,
         )
 
-        with util.pdbPostMortemUpon(util.DeveloperInterruption):
+        with util.pdbPostMortemUpon(Exception):
             lecteur.run(mvWindow)
 
         if playbackStatus.endReached:

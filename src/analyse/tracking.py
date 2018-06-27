@@ -155,7 +155,7 @@ class MvTracker():
         """Tell whether the given tracker should still be updated or is too small / out of screen and thus should be "Finished"."""
         finished = False
         height, _width = vidDimension
-        if self.mvbbox.bottom > height * 0.99:
+        if self.mvbbox.bottom > height * 0.88:
             finished = True
         if self.mvbbox.area < self.smallestAllowedTrackerArea:
             finished = True
@@ -245,7 +245,7 @@ class MvMultiTracker():
         self.trackerList = []
         for _i, mvTracker in enumerate(oldTrackerList):
             center = mvTracker.mvbbox.center
-            blobMvBbox = getBlobMvBbox(im["dilateC"], center.x, center.y)
+            blobMvBbox = getBlobMvBbox(self.logger, im["dilateC"], center.x, center.y)
             if blobMvBbox.width > 0:
                 ratio = blobMvBbox.height / blobMvBbox.width
                 isMoto = ratio > 1.6
@@ -294,7 +294,7 @@ class MvMultiTracker():
                 continue # Do not create a tracker = continue to next iteration
             # Get and draw bbox:
             x, y = keypoint.pt
-            blobMvbbox = getBlobMvBbox(im["dilateC"], x, y)
+            blobMvbbox = getBlobMvBbox(self.logger, im["dilateC"], x, y)
             if blobMvbbox.center.y < self.vidDimension[1] * self.trackingConfig.trackingXminRatio:
                 continue
             
@@ -370,15 +370,19 @@ class MvMultiTracker():
 
 
 
-def getBlobMvBbox(mask, xx, yy):
+def getBlobMvBbox(logger, mask, xx, yy):
     """Explore the mask, left, right, up and down to determine the width and height of the blob at given point.
     
     :rtype MvBbox:
     """
     xx, yy = int(xx), int(yy)
     height, width = mask.shape
-    assert xx < width
-    assert yy < height
+    if xx >= width:
+        xx = width - 1
+        logger.error("getBlobMvBbox called on point out of image: xx = {} >= width = {}".format(xx, width))
+    if yy >= height:
+        yy = height - 1
+        logger.error("getBlobMvBbox called on point out of image: yy = {} >= height = {}".format(xx, width))
     left = 0
     for x in range(xx, -1, -1):
         if mask[yy, x] == 0:

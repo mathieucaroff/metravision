@@ -1,9 +1,9 @@
 %YAML 1.2
 ---
 configurationVersion: 1.1.2
-printTimes: true
+printTimes: false
 backgroundMode: false
-developerMode: true
+developerMode: false
 lecteur:
     randomJump: 0
 window:

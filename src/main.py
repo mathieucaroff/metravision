@@ -42,7 +42,7 @@ if __name__ == "__main__":
     [GCC 7.2.0]
     [MV] [Numpy]       1.14.3
     [MV] [OpenCV]      3.4.1
-    [MV] [Metravision] 1.0.1
+    [MV] [Metravision] 1.0.2
     """
 
 def main():

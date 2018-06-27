@@ -1,42 +1,47 @@
 #!/usr/bin/python3
+"""
+Script to help launch metravision, finding and using the conda environnement.
+"""
+
+
 import os
 import sys
-from subprocess import call
-
 import pdb, traceback
-
-from pathlib import Path
-
-
-
-def execMV(*args, replace=False):
-    executablePath = Path(args[0]).absolute()
-    executableLocation = str(executablePath)
-    if replace:
-        print("[MV] [exec]", *args)
-    else:
-        print("[MV] [call]", *args)
-    
-    if replace:
-        executableName = str(executablePath.name)
-        os.execv(str(executablePath), [executableName, *args[1:]])
-    else:
-        call([executableLocation, *args[1:]])
-
-
-def confirmExit():
-    print("[MV] The script will exit when Enter is pressed.")
-    inp = input()
-    if inp and inp[0] in "dp":
-        try:
-            raise RuntimeError
-        except RuntimeError:
-            pdb.post_mortem()
 
 
 try:
+    from subprocess import call
+    from pathlib import Path
+
+    isWindows = (os.name == "nt")
+
+
+    def execMV(*args, replace=False):
+        executablePath = Path(args[0]).absolute()
+        executableLocation = str(executablePath)
+        if replace:
+            print("[MV] [exec]", *args)
+        else:
+            print("[MV] [call]", *args)
+        
+        if replace:
+            executableName = str(executablePath.name)
+            os.execv(str(executablePath), [executableName, *args[1:]])
+        else:
+            call([executableLocation, *args[1:]])
+
+
+    def confirmExit():
+        print("[MV] The script will exit when Enter is pressed.")
+        inp = input()
+        if inp and inp[0] in "dp":
+            try:
+                raise RuntimeError
+            except RuntimeError:
+                pdb.post_mortem()
+
+
     # Relative location, within the project root directory
-    pythonRelativeLocation = "lib/miniconda/python.exe"
     mainRelativeLocation = "src/main.py"
 
     # Establishing the list of directories to search for the executable
@@ -47,27 +52,51 @@ try:
         rootLocationList.append(di / "metravision")
         rootLocationList.append(di / "Metravision") # Useless if on Windows
 
-
+    # Finding the python sources
     for rootLocation in rootLocationList:
         metravisionRoot = Path(rootLocation).absolute()
-
         mainPath = Path(metravisionRoot / mainRelativeLocation)
         if mainPath.is_file():
             print(f"[MV] Found {str(mainPath)}")
-            pythonPath = Path(metravisionRoot / pythonRelativeLocation)
             break
     else:
-        # If break didn't occure
+        # If break didn't occur
         print(
             f"[MV] Couldn't find '{mainRelativeLocation}' within directories:",
             '\n'.join(map(str,[""] + rootLocationList))
         )
         confirmExit()
+    
+    # Finding the python environnement
+    # Relative location within the conda directory
+    pythonRelativeLocation = "python.exe" if isWindows else "bin/python"
+    condaLocationList = []
+    condaParentLocationList = [Path("/"), Path.home(), rootLocation / "lib", rootLocation.parent]
+    if not isWindows:
+        condaParentLocationList.append(Path("/opt"))
+        condaParentLocationList.append(Path.home() / "opt")
+    for di in condaParentLocationList:
+        condaLocationList.append(di / "conda")
+        condaLocationList.append(di / "miniconda")
+        condaLocationList.append(di / "Miniconda")
+        condaLocationList.append(di / "miniconda3")
+        condaLocationList.append(di / "Miniconda3")
 
-    if not pythonPath.is_file():
-        print(f"[MV] Missing '{pythonRelativeLocation}'")
+    # COPYPASTA COPYPASTA COPYPASTA COPYPASTA COPYPASTA COPYPASTA COPYPASTA
+    # Finding the python sources
+    for condaLocation in condaLocationList:
+        condaRoot = Path(condaLocation).absolute()
+        pythonPath = Path(condaRoot / pythonRelativeLocation)
+        if pythonPath.is_file():
+            print(f"[MV] Found {str(mainPath)}")
+            break
+    else:
+        # If break didn't occur
+        print(
+            f"[MV] Couldn't find '{pythonPath}' within directories:",
+            '\n'.join(map(str,[""] + condaLocationList))
+        )
         confirmExit()
-
 
     # Environement manipulation maybe unnecessary
     os.environ["PYTHONIOENCODING"] = "UTF-8"

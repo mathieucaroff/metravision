@@ -2,48 +2,7 @@
 The file main is the entry point of Metravision. It reads the configuration and starts the other modules.
 """
 
-# Python utils
-#from distutils.version import StrictVersion
-
-# Python io modules
-import random
-import sys
-from pathlib import Path
-import logging
-
-
-# Dependencies
-import cv2
-import numpy as np
-
-
-# Metravision modules
-from util import printMV
-import util
-import devint.window as window
-
-import parseConfig
-import lecture
-import fileresults
-
-logging.basicConfig(level=0)
-if __name__ == "__main__":
-    printMV("Versions:")
-    printMV(f"[Python]      {sys.version}")
-    printMV(f"[Numpy]       {np.__version__}")
-    printMV(f"[OpenCV]      {cv2.__version__}")
-    __version__ = Path("VERSION.txt").read_text()
-    printMV(f"[Metravision] {__version__}")
-
-    # Developper versions:
-    """(Conda, on Linux) 
-    [MV] Versions:
-    [MV] [Python]      3.6.4 |Anaconda, Inc.| (default, Jan 16 2018, 18:10:19)
-    [GCC 7.2.0]
-    [MV] [Numpy]       1.14.3
-    [MV] [OpenCV]      3.4.1
-    [MV] [Metravision] 1.0.2
-    """
+# !!! Imports at the end of the file !!!
 
 def main():
     for x in list(range(3)) + [0]:
@@ -169,13 +128,59 @@ def processVideo(logger, config, resultPathTemplate, backgroundMode, videoPath, 
         cap.release()
 
 
-if __name__ == "__main__":
-    import traceback
-    try:
+
+# Imports & execution
+# -------------------
+
+try:
+    # Python utils
+    #from distutils.version import StrictVersion
+
+    # Python io modules
+    import random
+    import sys
+    from pathlib import Path
+    import logging
+
+
+    # Dependencies
+    import cv2
+    import numpy as np
+
+
+    # Metravision modules
+    from util import printMV
+    import util
+    import devint.window as window
+
+    import parseConfig
+    import lecture
+    import fileresults
+
+    logging.basicConfig(level=0)
+    if __name__ == "__main__":
+        printMV("Versions:")
+        printMV(f"[Python]      {sys.version}")
+        printMV(f"[Numpy]       {np.__version__}")
+        printMV(f"[OpenCV]      {cv2.__version__}")
+        __version__ = Path("VERSION.txt").read_text()
+        printMV(f"[Metravision] {__version__}")
+
+        # Developper versions:
+        """(Conda, on Linux) 
+        [MV] Versions:
+        [MV] [Python]      3.6.4 |Anaconda, Inc.| (default, Jan 16 2018, 18:10:19)
+        [GCC 7.2.0]
+        [MV] [Numpy]       1.14.3
+        [MV] [OpenCV]      3.4.1
+        [MV] [Metravision] 1.0.2
+        """
+
         main()
-    except Exception: # pylint: disable=broad-except
-        traceback.print_exc()
-        inp = input()
-        if inp and inp[0] in "dp":
-            import pdb
-            pdb.post_mortem()
+except Exception: # pylint: disable=broad-except
+    import traceback
+    traceback.print_exc()
+    inp = input()
+    if inp and inp[0] in "dp":
+        import pdb
+        pdb.post_mortem()

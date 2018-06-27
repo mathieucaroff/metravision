@@ -7,7 +7,7 @@ from enum import Enum
 import util
 
 class AnalyseData:
-    def __init__(self, timePerFrame, jumpEventSubscriber, segmenter):
+    def __init__(self, timePerFrame, jumpEventSubscriber, segmenter, ratioRef, ratioErode):
         """
         Beware, the analyse data / segmenter thing is a real mess.
         Ideally, you should remove the "AnalyseData" class, and only use RealSegmenter.
@@ -18,16 +18,18 @@ class AnalyseData:
         self.timePerFrame = timePerFrame
         self._data = []
         self.segmenter = segmenter
+        self.ratioRef = ratioRef
+        self.ratioErode = ratioErode
 
         jumpEventSubscriber.append(self.addJumpNotice)
     
     def addVehicle(self, veHistory):
         time = max(veHistory.keys()) * self.timePerFrame
 
-        getRatio = lambda mvBbox: mvBbox[3] / mvBbox[2] # width / height
+        getRatio = lambda mvBbox: (mvBbox[3] - self.ratioErode) / (1 + abs(mvBbox[2] - self.ratioErode)) # height / width
         ratios = map(getRatio, veHistory.values())
         medianRatio = util.median(ratios)
-        vehicle = "Moto" if medianRatio > 1.6 else "Automobile"
+        vehicle = "Moto" if medianRatio > self.ratioRef else "Automobile"
         self._data.append((time, vehicle))
         self.segmenter.addVehicle(vehicle)
     

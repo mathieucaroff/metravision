@@ -11,7 +11,7 @@ def main():
             with p.open() as configFile:
                 configObj = parseConfig.MvConfig.fromConfigFile(
                     configFile,
-                    version="1.1.2",
+                    version="1.1.3",
                 )
             break
     else:
@@ -85,7 +85,6 @@ def processVideo(logger, config, resultPathTemplate, backgroundMode, videoPath, 
             logger=logger,
             cap=cap,
             config=config,
-            speedLimitEnabled=not backgroundMode,
             playbackStatus=playbackStatus,
         )
 

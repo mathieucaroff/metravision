@@ -169,7 +169,7 @@ class MvTracker():
         if max(sender.history.keys()) + 1 < min(self.history.keys()) or min(sender.history.keys()) - 1 > max(self.history.keys()):
             logger.debug(f"Not merging trackers with non-matching history. {info}")
         else:
-            logger.debug(f"Trackers history merged. {info}")
+            # logger.debug(f"Trackers history merged. {info}")
             self.history.update(sender.history)
 
 

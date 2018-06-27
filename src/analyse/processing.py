@@ -18,7 +18,7 @@ class ProcessingTool():
             vidDimension,
             timePerFrame,
             jumpEventSubscriber,
-            segmentDuration=6 # seconds
+            segmentDuration, # seconds
         ):
         """
         Initialisation -- Crée le backgroundSubtractor, paramètre le blob detector, initialise MultiTracker et AnalyseData.
@@ -61,7 +61,9 @@ class ProcessingTool():
         # Where to store results, together with the vehicle counter (segmenter)
         numberOfFramePerSegment = int(0.5 + segmentDuration / timePerFrame)
         segmenter = RealSegmenter(self.logger, numberOfFramePerSegment, timePerFrame)
-        self.analyseData = AnalyseData(timePerFrame, jumpEventSubscriber, segmenter)
+        ratioRef = processingToolsConfig.ratioRef
+        ratioErode = processingToolsConfig.ratioErode
+        self.analyseData = AnalyseData(timePerFrame, jumpEventSubscriber, segmenter, ratioRef, ratioErode)
 
         # Multi Tracker initialisation
         self.mvMultiTracker = MvMultiTracker(

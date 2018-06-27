@@ -81,15 +81,13 @@ class Lecteur:
         data = self.processingTool.getData()
         return data
 
-    def __init__(self, logger, config, cap, speedLimitEnabled, playbackStatus):
+    def __init__(self, logger, config, cap, playbackStatus):
         """
         Crée un objet Lecteur à partir d'une video openCV.
 
         :param logger: Instance utilisée pour afficher les messages metravision.
         :param config: L'objet configuration.
         :param cap: La vidéo à lire.
-        :param speedLimitEnabled: Si oui ou non il faut limité la vitesse de lecture
-            pour ne pas dépasser celle de la vidéo
         """
         self.initVideoInfo(cap)
         self.logger = logger
@@ -102,9 +100,17 @@ class Lecteur:
             processingToolsConfig=config.processingTools,
             vidDimension=self.vidDimension,
             timePerFrame=self.timePerFrame,
-            jumpEventSubscriber = self.jumpEventSubscriber
+            jumpEventSubscriber=self.jumpEventSubscriber,
+            segmentDuration=config.lecteur.segmentDuration,
         )
 
+        # Si oui ou non il faut limiter la vitesse de lecture pour ne pas
+        # dépasser celle de la vidéo
+        speedLimitEnabled = \
+            config.lecteur.limitProcessingSpeedToRealVideoSpeed == "always"
+        if not config.backgroundMode:
+            speedLimitEnabled |= \
+                config.lecteur.limitProcessingSpeedToRealVideoSpeed == "auto"
         self.playbackStatus = playbackStatus
         self.timeController = TimeController(self.timePerFrame if speedLimitEnabled else 0)
 

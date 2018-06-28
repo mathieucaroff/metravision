@@ -15,6 +15,7 @@ window:
         height: 960
         width: 800
     multiView:
+        viewNumber: 14
         openEvent:
             click: false
             doubleClick: true
@@ -80,6 +81,7 @@ processingTools:
           trackingXminRatio: 0.4
     opticalFlow: false
     contour: true
+    temporalDifferentiation: true
     ratioErode: 10 # How many pixels to subtract to each dimension before computing ratio
     ratioRef: 1.6 # Vehicles above this ratio (h/w) are detected as motos
 resultDestinationTemplates:

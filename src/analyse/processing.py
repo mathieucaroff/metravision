@@ -125,7 +125,10 @@ class ProcessingTool():
             im["tp_diff+128>20"] = ((im["tp_diff+128"] > 20 + 128) * 64).astype(np.uint8)
             im["tp_diff+128>20:sum"] = np.sum(im["tp_diff+128>20"], axis=-1).astype(np.uint8)
             im["tp_diff+128>20:s1"] = ((im["tp_diff+128>20:sum"] > 64) * 255).astype(np.uint8)
-            im["tp_diff+128>20:s2"] = ((im["tp_diff+128>20:sum"] > 128) * 255).astype(np.uint8)
+            # im["tp_diff+128>20:s2"] = ((im["tp_diff+128>20:sum"] > 128) * 255).astype(np.uint8)
+            del im["tp_diff+128"]
+            del im["tp_diff+128>20:sum"]
+            del im["tp_diff+128>20"]
 
         # opticalFlow
         if self.processingToolsConfig.opticalFlow:

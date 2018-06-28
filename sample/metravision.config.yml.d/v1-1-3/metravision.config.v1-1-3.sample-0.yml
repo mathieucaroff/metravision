@@ -1,12 +1,11 @@
 %YAML 1.2
 ---
 configurationVersion: 1.1.3
-usedFor: mv--1-0-2--2018-06-28--SequenceDebut--0-58--D.xslx
 printTimes: false
 backgroundMode: false
-developerMode: true
+developerMode: false
 lecteur:
-    randomJump: 0
+    randomJump: 0 # Between 0 and 1.
     segmentDuration: 6 # 6 # 60 # 360 # 3600 # seconds
     limitProcessingSpeedToRealVideoSpeed: never # always # auto
 window:
@@ -44,22 +43,24 @@ processingTools:
         - erode: 26
         - dilate: 15
     erodeAndDilatePostBitwiseAnd:
-        - dilate: 15
+        - dilate: 4
     blobDetector:
         - parameters:
             minDistBetweenBlobs: 50
             filterByArea: True
-            minArea: 3_600
+            minArea: 1_500
             maxArea: 80_000
             filterByInertia: False # Inertia ~ Not elongated. [0, 1]
             minInertiaRatio: 0.1
             maxInertiaRatio: 1
-            filterByCircularity: False # Perimeter/Area. [0, 1]
+            filterByCircularity: True # Perimeter/Area. [0, 1]
+            minCircularity: 0
+            maxCircularity: 0.96
             filterByConvexity: False # Area/Area of convex hull. [0, 1]
     tracking:
         - type: KCF
-          frameCountTillDeath: 12 # It takes about 50 frames of traking usually
-          trackingXminRatio: 0.7
+          frameCountTillDeath: 75 # It takes about 50 frames of traking usually
+          trackingXminRatio: 0.35
           distanceCorrection:
             regionWidth: 400
             regionHeight: 400
@@ -71,28 +72,28 @@ processingTools:
           countingLine: 0.95
         - type: TLD
           frameCountTillDeath: 300
-          trackingXminRatio: 0.4
+          trackingXminRatio: 0.5
         - type: MEDIANFLOW
           frameCountTillDeath: 300
-          trackingXminRatio: 0.4
+          trackingXminRatio: 0.5
         - type: GOTURN
           frameCountTillDeath: 300
-          trackingXminRatio: 0.4
+          trackingXminRatio: 0.5
         - type: MOSSE
           frameCountTillDeath: 300
-          trackingXminRatio: 0.4
+          trackingXminRatio: 0.5
     opticalFlow: false
-    contour: true
     temporalDifferentiation: true
-    ratioErode: 10 # How many pixels to subtract to each dimension before computing ratio
+    contour: true
+    ratioErode: 17 # How many pixels to subtract to each dimension before computing ratio
     ratioRef: 1.6 # Vehicles above this ratio (h/w) are detected as motos
 resultDestinationTemplates:
-    counts: "{video_directory}/mv-results/mv--{video_filename}--{segmentIndex}.{ext}"
+    counts: "{video_directory}/mv-results/mv--{video_filename}.{ext}"
 
     example:
         counts: "{video_directory}/mv-results/mv--{mv_version}--year%Y-month%m-day%d-hour%H-minutes%m-seconds%s----{mv_date}--{video_filename}.{ext}"
     developer:
-        counts: "/tmp/mv-results/mv--{mv_version}--{mv_date}--{video_filename}--{segmentIndex}.{ext}"
+        counts: "/tmp/mv-results/mv--{mv_version}--{mv_date}--{video_filename}.{ext}"
     usableProperties:
         video_directory: The directory of the analysed video.
         video_filename: The name of the video file, without extension.
@@ -100,12 +101,7 @@ resultDestinationTemplates:
         mv_date: The date of the day the result was compute, in local time.
         mv_datetime: Same as mv_date, but contains the hour as well.
         mv_utcdatetime: Same as mv_datetime, but in utc time.
-        mv_version: The version of Metravision used to get the result. Mostly usefull for developers.
-        ext: The extension of the result file. Just leave it at the end of the template.
-        segmentIndex: |
-            The index of the first and last segment that where treated.
-            They are joined by a single hypens if all segments between them were treated as well (example 0-35).
-            If they are joined by a double hypens (example 0--35), it means at least one segment is missing.
+        mv_version: The version of Metravision used to get the result. Mostly usefull for developers
         ext: The extension of the result file. Just leave it at the end of the template.
 image:
     directoryLocation: /path/to/image-dataset

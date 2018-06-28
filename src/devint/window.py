@@ -67,7 +67,7 @@ class MvWindow:
             self.windowConfig.multiView,
             videoName = self.videoName, 
             imageSet=imageSet,
-            output = output[:-barHeight]
+            output = output[:-barHeight],
         )
         devint.progressBar.drawBar(self.windowConfig.progressBar, buffer=output, advancementPercentage=advancementPercentage)
         if self.backgroundMode:

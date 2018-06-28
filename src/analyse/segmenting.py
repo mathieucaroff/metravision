@@ -75,7 +75,7 @@ class DummySegmenter(Segmenter):
 
 
 class RealSegmenter(Segmenter):
-    __slots__ = "logger _segments _segmentDuration _currentSegment _mode".split()
+    __slots__ = "logger _segments _segmentDuration currentSegment segmentIndex _mode".split()
     acceptedVehicleNames = "Automobile Moto".split()
 
     def __init__(self, logger, numberOfFramePerSegment, timePerFrame):
@@ -84,10 +84,11 @@ class RealSegmenter(Segmenter):
         self._timePerFrame = timePerFrame
         self._segmentDuration = timePerFrame * numberOfFramePerSegment
         self._frameIndex = 0
+        self.segmentIndex = 0
 
         self._segments = {} # Indexed from 0
         self._mode = "Counting" # "Waiting"
-        self._currentSegment = self._newSegment()
+        self.currentSegment = self._newSegment()
 
     @staticmethod
     def _newSegment():
@@ -95,39 +96,41 @@ class RealSegmenter(Segmenter):
 
     def incrementFrameIndex(self):
         self._frameIndex += 1
+        self.segmentIndex = int(self._frameIndex / self._numberOfFramePerSegment)
         if self._frameIndex % self._numberOfFramePerSegment == 0:
             i = int(self._frameIndex / self._numberOfFramePerSegment) - 1
             if self._mode == "Counting":
-                self._segments[i] = self._currentSegment
+                self._segments[i] = self.currentSegment
                 self.logger.debug(f"Finished segment {i}.")
             else:
                 self.logger.debug(f"Partially counted segment {i} -- not saved.")
-            self._currentSegment = self._newSegment()
+            self.currentSegment = self._newSegment()
             self.logger.debug(f"Starting to count for segment {i + 1}.")
             self._mode = "Counting"
+            self.segmentIndex = i + 1
 
         """ 
         if self._mode == "Counting":
             if self._frameIndex % self._numberOfFramePerSegment == 0:
                 i = int(self._frameIndex / self._numberOfFramePerSegment)
-                self._segments[i] = self._currentSegment
-                self._currentSegment = self._newSegment()
+                self._segments[i] = self.currentSegment
+                self.currentSegment = self._newSegment()
         elif self._mode == "Awaiting":
             if self._frameIndex % self._numberOfFramePerSegment == 0:
-                self._currentSegment = self._newSegment()
+                self.currentSegment = self._newSegment()
                 self._mode = "Counting"
         else:
             raise RuntimeError(f"self._mode: {self._mode}") """
     
     def jumpToFrame(self, frameIndex):
         self._mode = "Awaiting"
-        self._currentSegment = None
+        self.currentSegment = None
         self._frameIndex = frameIndex - 1
         self.incrementFrameIndex()
     
     def addVehicle(self, vehicleName):
         if self._mode == "Counting":
-            self._currentSegment[vehicleName] += 1
+            self.currentSegment[vehicleName] += 1
         elif self._mode == "Awaiting":
             pass
     
@@ -139,7 +142,7 @@ def test_RealSegmenter():
     import logging
     logger = logging.getLogger("[MV-test]")
     fps = 25
-    rs = RealSegmenter(logger, numberOfFramePerSegment = 4 * fps, timePerFrame = (1/fps))
+    rs = RealSegmenter(logger, numberOfFramePerSegment=4 * fps, timePerFrame=(1/fps))
     for _i in range(4):
         rs.addVehicle("Moto")
     for _j in range(7):

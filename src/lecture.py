@@ -133,13 +133,14 @@ class Lecteur:
                 if self.playbackStatus.endReached:
                     break
                 
+                imageSet["counting"] = frame
                 imageSet["frame"] = frame
                 imageSet["trackers"] = np.array(frame)
 
                 self.processingTool.run(imageSet, self.frameIndex)
 
                 advancementPercentage = self.cap.get(cv2.CAP_PROP_POS_FRAMES) / self.frameCount
-                mvWindow.update(imageSet, advancementPercentage)
+                mvWindow.update(imageSet, advancementPercentage, self.processingTool.analyseData.segmenter)
 
                 controlledTime = self.timeController.getControlledTime()
                 mvWindow.waitkey(controlledTime, self.playbackStatus)

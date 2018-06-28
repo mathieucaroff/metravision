@@ -155,7 +155,7 @@ class MvTracker():
         """Tell whether the given tracker should still be updated or is too small / out of screen and thus should be "Finished"."""
         finished = False
         height, _width = vidDimension
-        if self.mvbbox.bottom > height * 0.88:
+        if self.mvbbox.bottom > height * 0.99:
             finished = True
         if self.mvbbox.area < self.smallestAllowedTrackerArea:
             finished = True

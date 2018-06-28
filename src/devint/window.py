@@ -5,7 +5,7 @@ import util
 
 import devint.multiView
 import devint.progressBar
-
+from devint.counter import addCounters
 
 class MvWindow:
     def __init__(self, logger, windowConfig, videoName, backgroundMode, playbackStatus, jumpToFrameFunction):
@@ -55,13 +55,16 @@ class MvWindow:
         return v["different"]
 
 
-    def update(self, imageSet, advancementPercentage):
+    def update(self, imageSet, advancementPercentage, segmenter):
         # Display the resulting frame
         shape = (*self.windowShape, 3)
         output = np.zeros(shape=shape, dtype=np.uint8)
         barHeight = self.windowConfig.progressBar.height
 
+        addCounters(imageSet, segmenter)
+
         devint.multiView.renderNimages(
+            self.windowConfig.multiView,
             videoName = self.videoName, 
             imageSet=imageSet,
             output = output[:-barHeight]

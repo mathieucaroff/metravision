@@ -75,7 +75,7 @@ are: `dist/`, `build/*` `__pycache__/*`, `launch-metravision.spec`
 This can be done in a single command from Anaconda:
 
 ```sh
-pyinstaller --onefile launch-metravision.py && move /y ist\\launch-metravision.exe .. && del /q dist && del /q build && del /q launch-metravision.spec
+pyinstaller --onefile launch-metravision.py && move /y dist\\launch-metravision.exe .. && rmdir /q dist && rmdir /s /q build && del /q launch-metravision.spec
 ```
 
 ## Contributing

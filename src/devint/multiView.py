@@ -25,7 +25,7 @@ def viewDimensionsFromN(n=1):
         w += 1
     return (h, w)
 
-def renderNimages(videoName, imageSet, output=None, h=None, w=None):
+def renderNimages(multiViewConfig, videoName, imageSet, output=None, h=None, w=None):
     """
     Gather the images from the given collection into one image. All images must have the same dimension.
     If no output image buffer is given, the output dimension is that of one input image.
@@ -33,7 +33,7 @@ def renderNimages(videoName, imageSet, output=None, h=None, w=None):
     """
     imageList = imageSet.values()
 
-    n = len(imageList)
+    n = max(len(imageList), multiViewConfig.viewNumber)
 
     # Definition of h, w depends of the choice of the user 
     if h is None:
@@ -80,7 +80,8 @@ def renderNimages(videoName, imageSet, output=None, h=None, w=None):
             xoffset:(xoffset + imgwpx),
         ]
         cv2.resize(
-            src=image, dsize=destination.shape[:2][::-1],
+            src=image,
+            dsize=destination.shape[:2][::-1],
             dst=destination,
         )
         
@@ -144,7 +145,7 @@ def setupVideoSelectionHook(multiViewConfig, mouseCallbackList, displayShape, pl
                     cv2.imshow(imageName, imageSet[imageName])
 
         if share.press == True:
-            n = len(imageSet)
+            n = max(len(imageSet), multiViewConfig.viewNumber)
             h, w = viewDimensionsFromN(n)
 
             imghpx = height // h

@@ -95,7 +95,6 @@ class ProcessingTool():
         im["fgMask"] = sub
         
         # Two-frame bitwise AND
-        
         if self.last_fgMask is None:
             self.last_fgMask = im["fgMask"]
         if self.oneBeforeLast_fgMask is None:
@@ -103,10 +102,6 @@ class ProcessingTool():
         
         im["bitwise_fgMask_and"] = cv2.bitwise_and(im["fgMask"], self.last_fgMask, self.oneBeforeLast_fgMask)
 
-        # opticalFlow
-        if self.processingToolsConfig.opticalFlow:
-            im["opticalFlowH"], im["opticalFlowV"] = util.timed(self.opticalFlow)(im["frame"])
-        
         # erodeAndDilate
         ptc = self.processingToolsConfig
         mask = util.timed(self.erodeAndDilate)(
@@ -116,12 +111,29 @@ class ProcessingTool():
         )
         _ = mask
 
-        # Contour
-        if self.processingToolsConfig.contour:
-            util.timed(self.contour)(im, np.array(im["frame"][:, :, 1]))
-
         # Blob Detector
         blobKeypoints = util.timed(self.blobDetection)(im, nameOfImageToUse="dilateC")
+
+        # temporalDifferentiation
+        frame = im["frame"]
+        if self.last_frame is None:
+            self.last_frame = frame
+        last = self.last_frame
+        if self.processingToolsConfig.temporalDifferentiation:
+            im["temporal_xor"] = cv2.bitwise_xor(frame, last)
+            im["tp_diff+128"] = frame - last + 128
+            im["tp_diff+128>20"] = ((im["tp_diff+128"] > 20 + 128) * 64).astype(np.uint8)
+            im["tp_diff+128>20:sum"] = np.sum(im["tp_diff+128>20"], axis=-1).astype(np.uint8)
+            im["tp_diff+128>20:s1"] = ((im["tp_diff+128>20:sum"] > 64) * 255).astype(np.uint8)
+            im["tp_diff+128>20:s2"] = ((im["tp_diff+128>20:sum"] > 128) * 255).astype(np.uint8)
+
+        # opticalFlow
+        if self.processingToolsConfig.opticalFlow:
+            im["opticalFlowH"], im["opticalFlowV"] = util.timed(self.opticalFlow)(im["frame"])
+
+        # Contour
+        if self.processingToolsConfig.contour:
+            util.timed(self.contour)(im, np.array(im["dilateC"]))
 
         # Tracking
         frame = im["frame"]
@@ -199,7 +211,7 @@ class ProcessingTool():
             if m:
                 break
             mask = cv2.bitwise_and(mask, im["fgMask"])
-            im["bitwise_fgMask_dilateB_and"] = mask
+            im["bitwise_fgMask_second_and"] = mask
         
         im["dilateC"] = mask
 
@@ -228,11 +240,11 @@ class ProcessingTool():
 
         _img, contourPointList, _hierachy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-        #im["dilateMaskB"] = cv2.cvtColor(im["dilateMaskB"], cv2.COLOR_GRAY2BGR)
+        im["contour"] = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
 
         allContours = -1
         cv2.drawContours(
-            image=im["trackers"],
+            image=im["contour"],
             contours=contourPointList,
             contourIdx=allContours,
             color=red,

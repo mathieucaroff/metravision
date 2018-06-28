@@ -76,7 +76,7 @@ def processVideo(logger, config, resultPathTemplate, backgroundMode, videoPath, 
     logger.info(f"Starting to process video `{videoName}`")
 
     if not videoPath.is_file():
-        raise FileNotFoundError(f"The specified video `{videoPath}` couldn't be open. (Missing file?)")
+        raise FileNotFoundError(f"The specified video `{videoPath}` couldn't be opened. (Missing file?)")
 
     cap = cv2.VideoCapture(str(videoPath))
 
@@ -126,7 +126,6 @@ def processVideo(logger, config, resultPathTemplate, backgroundMode, videoPath, 
     finally:
         # When everything done, release the capture
         cap.release()
-
 
 
 # Imports & execution

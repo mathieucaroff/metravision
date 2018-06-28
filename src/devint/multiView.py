@@ -77,20 +77,25 @@ def renderNimages(videoName, imageSet, output=None, h=None, w=None):
 
         destination = output[
             yoffset:(yoffset + imghpx),
-            xoffset:(xoffset + imgwpx
-        )]
+            xoffset:(xoffset + imgwpx),
+        ]
         cv2.resize(
-            src = image, dsize=destination.shape[:2][::-1],
-            dst = destination)
+            src=image, dsize=destination.shape[:2][::-1],
+            dst=destination,
+        )
         
         if name == "frame":
             name = videoName
         
         orange = (0, 128, 256)
         cv2.putText(
-            img = destination, text = name, org = (16, 16),
-            fontFace = cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6,
-            color = orange, thickness = 2
+            img=destination,
+            text=name,
+            org=(16, 16),
+            fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+            fontScale=0.6,
+            color=orange,
+            thickness=2,
         )
 
     return output

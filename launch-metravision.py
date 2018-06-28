@@ -65,7 +65,7 @@ try:
         # If break didn't occur
         print(
             f"[MV] Couldn't find '{mainRelativeLocation}' within directories:",
-            '\n'.join(map(str,[""] + rootLocationList))
+            '\n'.join(map(str,[""] + rootLocationList)),
         )
         confirmExit(retcode=2)
     

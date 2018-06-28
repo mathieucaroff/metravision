@@ -369,7 +369,6 @@ class MvMultiTracker():
         return indexDict
 
 
-
 def getBlobMvBbox(mask, xx, yy):
     """Explore the mask, left, right, up and down to determine the width and height of the blob at given point.
     

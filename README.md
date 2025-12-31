@@ -3,6 +3,8 @@
 Detecting and counting light vehicles (motorbikes and alikes) on
 highways, using video processing.
 
+![Metravision concept overview](./doc/frontview.png)
+
 ## Installing and launching
 
 ### Basic use
